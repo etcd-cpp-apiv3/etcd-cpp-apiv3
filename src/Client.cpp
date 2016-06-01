@@ -3,6 +3,15 @@
 etcd::Client::Client(std::string const & address)
   : client(address)
 {
+    std::string stripped_address(address);
+    std::string substr("http://");
+    std::string::size_type i = stripped_address.find(substr);
+    if(i != std::string::npos)
+    {
+       stripped_address.erase(i,substr.length());
+    }
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
+    stub_= KV::NewStub(channel);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)

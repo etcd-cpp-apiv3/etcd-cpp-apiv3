@@ -6,6 +6,12 @@
 #include <cpprest/http_client.h>
 #include <string>
 
+#include <grpc++/grpc++.h>
+#include "proto/rpc.grpc.pb.h"
+
+using grpc::Channel;
+using etcdserverpb::KV;
+
 namespace etcd
 {
   /**
@@ -132,6 +138,8 @@ namespace etcd
     pplx::task<Response> send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value);
 
     web::http::client::http_client client;
+
+    std::unique_ptr<KV::Stub> stub_;
   };
 }
 
