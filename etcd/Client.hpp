@@ -10,6 +10,12 @@
 #include "proto/rpc.grpc.pb.h"
 
 using grpc::Channel;
+using grpc::ClientAsyncResponseReader;
+using grpc::ClientContext;
+using grpc::CompletionQueue;
+using grpc::Status;
+using etcdserverpb::PutRequest;
+using etcdserverpb::PutResponse;
 using etcdserverpb::KV;
 
 namespace etcd
@@ -140,6 +146,18 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
+    pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
+  };
+
+  class AsyncPutResponse
+  {
+    public:
+        PutResponse reply;
+        Status status;
+        ClientContext context;
+        CompletionQueue cq_;
+        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
+        Response ParseResponse();
   };
 }
 

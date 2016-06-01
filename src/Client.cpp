@@ -3,15 +3,15 @@
 etcd::Client::Client(std::string const & address)
   : client(address)
 {
-    std::string stripped_address(address);
-    std::string substr("http://");
-    std::string::size_type i = stripped_address.find(substr);
-    if(i != std::string::npos)
-    {
-       stripped_address.erase(i,substr.length());
-    }
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
-    stub_= KV::NewStub(channel);
+  std::string stripped_address(address);
+  std::string substr("http://");
+  std::string::size_type i = stripped_address.find(substr);
+  if(i != std::string::npos)
+  {
+    stripped_address.erase(i,substr.length());
+  }
+  std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
+  stub_= KV::NewStub(channel);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)
@@ -39,8 +39,7 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  return send_put_request(uri, "value", value);
+  return send_put(key,value);
 }
 
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value)
@@ -133,4 +132,46 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
   if (recursive)
     uri.append_query("recursive=true");
   return send_get_request(uri);
+}
+
+
+etcd::Response etcd::AsyncPutResponse::ParseResponse()
+{
+  return etcd::Response();
+}
+
+
+pplx::task<etcd::Response> etcd::Client::send_put(std::string const & key, std::string const & value)
+{
+  PutRequest request;
+  request.set_key(key);
+  request.set_value(value);
+    
+  etcd::AsyncPutResponse* call= new etcd::AsyncPutResponse();  
+
+  call->response_reader = stub_->AsyncPut(&call->context,request,&call->cq_);
+
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        
+
+  return pplx::task<etcd::Response>([call]()
+  {
+    void* got_tag;
+    bool ok = false;
+    etcd::Response resp;
+
+    //blocking
+    call->cq_.Next(&got_tag, &ok);
+    GPR_ASSERT(got_tag == (void*)call);
+    GPR_ASSERT(ok);
+
+    etcd::AsyncPutResponse* call = static_cast<etcd::AsyncPutResponse*>(got_tag);
+    
+    if(call->status.ok())
+    {
+      resp = call->ParseResponse();
+    }
+    delete call;
+    return resp;
+  });
 }
