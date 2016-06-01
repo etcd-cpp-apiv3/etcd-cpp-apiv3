@@ -16,6 +16,8 @@ using grpc::CompletionQueue;
 using grpc::Status;
 using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
+using etcdserverpb::RangeRequest;
+using etcdserverpb::RangeResponse;
 using etcdserverpb::KV;
 
 namespace etcd
@@ -147,6 +149,7 @@ namespace etcd
 
     std::unique_ptr<KV::Stub> stub_;
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
+    pplx::task<etcd::Response> send_get(std::string const & key);
   };
 
   class AsyncPutResponse
@@ -157,6 +160,17 @@ namespace etcd
         ClientContext context;
         CompletionQueue cq_;
         std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
+        Response ParseResponse();
+  };
+
+  class AsyncRangeResponse
+  {
+    public:
+        RangeResponse reply;
+        Status status;
+        ClientContext context;
+        CompletionQueue cq_;
+        std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
         Response ParseResponse();
   };
 }
