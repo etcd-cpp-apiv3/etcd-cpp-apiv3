@@ -70,8 +70,11 @@ TEST_CASE("set a key")
 
 TEST_CASE("delete a value")
 {
+	std::cout << "FBDL do a delete via rm only" <<std::endl;
   etcd::Client etcd("http://127.0.0.1:4001");
   CHECK(3 == etcd.ls("/test").get().keys().size());
+
+  std::cout << "FBDL invoking rm in test" <<std::endl;
   etcd::Response resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
   CHECK("delete" == resp.action());
@@ -130,6 +133,28 @@ TEST_CASE("wait for a value change")
   REQUIRE(res.is_done());
   REQUIRE("set" == res.get().action());
   CHECK("43" == res.get().value().as_string());
+}
+
+//FBDL: first watch
+TEST_CASE("FBDL wait for a value change")
+{
+  std::cout << "FBDL wait for a value change" << std::endl;
+  etcd::Client etcd("http://127.0.0.1:4001");
+//  etcd.set("/test/key1", "42").wait();
+  etcd.setv3("test/key1", "42");
+
+//  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
+//  CHECK(!res.is_done());
+//  sleep(1);
+//  CHECK(!res.is_done());
+//  CHECK("42" == etcd.get("/test/key1").get().value().as_string());
+//
+//  etcd.set("/test/key1", "43").get();
+//  sleep(1);
+//  REQUIRE(res.is_done());
+//  REQUIRE("set" == res.get().action());
+//  CHECK("43" == res.get().value().as_string());
+//  CHECK("43" == etcd.get("/test/key1").get().value().as_string());
 }
 
 TEST_CASE("wait for a directory change")

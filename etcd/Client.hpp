@@ -11,6 +11,7 @@
 
 using grpc::Channel;
 using etcdserverpb::KV;
+using etcdserverpb::Watch;
 
 namespace etcd
 {
@@ -40,6 +41,8 @@ namespace etcd
      * @param value is the new value to be set
      */
     pplx::task<Response> set(std::string const & key, std::string const & value);
+
+    void setv3(std::string const&, std::string const&);
 
     /**
      * Creates a new key and sets it's value. Fails if the key already exists.
@@ -140,6 +143,7 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
+    std::unique_ptr<Watch::Stub> watchServiceStub;
   };
 }
 

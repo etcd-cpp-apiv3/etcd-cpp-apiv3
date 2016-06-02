@@ -1,12 +1,19 @@
 #include "etcd/Response.hpp"
 #include "json_constants.hpp"
 
+#include <iostream>
+
 pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_response> response_task)
 {
-  return pplx::task<etcd::Response> ([response_task](){
-      auto json_task = response_task.get().extract_json();
-      return etcd::Response(response_task.get(), json_task.get());
-    });
+	std::cout << "FBDL Response create" << std::endl;
+  return pplx::task<etcd::Response> (
+		  [response_task]()
+		  {
+	  	  	  std::cout << "FBDL inside response task" << std::endl;
+      	  	  auto json_task = response_task.get().extract_json();
+      	  	  return etcd::Response(response_task.get(), json_task.get());
+		  }
+  );
 }
 
 etcd::Response::Response()

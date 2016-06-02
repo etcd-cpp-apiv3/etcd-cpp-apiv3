@@ -1,5 +1,7 @@
 #include "etcd/Client.hpp"
 
+#include <iostream>
+
 etcd::Client::Client(std::string const & address)
   : client(address)
 {
@@ -12,6 +14,7 @@ etcd::Client::Client(std::string const & address)
     }
     std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
     stub_= KV::NewStub(channel);
+    watchServiceStub = Watch::NewStub(channel);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)
@@ -43,6 +46,28 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
   return send_put_request(uri, "value", value);
 }
 
+void etcd::Client::setv3(std::string const &key, std::string const &value)
+{
+	std::cout << "FBDL setv3" << std::endl;
+	etcdserverpb::PutRequest putRequest;
+	putRequest.set_key(key);
+	putRequest.set_value(value);
+
+	etcdserverpb::PutResponse putResponse;
+	grpc::ClientContext context;
+
+	std::cout << "invoking put stub rpc" << std::endl;
+	grpc::Status status = stub_->Put(&context, putRequest, &putResponse);
+
+	std::cout << "checking status" << std::endl;
+	if(status.ok()){
+		std::cout << "put OK" << std::endl;
+	}
+	else {
+		std::cout << "put NOK" << std::endl;
+	}
+}
+
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value)
 {
   web::http::uri_builder uri("/v2/keys" + key);
@@ -64,6 +89,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return send_put_request(uri, "value", value);
 }
 
+//FBDL
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index)
 {
   web::http::uri_builder uri("/v2/keys" + key);
@@ -73,8 +99,13 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("dir=false");
+	std::cout << "FBDL: rm is invoked" << std::endl;
+  web::http::uri_builder uri("/v2/keys" + key); // /v2/keys/test/key1
+  std::cout << "FBDL url: " << uri.to_string() << std::endl;
+
+  uri.append_query("dir=false"); // /v2/keys/test/key1?dir=false
+  std::cout << "FBDL url after append query: " << uri.to_string() << std::endl;
+
   return Response::create(client.request("DELETE", uri.to_string()));
 }
 
