@@ -1,4 +1,5 @@
 #include "etcd/Client.hpp"
+#include "v3/include/AsyncRangeResponse.hpp"
 
 etcd::Client::Client(std::string const & address)
   : client(address)
@@ -33,12 +34,12 @@ pplx::task<etcd::Response> etcd::Client::send_put_request(web::http::uri_builder
 
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
-  return send_get(key);
+  return send_asyncget(key);
 }
 
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value)
 {
-  return send_put(key,value);
+  return send_asyncput(key,value);
 }
 
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value)
@@ -46,6 +47,12 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
   web::http::uri_builder uri("/v2/keys" + key);
   uri.append_query("prevExist=false");
   return send_put_request(uri, "value", value);
+
+  // since RequestUnion is still not fixed in rpc.proto skip checking if key already exist.
+  //check first if key exist, use rpc synchronous Range since there's still some problem
+  //in rpc Txn;
+
+  //return send_put(key,value);
 }
 
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value)
@@ -134,65 +141,22 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
 }
 
 
-etcd::Response etcd::AsyncPutResponse::ParseResponse()
-{
-  std::cout << reply.header().revision() << std::endl;
-  return etcd::Response();
-}
-
-etcd::Response etcd::AsyncRangeResponse::ParseResponse()
-{
-  mvccpb::KeyValue kvs;
-  if(reply.kvs_size())
-  {
-    int index=0;
-    do
-    {
-      kvs = reply.kvs(index++);
-      std::cout<<reply.header().revision() << std::endl;
-      std::cout << kvs.create_revision() << std::endl;
-      std::cout << kvs.mod_revision() << std::endl;
-      std::cout << kvs.version() << std::endl;
-    }while(reply.more());
-  }
-  return etcd::Response();
-}
-
-pplx::task<etcd::Response> etcd::Client::send_get(std::string const & key)
+pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key)
 {
   RangeRequest request;
   request.set_key(key);
     
-  etcd::AsyncRangeResponse* call= new etcd::AsyncRangeResponse();  
+  etcdv3::AsyncRangeResponse* call= new etcdv3::AsyncRangeResponse();  
 
   call->response_reader = stub_->AsyncRange(&call->context,request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-    
-  return pplx::task<etcd::Response>([call]()
-  {
-    void* got_tag;
-    bool ok = false;
-    etcd::Response resp;
 
-    //blocking
-    call->cq_.Next(&got_tag, &ok);
-    GPR_ASSERT(got_tag == (void*)call);
-    GPR_ASSERT(ok);
-
-    etcd::AsyncRangeResponse* call = static_cast<etcd::AsyncRangeResponse*>(got_tag);
-    if(call->status.ok())
-    {
-      resp = call->ParseResponse();
-    }
-               
-    delete call;
-    return resp;
-  });
+  return Response::create(call);
 }
 
 
-pplx::task<etcd::Response> etcd::Client::send_put(std::string const & key, std::string const & value)
+pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, std::string const & value)
 {
   PutRequest request;
   request.set_key(key);
@@ -204,25 +168,7 @@ pplx::task<etcd::Response> etcd::Client::send_put(std::string const & key, std::
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
         
-
-  return pplx::task<etcd::Response>([call]()
-  {
-    void* got_tag;
-    bool ok = false;
-    etcd::Response resp;
-
-    //blocking
-    call->cq_.Next(&got_tag, &ok);
-    GPR_ASSERT(got_tag == (void*)call);
-    GPR_ASSERT(ok);
-
-    etcd::AsyncPutResponse* call = static_cast<etcd::AsyncPutResponse*>(got_tag);
-    
-    if(call->status.ok())
-    {
-      resp = call->ParseResponse();
-    }
-    delete call;
-    return resp;
-  });
+  return Response::create(call);
 }
+
+

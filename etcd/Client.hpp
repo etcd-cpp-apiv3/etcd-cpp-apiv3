@@ -148,31 +148,12 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
-    pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
-    pplx::task<etcd::Response> send_get(std::string const & key);
+    pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
+    pplx::task<etcd::Response> send_asyncget(std::string const & key);
   };
 
-  class AsyncPutResponse
-  {
-    public:
-        PutResponse reply;
-        Status status;
-        ClientContext context;
-        CompletionQueue cq_;
-        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
-        Response ParseResponse();
-  };
 
-  class AsyncRangeResponse
-  {
-    public:
-        RangeResponse reply;
-        Status status;
-        ClientContext context;
-        CompletionQueue cq_;
-        std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-        Response ParseResponse();
-  };
+
 }
 
 #endif

@@ -1,5 +1,6 @@
 #include "etcd/Value.hpp"
 #include "json_constants.hpp"
+#include "proto/kv.pb.h"
 
 etcd::Value::Value()
   : dir(false),
@@ -15,6 +16,15 @@ etcd::Value::Value(web::json::value const & json_value)
     created(json_value.has_field(JSON_CREATED) ? json_value.at(JSON_CREATED).as_number().to_int64() : 0),
     modified(json_value.has_field(JSON_MODIFIED) ? json_value.at(JSON_MODIFIED).as_number().to_int64() : 0)
 {
+}
+
+etcd::Value::Value(mvccpb::KeyValue const & kvs)
+{
+  dir=false;
+  _key=kvs.key();
+  value=kvs.value();
+  created=kvs.create_revision();
+  modified=kvs.mod_revision();
 }
 
 std::string const & etcd::Value::key() const

@@ -7,9 +7,31 @@
 
 #include "etcd/Value.hpp"
 
+#include <grpc++/grpc++.h>
+#include "proto/rpc.grpc.pb.h"
+#include "v3/include/V3Response.hpp"
+
+
+using grpc::ClientAsyncResponseReader;
+using grpc::ClientContext;
+using grpc::CompletionQueue;
+using grpc::Status;
+using etcdserverpb::PutRequest;
+using etcdserverpb::PutResponse;
+
 namespace etcd
 {
   typedef std::vector<std::string> Keys;
+
+  class AsyncPutResponse
+  {
+    public:
+        PutResponse reply;
+        Status status;
+        ClientContext context;
+        CompletionQueue cq_;
+        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
+  };
 
   /**
    * The Reponse object received for the requests of etcd::Client
@@ -18,6 +40,35 @@ namespace etcd
   {
   public:
     static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
+
+    template<typename T>static pplx::task<etcd::Response> create(T call)
+    {
+      return pplx::task<etcd::Response>([call]()
+      {
+        void* got_tag;
+        bool ok = false;
+        etcd::Response resp;
+
+        //blocking
+        call->cq_.Next(&got_tag, &ok);
+        GPR_ASSERT(got_tag == (void*)call);
+        GPR_ASSERT(ok);
+
+        T call = static_cast<T>(got_tag);
+        if(call->status.ok())
+        {
+          auto v3resp = call->ParseResponse();
+          resp = etcd::Response();
+        }
+        else
+        {
+          throw std::runtime_error(call->status.error_message());
+        }
+               
+        delete call; //todo:make this a smart pointer
+        return resp;
+      });
+    };
 
     Response();
 
@@ -76,8 +127,10 @@ namespace etcd
      */
     std::string const & key(int index) const;
 
-  protected:
+  protected:  
     Response(web::http::http_response http_response, web::json::value json_value);
+    Response(const etcdv3::V3Response& response);
+    Response(PutResponse reply);
 
     int         _error_code;
     std::string _error_message;

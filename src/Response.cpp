@@ -1,6 +1,7 @@
 #include "etcd/Response.hpp"
 #include "json_constants.hpp"
 
+
 pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_response> response_task)
 {
   return pplx::task<etcd::Response> ([response_task](){
@@ -8,6 +9,31 @@ pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_res
       return etcd::Response(response_task.get(), json_task.get());
     });
 }
+
+etcd::Response::Response(const etcdv3::V3Response& reply)
+{
+  _index = reply.index;
+  _error_code = reply.error_code;
+  _error_message = reply.error_message;
+  _action = reply.action;
+  int size = reply.values.size();
+  if(size > 1)
+  {
+    for(int x = 0; x < size; x++)
+    _values.push_back(Value(reply.values[x]));
+  }
+  else if(size == 1)
+  {
+    _value = Value(reply.values[0]);
+  }
+}
+
+etcd::Response::Response(PutResponse reply)
+  :_error_code(0),
+    _index(0)
+{
+}
+
 
 etcd::Response::Response()
   : _error_code(0),

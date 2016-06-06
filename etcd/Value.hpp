@@ -4,6 +4,7 @@
 #include <cpprest/http_client.h>
 #include <string>
 #include <vector>
+#include "proto/kv.pb.h"
 
 namespace etcd
 {
@@ -43,6 +44,7 @@ namespace etcd
     friend class Response;
     Value();
     Value(web::json::value const & json_value);
+    Value(mvccpb::KeyValue const & kvs);
     std::string _key;
     bool        dir;
     std::string value;
