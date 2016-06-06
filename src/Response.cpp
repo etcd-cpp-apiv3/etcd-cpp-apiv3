@@ -12,6 +12,7 @@ pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_res
 
 etcd::Response::Response(const etcdv3::V3Response& reply)
 {
+
   _index = reply.index;
   _error_code = reply.error_code;
   _error_message = reply.error_message;
@@ -26,12 +27,8 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
   {
     _value = Value(reply.values[0]);
   }
-}
-
-etcd::Response::Response(PutResponse reply)
-  :_error_code(0),
-    _index(0)
-{
+  
+  _prev_value = Value(reply.prev_value);
 }
 
 

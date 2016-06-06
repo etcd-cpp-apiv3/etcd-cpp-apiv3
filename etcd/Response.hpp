@@ -7,31 +7,12 @@
 
 #include "etcd/Value.hpp"
 
-#include <grpc++/grpc++.h>
-#include "proto/rpc.grpc.pb.h"
 #include "v3/include/V3Response.hpp"
-
-
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Status;
-using etcdserverpb::PutRequest;
-using etcdserverpb::PutResponse;
+#include <grpc++/grpc++.h>
 
 namespace etcd
 {
   typedef std::vector<std::string> Keys;
-
-  class AsyncPutResponse
-  {
-    public:
-        PutResponse reply;
-        Status status;
-        ClientContext context;
-        CompletionQueue cq_;
-        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
-  };
 
   /**
    * The Reponse object received for the requests of etcd::Client
@@ -58,7 +39,7 @@ namespace etcd
         if(call->status.ok())
         {
           auto v3resp = call->ParseResponse();
-          resp = etcd::Response();
+          resp = etcd::Response(v3resp);
         }
         else
         {
@@ -130,7 +111,6 @@ namespace etcd
   protected:  
     Response(web::http::http_response http_response, web::json::value json_value);
     Response(const etcdv3::V3Response& response);
-    Response(PutResponse reply);
 
     int         _error_code;
     std::string _error_message;
