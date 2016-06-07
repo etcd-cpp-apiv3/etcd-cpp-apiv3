@@ -4,6 +4,7 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "v3/include/V3Response.hpp"
+#include "v3/include/grpcClient.hpp"
 
 
 using grpc::ClientAsyncResponseReader;
@@ -18,6 +19,7 @@ namespace etcdv3
   {
     public:
       AsyncPutResponse(){};
+      AsyncPutResponse(const std::string act){action = act;};
       AsyncPutResponse(const AsyncPutResponse& other);
       AsyncPutResponse& operator=(const AsyncPutResponse& other);
       PutResponse reply;
@@ -26,6 +28,8 @@ namespace etcdv3
       CompletionQueue cq_;
       std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
       AsyncPutResponse& ParseResponse();
+      etcdv3::grpcClient* client;
+      std::string key;
   };
 }
 

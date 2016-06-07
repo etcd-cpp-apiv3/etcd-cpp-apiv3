@@ -10,6 +10,13 @@ pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_res
     });
 }
 
+pplx::task<etcd::Response> etcd::Response::createResponse(const etcdv3::V3Response& response)
+{
+  return pplx::task<etcd::Response>([response](){
+    return etcd::Response(response);
+  });
+}
+
 etcd::Response::Response(const etcdv3::V3Response& reply)
 {
 

@@ -18,17 +18,6 @@ service KV {
   // A delete request increments the revision of the key-value store
   // and generates a delete event in the event history for every deleted key.
   rpc DeleteRange(DeleteRangeRequest) returns (DeleteRangeResponse) {}
-
-  // Txn processes multiple requests in a single transaction.
-  // A txn request increments the revision of the key-value store
-  // and generates events with the same revision for every completed request.
-  // It is not allowed to modify the same key several times within one txn.
-  rpc Txn(TxnRequest) returns (TxnResponse) {}
-
-  // Compact compacts the event history in the etcd key-value store. The key-value
-  // store should be periodically compacted or the event history will continue to grow
-  // indefinitely.
-  rpc Compact(CompactionRequest) returns (CompactionResponse) {}
 }
 
 service Watch {
@@ -228,19 +217,10 @@ message DeleteRangeResponse {
 
 message RequestUnion {
   // request is a union of request types accepted by a transaction.
-  oneof request {
+  oneof requestXXX {
     RangeRequest request_range = 1;
     PutRequest request_put = 2;
     DeleteRangeRequest request_delete_range = 3;
-  }
-}
-
-message ResponseUnion {
-  // response is a union of response types returned by a transaction.
-  oneof response {
-    RangeResponse response_range = 1;
-    PutResponse response_put = 2;
-    DeleteRangeResponse response_delete_range = 3;
   }
 }
 
@@ -272,58 +252,6 @@ message Compare {
     // value is the value of the given key, in bytes.
     bytes value = 7;
   }
-}
-
-// From google paxosdb paper:
-// Our implementation hinges around a powerful primitive which we call MultiOp. All other database
-// operations except for iteration are implemented as a single call to MultiOp. A MultiOp is applied atomically
-// and consists of three components:
-// 1. A list of tests called guard. Each test in guard checks a single entry in the database. It may check
-// for the absence or presence of a value, or compare with a given value. Two different tests in the guard
-// may apply to the same or different entries in the database. All tests in the guard are applied and
-// MultiOp returns the results. If all tests are true, MultiOp executes t op (see item 2 below), otherwise
-// it executes f op (see item 3 below).
-// 2. A list of database operations called t op. Each operation in the list is either an insert, delete, or
-// lookup operation, and applies to a single database entry. Two different operations in the list may apply
-// to the same or different entries in the database. These operations are executed
-// if guard evaluates to
-// true.
-// 3. A list of database operations called f op. Like t op, but executed if guard evaluates to false.
-message TxnRequest {
-  // compare is a list of predicates representing a conjunction of terms.
-  // If the comparisons succeed, then the success requests will be processed in order,
-  // and the response will contain their respective responses in order.
-  // If the comparisons fail, then the failure requests will be processed in order,
-  // and the response will contain their respective responses in order.
-  repeated Compare compare = 1;
-  // success is a list of requests which will be applied when compare evaluates to true.
-  repeated RequestUnion success = 2;
-  // failure is a list of requests which will be applied when compare evaluates to false.
-  repeated RequestUnion failure = 3;
-}
-
-message TxnResponse {
-  ResponseHeader header = 1;
-  // succeeded is set to true if the compare evaluated to true or false otherwise.
-  bool succeeded = 2;
-  // responses is a list of responses corresponding to the results from applying
-  // success if succeeded is true or failure if succeeded is false.
-  repeated ResponseUnion responses = 3;
-}
-
-// CompactionRequest compacts the key-value store up to a given revision. All superseded keys
-// with a revision less than the compaction revision will be removed.
-message CompactionRequest {
-  // revision is the key-value store revision for the compaction operation. 
-  int64 revision = 1;
-  // physical is set so the RPC will wait until the compaction is physically
-  // applied to the local database such that compacted entries are totally
-  // removed from the backend database.
-  bool physical = 2;
-}
-
-message CompactionResponse {
-  ResponseHeader header = 1;
 }
 
 message HashRequest {

@@ -1,6 +1,5 @@
 #include "v3/include/AsyncRangeResponse.hpp"
 
-
 etcdv3::AsyncRangeResponse::AsyncRangeResponse(const etcdv3::AsyncRangeResponse& other) 
 {
   error_code = other.error_code;
@@ -46,3 +45,5 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
 
   return *this;
 }
+
+

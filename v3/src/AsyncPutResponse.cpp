@@ -1,4 +1,5 @@
 #include "v3/include/AsyncPutResponse.hpp"
+#include "v3/include/Utils.hpp"
 
 using etcdserverpb::PutRequest;
 using etcdserverpb::PutRequest;
@@ -33,6 +34,11 @@ etcdv3::AsyncPutResponse& etcdv3::AsyncPutResponse::operator=(const etcdv3::Asyn
 
 etcdv3::AsyncPutResponse& etcdv3::AsyncPutResponse::ParseResponse()
 {
-  action = "set";
+  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, *client);
+  if(resp->reply.kvs_size())
+  {
+    values.push_back(resp->reply.kvs(0));
+  }
+  
   return *this;
 }

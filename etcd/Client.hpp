@@ -8,16 +8,13 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
+#include "v3/include/AsyncRangeResponse.hpp"
+#include "v3/include/grpcClient.hpp"
+
 
 using grpc::Channel;
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Status;
 using etcdserverpb::PutRequest;
-using etcdserverpb::PutResponse;
 using etcdserverpb::RangeRequest;
-using etcdserverpb::RangeResponse;
 using etcdserverpb::KV;
 
 namespace etcd
@@ -147,9 +144,15 @@ namespace etcd
 
     web::http::client::http_client client;
 
-    std::unique_ptr<KV::Stub> stub_;
     pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_asyncget(std::string const & key);
+    pplx::task<etcd::Response> send_asyncadd(std::string const & key, const std::string& value);
+    pplx::task<etcd::Response> send_asyncmodify(std::string const & key, std::string const & value);
+    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);
+
+    etcdv3::grpcClient grpcClient;
+  
+    
   };
 
 
