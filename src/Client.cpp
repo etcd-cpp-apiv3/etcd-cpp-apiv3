@@ -118,40 +118,41 @@ pplx::task<etcd::Response> etcd::Client::removeEntry(std::string const & entryKe
 	}
 
 
-
 	//then delete
-	std::cout << "removing etcd v3 entry naman" << std::endl;
+	std::cout << "removing etcd v3 entry naman with template na" << std::endl;
 
 	etcdserverpb::DeleteRangeRequest deleteRangeRequest;
 	deleteRangeRequest.set_key(entryKey);
 
-	drp->rpcInstance = stub_->AsyncDeleteRange(&drp->context, deleteRangeRequest, &drp->completionQueue);
+	drp->rpcInstance = stub_->AsyncDeleteRange(&drp->context, deleteRangeRequest, &drp->cq_);
 	drp->rpcInstance->Finish(&drp->deleteResponse, &drp->status, (void*)drp);
 
-	return pplx::task<etcd::Response>([drp]()
-		{
-			std::cout << "doing delete v3 entry task" << std::endl;
-			void* got_tag;
-			bool ok = false;
-			etcd::Response resp;
+	return Response::create(drp);
 
-			drp->completionQueue.Next(&got_tag, &ok);
-			GPR_ASSERT(got_tag == (void*)drp);
-			GPR_ASSERT(ok);
-
-			etcd::DeleteRpcResponse* deleteResponse = static_cast<etcd::DeleteRpcResponse*>(got_tag);
-
-			if (deleteResponse->status.ok()){
-				std::cout << "doing delete v3 entry task OK" << std::endl;
-				resp = *drp; //simply stripping off the response part
-			}
-			else
-				std::cout << "doing delete v3 entry task NOK" << std::endl;
-			delete deleteResponse;
-			std::cout << "delete done, returning" << std::endl;
-			return resp;
-		}
-	);
+//	return pplx::task<etcd::Response>([drp]()
+//		{
+//			std::cout << "doing delete v3 entry task" << std::endl;
+//			void* got_tag;
+//			bool ok = false;
+//			etcd::Response resp;
+//
+//			drp->completionQueue.Next(&got_tag, &ok);
+//			GPR_ASSERT(got_tag == (void*)drp);
+//			GPR_ASSERT(ok);
+//
+//			etcd::DeleteRpcResponse* deleteResponse = static_cast<etcd::DeleteRpcResponse*>(got_tag);
+//
+//			if (deleteResponse->status.ok()){
+//				std::cout << "doing delete v3 entry task OK" << std::endl;
+//				resp = *drp; //simply stripping off the response part
+//			}
+//			else
+//				std::cout << "doing delete v3 entry task NOK" << std::endl;
+//			delete deleteResponse;
+//			std::cout << "delete done, returning" << std::endl;
+//			return resp;
+//		}
+//	);
 }
 
 

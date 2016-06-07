@@ -21,7 +21,7 @@ public:
 	etcdserverpb::DeleteRangeResponse deleteResponse;
 	grpc::Status status;
 	grpc::ClientContext context;
-	grpc::CompletionQueue completionQueue;
+	grpc::CompletionQueue cq_;
 	std::unique_ptr<grpc::ClientAsyncResponseReader<etcdserverpb::DeleteRangeResponse>> rpcInstance;
 };
 }

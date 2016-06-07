@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "etcd/Value.hpp"
+#include <grpc++/grpc++.h>
 
 namespace etcd
 {
@@ -18,6 +19,37 @@ namespace etcd
   {
   public:
     static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
+
+    //parang mas magandang ilagay ito sa baseclass imbis na here ooorrr
+    //talagang response v2 lang talaga dito
+    template<typename T>static pplx::task<etcd::Response> create(T call)
+    {
+      return pplx::task<etcd::Response>([call]()
+      {
+        void* got_tag;
+        bool ok = false;
+        etcd::Response resp;
+
+        //blocking
+        call->cq_.Next(&got_tag, &ok);
+        GPR_ASSERT(got_tag == (void*)call);
+        GPR_ASSERT(ok);
+
+        T call = static_cast<T>(got_tag);
+        if(call->status.ok())
+        {
+//          auto v3resp = call->ParseResponse();
+          resp = *call;// stripping off instead of creating a new response class
+        }
+        else
+        {
+          throw std::runtime_error(call->status.error_message());
+        }
+
+        delete call; //todo:make this a smart pointer
+        return resp;
+      });
+    };
 
     Response();
 
