@@ -10,6 +10,14 @@
 #include "proto/rpc.grpc.pb.h"
 
 using grpc::Channel;
+using grpc::ClientAsyncResponseReader;
+using grpc::ClientContext;
+using grpc::CompletionQueue;
+using grpc::Status;
+using etcdserverpb::PutRequest;
+using etcdserverpb::PutResponse;
+using etcdserverpb::RangeRequest;
+using etcdserverpb::RangeResponse;
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 
@@ -149,6 +157,30 @@ namespace etcd
 
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
+    pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
+    pplx::task<etcd::Response> send_get(std::string const & key);
+  };
+
+  class AsyncPutResponse
+  {
+    public:
+        PutResponse reply;
+        Status status;
+        ClientContext context;
+        CompletionQueue cq_;
+        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
+        Response ParseResponse();
+  };
+
+  class AsyncRangeResponse
+  {
+    public:
+        RangeResponse reply;
+        Status status;
+        ClientContext context;
+        CompletionQueue cq_;
+        std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
+        Response ParseResponse();
   };
 }
 
