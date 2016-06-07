@@ -56,11 +56,8 @@ void etcd::Client::setv3(std::string const &key, std::string const &value)
 
 	etcdserverpb::PutResponse putResponse;
 	grpc::ClientContext context;
-
-	std::cout << "invoking put stub rpc" << std::endl;
 	grpc::Status status = stub_->Put(&context, putRequest, &putResponse);
 
-	std::cout << "checking status" << std::endl;
 	if(status.ok()){
 		std::cout << "put OK" << std::endl;
 	}
@@ -112,19 +109,9 @@ pplx::task<etcd::Response> etcd::Client::removeEntry(std::string const & entryKe
 
 	grpc::Status status = stub_->Range(&context, rangeRequest, &rangeResponse);
 
-	std::cout << "checking status" << std::endl;
 	if(status.ok()) {
 		std::cout << "get OK" << std::endl;
-		std::cout << "size: " << rangeResponse.kvs_size() << std::endl;
-		std::cout << "kvs 0 key: " << rangeResponse.kvs(0).key() << std::endl;
-		std::cout << "kvs 0 value: " << rangeResponse.kvs(0).value() << std::endl;
-		std::cout << "kvs.Get 0 value: " << rangeResponse.kvs().Get(0).value() << std::endl;
-
 		drp->fillUpV2ResponseValues(rangeResponse);
-		std::cout << "this drp object has now a previous value of: " << drp->as_string() << std::endl;
-		std::cout << "checking for check" << std::endl;
-		std::cout << "resp.prev_value().as_string: " << drp->prev_value().as_string() << std::endl;
-		std::cout << "resp.action(): " << drp->action() << std::endl;
 	}
 	else {
 		std::cout << "get NOK" << std::endl;
@@ -197,7 +184,6 @@ void etcd::Client::getv3(std::string const & key) {
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
-	std::cout << "FBDL: handling rm for key: " << key << std::endl;
 	return removeEntry(key);
 }
 

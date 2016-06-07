@@ -15,7 +15,6 @@ etcd::DeleteRpcResponse::DeleteRpcResponse() {
 
 etcd::DeleteRpcResponse::~DeleteRpcResponse() {
 	// TODO Auto-generated destructor stub
-	std::cout << "destroyinh delete response" << std::endl;
 }
 
 //prototype in handling the response object
