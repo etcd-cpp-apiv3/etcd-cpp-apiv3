@@ -43,6 +43,7 @@ TEST_CASE("simplified read")
 {
   etcd::Client etcd("http://127.0.0.1:4001");
   CHECK("42" == etcd.get("/test/key1").get().value().as_string());
+  std::cout << "get error code kahit success: " << etcd.get("/test/key1").get().error_code() << std::endl;
   CHECK(100  == etcd.get("/test/key2").get().error_code()); // Key not found
 }
 
@@ -56,29 +57,41 @@ TEST_CASE("modify a key")
   CHECK("43" == etcd.modify("/test/key1", "42").get().prev_value().as_string());
 }
 
-TEST_CASE("set a key")
-{
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::Response resp = etcd.set("/test/key1", "43").get();
-  REQUIRE(0  == resp.error_code()); // overwrite
-  CHECK("set" == resp.action());
-  CHECK(0  == etcd.set("/test/key2", "43").get().error_code()); // create new
-  CHECK("43" == etcd.set("/test/key2", "44").get().prev_value().as_string());
-  CHECK(""   == etcd.set("/test/key3", "44").get().prev_value().as_string());
-  CHECK(102  == etcd.set("/test",      "42").get().error_code()); // Not a file
-}
+//TEST_CASE("set a key")
+//{
+//  etcd::Client etcd("http://127.0.0.1:4001");
+//  etcd::Response resp = etcd.set("/test/key1", "43").get();
+//  REQUIRE(0  == resp.error_code()); // overwrite
+//  CHECK("set" == resp.action());
+//  CHECK(0  == etcd.set("/test/key2", "43").get().error_code()); // create new
+//  CHECK("43" == etcd.set("/test/key2", "44").get().prev_value().as_string());
+//  CHECK(""   == etcd.set("/test/key3", "44").get().prev_value().as_string());
+//  CHECK(102  == etcd.set("/test",      "42").get().error_code()); // Not a file
+//}
+//
+//FBDL rm naman
+//TEST_CASE("delete a value")
+//{
+//	std::cout << "FBDL do a delete via rm only" <<std::endl;
+//  etcd::Client etcd("http://127.0.0.1:4001");
+//  CHECK(3 == etcd.ls("/test").get().keys().size());
+//
+//  std::cout << "FBDL invoking rm in test" <<std::endl;
+//  etcd::Response resp = etcd.rm("/test/key1").get();
+//  CHECK("43" == resp.prev_value().as_string());
+//  CHECK("delete" == resp.action());
+//  CHECK(2 == etcd.ls("/test").get().keys().size());
+//}
 
-TEST_CASE("delete a value")
+TEST_CASE("delete a value V3")
 {
-	std::cout << "FBDL do a delete via rm only" <<std::endl;
+  std::cout << "FBDL do a delete via rm only V3" <<std::endl;
   etcd::Client etcd("http://127.0.0.1:4001");
-  CHECK(3 == etcd.ls("/test").get().keys().size());
+  etcd.setv3("test/key1", "42"); //temporary get
 
-  std::cout << "FBDL invoking rm in test" <<std::endl;
-  etcd::Response resp = etcd.rm("/test/key1").get();
-  CHECK("43" == resp.prev_value().as_string());
+  etcd::Response resp = etcd.rm("test/key1").get();
+  CHECK("42" == resp.prev_value().as_string());
   CHECK("delete" == resp.action());
-  CHECK(2 == etcd.ls("/test").get().keys().size());
 }
 
 TEST_CASE("create a directory")
@@ -136,26 +149,26 @@ TEST_CASE("wait for a value change")
 }
 
 //FBDL: first watch
-TEST_CASE("FBDL wait for a value change")
-{
-  std::cout << "FBDL wait for a value change" << std::endl;
-  etcd::Client etcd("http://127.0.0.1:4001");
-//  etcd.set("/test/key1", "42").wait();
-  etcd.setv3("test/key1", "42");
-
-//  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
-//  CHECK(!res.is_done());
-//  sleep(1);
-//  CHECK(!res.is_done());
-//  CHECK("42" == etcd.get("/test/key1").get().value().as_string());
+//TEST_CASE("FBDL wait for a value change")
+//{
+//  std::cout << "FBDL wait for a value change" << std::endl;
+//  etcd::Client etcd("http://127.0.0.1:4001");
+////  etcd.set("/test/key1", "42").wait();
+//  etcd.setv3("test/key1", "42");
 //
-//  etcd.set("/test/key1", "43").get();
-//  sleep(1);
-//  REQUIRE(res.is_done());
-//  REQUIRE("set" == res.get().action());
-//  CHECK("43" == res.get().value().as_string());
-//  CHECK("43" == etcd.get("/test/key1").get().value().as_string());
-}
+////  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
+////  CHECK(!res.is_done());
+////  sleep(1);
+////  CHECK(!res.is_done());
+////  CHECK("42" == etcd.get("/test/key1").get().value().as_string());
+////
+////  etcd.set("/test/key1", "43").get();
+////  sleep(1);
+////  REQUIRE(res.is_done());
+////  REQUIRE("set" == res.get().action());
+////  CHECK("43" == res.get().value().as_string());
+////  CHECK("43" == etcd.get("/test/key1").get().value().as_string());
+//}
 
 TEST_CASE("wait for a directory change")
 {

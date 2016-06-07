@@ -42,7 +42,11 @@ namespace etcd
      */
     pplx::task<Response> set(std::string const & key, std::string const & value);
 
+    /**
+     * FBDL temporary set and get items to etcd v3
+     */
     void setv3(std::string const&, std::string const&);
+    void getv3(std::string const&);
 
     /**
      * Creates a new key and sets it's value. Fails if the key already exists.
@@ -139,6 +143,7 @@ namespace etcd
     pplx::task<Response> send_get_request(web::http::uri_builder & uri);
     pplx::task<Response> send_del_request(web::http::uri_builder & uri);
     pplx::task<Response> send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value);
+    pplx::task<Response> removeEntry(std::string const &);
 
     web::http::client::http_client client;
 

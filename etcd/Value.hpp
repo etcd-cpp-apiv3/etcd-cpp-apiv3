@@ -41,6 +41,7 @@ namespace etcd
 
   protected:
     friend class Response;
+    friend class DeleteRpcResponse;
     Value();
     Value(web::json::value const & json_value);
     std::string _key;
