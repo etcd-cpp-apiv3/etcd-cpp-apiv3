@@ -18,4 +18,5 @@ etcd::AsyncDeleteResponse::~AsyncDeleteResponse() {
 void etcd::AsyncDeleteResponse::fillUpV2ResponseValues(etcdserverpb::RangeResponse getResponse) {
 	_prev_value.value = getResponse.kvs().Get(0).value();
 	_action = "delete";
+
 }

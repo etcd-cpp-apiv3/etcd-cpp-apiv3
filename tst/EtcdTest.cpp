@@ -1,18 +1,20 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+#include <iostream>
 
 #include "etcd/Client.hpp"
 
-//TEST_CASE("setup")
-//{
-  etcd::Client etcd("http://192.168.99.100:2379");
+
+TEST_CASE("setup")
+{
+  etcd::Client etcd("http://127.0.0.1:4001");
   //etcd.rmdir("/test", true).wait();
 }
 
 
 TEST_CASE("add a new key")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   etcd::Response resp = etcd.add("/test/key1", "42").get();
   REQUIRE(0 == resp.error_code());
   CHECK("create" == resp.action());
@@ -31,7 +33,7 @@ TEST_CASE("add a new key")
 
 TEST_CASE("read a value from etcd")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   etcd::Response resp = etcd.get("/test/key1").get();
   CHECK("get" == resp.action());
   REQUIRE(resp.is_ok());
@@ -44,7 +46,7 @@ TEST_CASE("read a value from etcd")
 
 TEST_CASE("simplified read")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   CHECK("42" == etcd.get("/test/key1").get().value().as_string());
   CHECK(100  == etcd.get("/test/key2").get().error_code()); // Key not found
 }
@@ -53,7 +55,7 @@ TEST_CASE("simplified read")
 
 TEST_CASE("modify a key")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   etcd::Response resp = etcd.modify("/test/key1", "43").get();
   REQUIRE(0 == resp.error_code()); // overwrite
   CHECK("update" == resp.action());
@@ -65,7 +67,7 @@ TEST_CASE("modify a key")
 
 TEST_CASE("set a key")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   etcd::Response resp = etcd.set("/test/key1", "43").get();
   REQUIRE(0  == resp.error_code()); // overwrite
   CHECK("set" == resp.action());
@@ -77,7 +79,7 @@ TEST_CASE("set a key")
 
 TEST_CASE("atomic compare-and-swap")
 {
-  etcd::Client etcd("http://192.168.99.100:2379");
+  etcd::Client etcd("http://127.0.0.1:4001");
   etcd.set("/test/key1", "42").wait();
 
   // modify success
@@ -94,17 +96,18 @@ TEST_CASE("atomic compare-and-swap")
   CHECK("Compare failed" == res.error_message());
 }
 
-#if 0
-
 TEST_CASE("delete a value")
 {
+	std::cout << "delete a value fbdl" << std::endl;
   etcd::Client etcd("http://127.0.0.1:4001");
-  CHECK(3 == etcd.ls("/test").get().keys().size());
+//  CHECK(3 == etcd.ls("/test").get().keys().size()); // not supported in v3
   etcd::Response resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
   CHECK("delete" == resp.action());
-  CHECK(2 == etcd.ls("/test").get().keys().size());
+//  CHECK(2 == etcd.ls("/test").get().keys().size()); // not supported in v3
 }
+
+#if 0
 
 TEST_CASE("create a directory")
 {

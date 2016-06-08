@@ -82,11 +82,12 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 
 void etcd::Client::getEntryForPreviousValue(const std::string& entryKey, etcd::AsyncDeleteResponse* drp)
 {
+	std::cout << "get entry for previous value" << std::endl;
 	etcdserverpb::RangeRequest rangeRequest;
 	rangeRequest.set_key(entryKey);
 	etcdserverpb::RangeResponse rangeResponse;
 	grpc::ClientContext context;
-	grpc::Status status = stub_->Range(&context, rangeRequest, &rangeResponse);
+	grpc::Status status = grpcClient.stub_->Range(&context, rangeRequest, &rangeResponse);
 	if (status.ok()) {
 		std::cout << "get OK" << std::endl;
 		drp->fillUpV2ResponseValues(rangeResponse);
@@ -103,7 +104,7 @@ pplx::task<etcd::Response> etcd::Client::removeEntry(std::string const & entryKe
 	etcdserverpb::DeleteRangeRequest deleteRangeRequest;
 	deleteRangeRequest.set_key(entryKey);
 
-	drp->rpcInstance = stub_->AsyncDeleteRange(&drp->context, deleteRangeRequest, &drp->cq_);
+	drp->rpcInstance = grpcClient.stub_->AsyncDeleteRange(&drp->context, deleteRangeRequest, &drp->cq_);
 	drp->rpcInstance->Finish(&drp->deleteResponse, &drp->status, (void*)drp);
 
 	return Response::createV2Response(drp);
@@ -139,6 +140,7 @@ void etcd::Client::getv3(std::string const & key) {
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
+	std::cout << "rm called" << std::endl;
 	return removeEntry(key);
 }
 
