@@ -8,7 +8,6 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
-#include "etcd/DeleteRpcResponse.h"
 #include "etcd/AsyncDeleteResponse.h"
 
 using grpc::Channel;

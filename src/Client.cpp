@@ -1,7 +1,6 @@
 #include "etcd/Client.hpp"
 
 #include <iostream>
-#include "etcd/DeleteRpcResponse.h"
 #include "etcd/AsyncDeleteResponse.h"
 
 etcd::Client::Client(std::string const & address)
