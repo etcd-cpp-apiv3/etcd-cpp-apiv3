@@ -20,9 +20,7 @@ namespace etcd
   public:
     static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
 
-    //parang mas magandang ilagay ito sa baseclass imbis na here ooorrr
-    //talagang response v2 lang talaga dito
-    template<typename T>static pplx::task<etcd::Response> create(T call)
+    template<typename T>static pplx::task<etcd::Response> createV2Response(T call)
     {
       return pplx::task<etcd::Response>([call]()
       {
@@ -39,7 +37,7 @@ namespace etcd
         if(call->status.ok())
         {
 //          auto v3resp = call->ParseResponse();
-          resp = *call;// stripping off instead of creating a new response class
+          resp = *call;// stripping off instead of creating a new response class object
         }
         else
         {

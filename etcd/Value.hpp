@@ -41,7 +41,9 @@ namespace etcd
 
   protected:
     friend class Response;
+    friend class BaseResponse; //deliberately done since Value class will be removed during full V3
     friend class DeleteRpcResponse;
+    friend class AsyncDeleteResponse;
     Value();
     Value(web::json::value const & json_value);
     std::string _key;

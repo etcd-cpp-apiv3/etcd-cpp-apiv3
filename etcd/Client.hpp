@@ -8,6 +8,8 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
+#include "etcd/DeleteRpcResponse.h"
+#include "etcd/AsyncDeleteResponse.h"
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -159,7 +161,10 @@ namespace etcd
     std::unique_ptr<Watch::Stub> watchServiceStub;
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_get(std::string const & key);
-  };
+
+private:
+	void getEntryForPreviousValue(const std::string& entryKey, etcd::AsyncDeleteResponse* drp);
+};
 
   class AsyncPutResponse
   {
