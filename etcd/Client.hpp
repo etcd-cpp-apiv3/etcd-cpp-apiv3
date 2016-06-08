@@ -9,6 +9,9 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "etcd/AsyncDeleteResponse.h"
+#include "v3/include/AsyncRangeResponse.hpp"
+#include "v3/include/grpcClient.hpp"
+
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -157,35 +160,25 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
+    pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
     std::unique_ptr<Watch::Stub> watchServiceStub;
+    pplx::task<etcd::Response> send_asyncget(std::string const & key);
+    pplx::task<etcd::Response> send_asyncadd(std::string const & key, const std::string& value);
+    pplx::task<etcd::Response> send_asyncmodify(std::string const & key, std::string const & value);
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_get(std::string const & key);
+    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);
+
+    etcdv3::grpcClient grpcClient;
 
 private:
 	void getEntryForPreviousValue(const std::string& entryKey, etcd::AsyncDeleteResponse* drp);
-};
-
-  class AsyncPutResponse
-  {
-    public:
-        PutResponse reply;
-        Status status;
-        ClientContext context;
-        CompletionQueue cq_;
-        std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
-        Response ParseResponse();
+  
+    
   };
 
-  class AsyncRangeResponse
-  {
-    public:
-        RangeResponse reply;
-        Status status;
-        ClientContext context;
-        CompletionQueue cq_;
-        std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-        Response ParseResponse();
-  };
+
+
 }
 
 #endif

@@ -8,6 +8,9 @@
 #include "etcd/Value.hpp"
 #include <grpc++/grpc++.h>
 
+#include "v3/include/V3Response.hpp"
+#include <grpc++/grpc++.h>
+
 namespace etcd
 {
   typedef std::vector<std::string> Keys;
@@ -44,6 +47,37 @@ namespace etcd
           throw std::runtime_error(call->status.error_message());
         }
 
+        delete call; //todo:make this a smart pointer
+        return resp;
+      });
+    };
+
+    static pplx::task<Response> createResponse(const etcdv3::V3Response& response);
+
+    template<typename T>static pplx::task<etcd::Response> create(T call)
+    {
+      return pplx::task<etcd::Response>([call]()
+      {
+        void* got_tag;
+        bool ok = false;
+        etcd::Response resp;
+
+        //blocking
+        call->cq_.Next(&got_tag, &ok);
+        GPR_ASSERT(got_tag == (void*)call);
+        GPR_ASSERT(ok);
+
+        T call = static_cast<T>(got_tag);
+        if(call->status.ok())
+        {
+          auto v3resp = call->ParseResponse();
+          resp = etcd::Response(v3resp);
+        }
+        else
+        {
+          throw std::runtime_error(call->status.error_message());
+        }
+               
         delete call; //todo:make this a smart pointer
         return resp;
       });
@@ -106,8 +140,9 @@ namespace etcd
      */
     std::string const & key(int index) const;
 
-  protected:
+  protected:  
     Response(web::http::http_response http_response, web::json::value json_value);
+    Response(const etcdv3::V3Response& response);
 
     int         _error_code;
     std::string _error_message;

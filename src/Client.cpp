@@ -1,21 +1,14 @@
 #include "etcd/Client.hpp"
+#include "v3/include/AsyncRangeResponse.hpp"
+#include "v3/include/AsyncPutResponse.hpp"
+#include "v3/include/Utils.hpp"
 
 #include <iostream>
 #include "etcd/AsyncDeleteResponse.h"
 
 etcd::Client::Client(std::string const & address)
-  : client(address)
+  : client(address), grpcClient(address)
 {
-  std::string stripped_address(address);
-  std::string substr("http://");
-  std::string::size_type i = stripped_address.find(substr);
-  if(i != std::string::npos)
-  {
-    stripped_address.erase(i,substr.length());
-  }
-  std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
-  stub_= KV::NewStub(channel);
-    watchServiceStub = Watch::NewStub(channel);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)
@@ -37,12 +30,12 @@ pplx::task<etcd::Response> etcd::Client::send_put_request(web::http::uri_builder
 
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
-  return send_get(key);
+  return send_asyncget(key);
 }
 
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value)
 {
-  return send_put(key,value);
+  return send_asyncput(key,value);
 }
 
 //TODO: a temporary set, until set version 3 is implemented
@@ -66,23 +59,17 @@ void etcd::Client::setv3(std::string const &key, std::string const &value)
 
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("prevExist=false");
-  return send_put_request(uri, "value", value);
+  return send_asyncadd(key,value);
 }
 
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("prevExist=true");
-  return send_put_request(uri, "value", value);
+  return send_asyncmodify(key,value);
 }
 
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("prevValue", old_value);
-  return send_put_request(uri, "value", value);
+  return send_asyncmodify_if(key, value, old_value);
 }
 
 //FBDL
@@ -213,97 +200,151 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
 }
 
 
-etcd::Response etcd::AsyncPutResponse::ParseResponse()
-{
-  std::cout << reply.header().revision() << std::endl;
-  return etcd::Response();
-}
 
-etcd::Response etcd::AsyncRangeResponse::ParseResponse()
+
+
+pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
 {
-  mvccpb::KeyValue kvs;
-  if(reply.kvs_size())
+
+  //check if key already exist
+  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
+  if(resp->reply.kvs_size())
   {
-    int index=0;
-    do
-    {
-      kvs = reply.kvs(index++);
-      std::cout<<reply.header().revision() << std::endl;
-      std::cout << kvs.create_revision() << std::endl;
-      std::cout << kvs.mod_revision() << std::endl;
-      std::cout << kvs.version() << std::endl;
-    }while(reply.more());
+    resp->error_code=105;
+    resp->error_message="Key already exists";
+    return Response::createResponse(*resp);
   }
-  return etcd::Response();
+
+  PutRequest put_request;
+  put_request.set_key(key);
+  put_request.set_value(value);
+    
+  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("create"); 
+
+  //below 2 lines can be removed once we are able to use Txn
+  call->client = &grpcClient;
+  call->key = key;
+
+  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        
+  return Response::create(call);
+
 }
 
-pplx::task<etcd::Response> etcd::Client::send_get(std::string const & key)
+pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value)
+{
+
+  //check current key is equal to old_value
+  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
+  if(!resp->reply.kvs_size())
+  {
+    resp->error_code=100;
+    resp->error_message="Key not found";
+    return Response::createResponse(*resp);
+  }
+  else
+  {
+    if(resp->reply.kvs(0).value() != old_value)
+    {
+      resp->error_code=101;
+      resp->error_message="Compare failed";
+      return Response::createResponse(*resp);
+    }
+  }
+
+  PutRequest put_request;
+  put_request.set_key(key);
+  put_request.set_value(value);
+    
+  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("compareAndSwap"); 
+
+  //below 2 lines can be removed once we are able to use Txn
+  call->prev_value = resp->reply.kvs(0);
+  call->client = &grpcClient;
+  call->key = key;
+
+  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        
+  return Response::create(call);
+
+}
+
+pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & key, std::string const & value)
+{
+
+  //check if key already exist
+  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
+  if(!resp->reply.kvs_size())
+  {
+    resp->error_code=100;
+    resp->error_message="Key not found";
+    return Response::createResponse(*resp);
+  }
+
+  PutRequest put_request;
+  put_request.set_key(key);
+  put_request.set_value(value);
+    
+  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("update"); 
+
+  //below 2 lines can be removed once we are able to use Txn
+  call->prev_value = resp->reply.kvs(0);
+  call->client = &grpcClient;
+  call->key = key;
+
+  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        
+  return Response::create(call);
+
+}
+
+
+pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key)
 {
   RangeRequest request;
   request.set_key(key);
     
-  etcd::AsyncRangeResponse* call= new etcd::AsyncRangeResponse();  
+  etcdv3::AsyncRangeResponse* call= new etcdv3::AsyncRangeResponse();  
 
-  call->response_reader = stub_->AsyncRange(&call->context,request,&call->cq_);
+  call->response_reader = grpcClient.stub_->AsyncRange(&call->context,request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-    
-  return pplx::task<etcd::Response>([call]()
-  {
-    void* got_tag;
-    bool ok = false;
-    etcd::Response resp;
 
-    //blocking
-    call->cq_.Next(&got_tag, &ok);
-    GPR_ASSERT(got_tag == (void*)call);
-    GPR_ASSERT(ok);
-
-    etcd::AsyncRangeResponse* call = static_cast<etcd::AsyncRangeResponse*>(got_tag);
-    if(call->status.ok())
-    {
-      resp = call->ParseResponse();
-    }
-               
-    delete call;
-    return resp;
-  });
+  return Response::create(call);
 }
 
 
-pplx::task<etcd::Response> etcd::Client::send_put(std::string const & key, std::string const & value)
+pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, std::string const & value)
 {
-  PutRequest request;
-  request.set_key(key);
-  request.set_value(value);
-    
-  etcd::AsyncPutResponse* call= new etcd::AsyncPutResponse();  
 
-  call->response_reader = stub_->AsyncPut(&call->context,request,&call->cq_);
+  PutRequest put_request;
+  put_request.set_key(key);
+  put_request.set_value(value);
+    
+  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("set"); 
+
+  //get current value
+  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
+  if(resp->reply.kvs_size())
+  {
+    call->prev_value = resp->reply.kvs(0);
+  }
+
+  call->client = &grpcClient;
+  call->key = key;
+
+
+  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
         
-
-  return pplx::task<etcd::Response>([call]()
-  {
-    void* got_tag;
-    bool ok = false;
-    etcd::Response resp;
-
-    //blocking
-    call->cq_.Next(&got_tag, &ok);
-    GPR_ASSERT(got_tag == (void*)call);
-    GPR_ASSERT(ok);
-
-    etcd::AsyncPutResponse* call = static_cast<etcd::AsyncPutResponse*>(got_tag);
-    
-    if(call->status.ok())
-    {
-      resp = call->ParseResponse();
-    }
-    delete call;
-    return resp;
-  });
+  return Response::create(call);
 }
 
 

@@ -14,6 +14,35 @@ pplx::task<etcd::Response> etcd::Response::create(pplx::task<web::http::http_res
   );
 }
 
+pplx::task<etcd::Response> etcd::Response::createResponse(const etcdv3::V3Response& response)
+{
+  return pplx::task<etcd::Response>([response](){
+    return etcd::Response(response);
+  });
+}
+
+etcd::Response::Response(const etcdv3::V3Response& reply)
+{
+
+  _index = reply.index;
+  _error_code = reply.error_code;
+  _error_message = reply.error_message;
+  _action = reply.action;
+  int size = reply.values.size();
+  if(size > 1)
+  {
+    for(int x = 0; x < size; x++)
+    _values.push_back(Value(reply.values[x]));
+  }
+  else if(size == 1)
+  {
+    _value = Value(reply.values[0]);
+  }
+  
+  _prev_value = Value(reply.prev_value);
+}
+
+
 etcd::Response::Response()
   : _error_code(0),
     _index(0)
