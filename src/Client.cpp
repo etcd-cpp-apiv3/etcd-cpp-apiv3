@@ -1,11 +1,18 @@
 #include "etcd/Client.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncPutResponse.hpp"
+#include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncDelResponse.hpp"
 #include "v3/include/AsyncModifyResponse.hpp"
 #include "v3/include/Utils.hpp"
 
 #include <iostream>
+#include <memory>
+
+
+using etcdserverpb::TxnRequest;
+using etcdserverpb::Compare;
+using etcdserverpb::RequestOp;
 
 etcd::Client::Client(std::string const & address)
   : client(address), grpcClient(address)
@@ -196,6 +203,7 @@ pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndIndex(std::string 
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
 {
 	return removeEntryWithKeyAndIndex(key, old_index);
+
 }
 
 pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
@@ -242,29 +250,42 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
 pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
 {
 
-  //check if key already exist
-  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
-  if(resp->reply.kvs_size())
-  {
-    resp->error_code=105;
-    resp->error_message="Key already exists";
-    return Response::createResponse(*resp);
-  }
+  //check if key is not present
+  TxnRequest txn_request;
+  Compare* compare = txn_request.add_compare();
+  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
+  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
+  compare->set_key(key);
+  compare->set_version(0);
 
-  PutRequest put_request;
-  put_request.set_key(key);
-  put_request.set_value(value);
-    
-  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("create"); 
 
-  //below 2 lines can be removed once we are able to use Txn
-  call->client = &grpcClient;
-  call->key = key;
+  //get key whether success or failure  
+  RangeRequest get_request1 = new RangeRequest();
+  get_request1->set_key(key);
+  RequestOp* req_failure = txn_request.add_failure();
+  req_failure->set_allocated_request_range(get_request1);
 
-  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+
+  //if success, add key and then get new value of key
+  PutRequest* put_request = new PutRequest();
+  put_request->set_key(key);
+  put_request->set_value(value);
+  RequestOp* req_success2 = txn_request.add_success();
+  req_success2->set_allocated_request_put(put_request);
+
+  RangeRequest* get_request2 = new RangeRequest();
+  get_request2->set_key(key);
+  RequestOp* req_success3 = txn_request.add_success();
+  req_success3->set_allocated_request_range(get_request2);
+
+
+
+  etcdv3::AsyncTxnResponse* call= new etcdv3::AsyncTxnResponse("create"); 
+   
+  call->response_reader = grpcClient.stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-        
+
   return Response::create(call);
 
 }
