@@ -8,7 +8,6 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
-#include "etcd/AsyncDeleteResponse.h"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/grpcClient.hpp"
 

@@ -6,7 +6,6 @@
 #include "v3/include/Utils.hpp"
 
 #include <iostream>
-#include "etcd/AsyncDeleteResponse.h"
 
 etcd::Client::Client(std::string const & address)
   : client(address), grpcClient(address)
