@@ -33,44 +33,57 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
 
 etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 {
-  if(action == "create")
+  for(int index=0; index < reply.responses_size(); index++)
   {
-    if(reply.succeeded())
+    auto resp = reply.responses(index);
+    if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
     {
-      for(int index=0; index < reply.responses_size(); index++)
+      if(resp.response_range().kvs_size())
       {
-        auto resp = reply.responses(index);
-        if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
+        if(!resp.response_range().more())
         {
-          if(resp.response_range().kvs_size())
+          if(!values.empty())
           {
-            if(!values.empty())
-            {
-              prev_value = values[0];
-            }
-            
-            values.push_back(resp.response_range().kvs(0));
+            prev_value = values[0];
           }
-          else
-          {
-            error_code=100;
-            error_message="Key not found";
-          }
-        }
-        else if(ResponseOp::ResponseCase::kResponsePut == resp.response_case())
-        {
-          //do nothing for now.
-        }
-        else
-        {
-          //do nothing for now.
+          values.clear();
+          values.push_back(resp.response_range().kvs(0));
         }
       }
+      else
+      {
+        error_code=100;
+        error_message="Key not found";
+      }
+    }
+    else if(ResponseOp::ResponseCase::kResponsePut == resp.response_case())
+    {
+      //do nothing for now.
     }
     else
     {
+      //do nothing for now.
+    }
+  }
+
+
+
+
+  if(action == "create")
+  {
+
+    if(!reply.succeeded())
+    {
       error_code=105;
       error_message="Key already exists";
+    }
+  }
+  else if(action == "compareAndSwap")
+  {
+    if(!reply.succeeded())
+    {
+      error_code=101;
+      error_message="Compare failed";
     }
   }
   return *this;

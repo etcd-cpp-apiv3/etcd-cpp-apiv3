@@ -8,18 +8,12 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
-#include "v3/include/AsyncRangeResponse.hpp"
-#include "v3/include/grpcClient.hpp"
 
-
-using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
-using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
-using etcdserverpb::RangeRequest;
 using etcdserverpb::RangeResponse;
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
@@ -159,17 +153,14 @@ namespace etcd
     pplx::task<etcd::Response> send_asyncmodify(std::string const & key, std::string const & value);
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_get(std::string const & key);
-    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);
-
-    etcdv3::grpcClient grpcClient;
+    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);  
+    
 
 private:
     pplx::task<Response> removeEntryWithKey(std::string const &entryKey);
     pplx::task<Response> removeEntryWithKeyAndValue(std::string const &entryKey, std::string const &oldValue);
     pplx::task<Response> removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex);
     pplx::task<Response> modifyEntryWithValueAndOldIndex(std::string const & key, std::string const & value, int old_index);
-  
-    
   };
 
 

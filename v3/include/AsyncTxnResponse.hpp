@@ -4,9 +4,6 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "v3/include/V3Response.hpp"
-#include "v3/include/grpcClient.hpp"
-
-
 
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
