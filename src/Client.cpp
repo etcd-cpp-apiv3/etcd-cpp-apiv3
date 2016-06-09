@@ -54,7 +54,6 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return send_asyncmodify_if(key, value, old_value);
 }
 
-//FBDL
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index)
 {
   web::http::uri_builder uri("/v2/keys" + key);
@@ -131,12 +130,40 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
 	return removeEntryWithKeyAndValue(key, old_value);
 }
 
+pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex) {
+
+	etcdv3::AsyncRangeResponse *searchResult = etcdv3::Utils::getKey(entryKey, grpcClient);
+	std::cout << "found revision in item is: " << searchResult->reply.kvs(0).create_revision() << std::endl;
+
+	if(!searchResult->reply.kvs_size()) {
+		searchResult->error_code = 100;
+		searchResult->error_message = "Key not Found";
+		return Response::createResponse(*searchResult);
+	}
+	else if(searchResult->reply.kvs(0).create_revision() != oldIndex) {
+		searchResult->error_code = 101;
+		searchResult->error_message = "Compare failed";
+		return Response::createResponse(*searchResult);
+	}
+
+	etcdserverpb::DeleteRangeRequest deleteRangeRequest;
+	deleteRangeRequest.set_key(entryKey);
+
+	etcdv3::AsyncDelResponse *deleteResponseCall = new etcdv3::AsyncDelResponse("compareAndDelete");
+
+	deleteResponseCall->prev_value = searchResult->reply.kvs(0);
+	deleteResponseCall->client = &grpcClient;
+	deleteResponseCall->key = entryKey;
+
+	deleteResponseCall->rpcInstance = grpcClient.stub_->AsyncDeleteRange(&deleteResponseCall->context, deleteRangeRequest, &deleteResponseCall->cq_);
+	deleteResponseCall->rpcInstance->Finish(&deleteResponseCall->deleteResponse, &deleteResponseCall->status, (void*)deleteResponseCall);
+
+	return Response::createResponse(*deleteResponseCall);
+}
+
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("dir=false");
-  uri.append_query("prevIndex", old_index);
-  return send_del_request(uri);
+	return removeEntryWithKeyAndIndex(key, old_index);
 }
 
 pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
@@ -245,7 +272,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
   call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-        
+
   return Response::create(call);
 
 }
@@ -276,7 +303,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
   call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-        
+
   return Response::create(call);
 
 }
@@ -299,7 +326,6 @@ pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key)
 
 pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, std::string const & value)
 {
-
   PutRequest put_request;
   put_request.set_key(key);
   put_request.set_value(value);
@@ -316,11 +342,10 @@ pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, 
   call->client = &grpcClient;
   call->key = key;
 
-
   call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
-        
+
   return Response::create(call);
 }
 

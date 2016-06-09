@@ -165,8 +165,10 @@ namespace etcd
     etcdv3::grpcClient grpcClient;
 
 private:
-    pplx::task<Response> removeEntryWithKey(std::string const &);
-    pplx::task<Response> removeEntryWithKeyAndValue(std::string const &, std::string const &);
+    pplx::task<Response> removeEntryWithKey(std::string const &entryKey);
+    pplx::task<Response> removeEntryWithKeyAndValue(std::string const &entryKey, std::string const &oldValue);
+    pplx::task<Response> removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex);
+
   
     
   };
