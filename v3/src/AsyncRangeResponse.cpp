@@ -42,7 +42,7 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
     error_code=100;
     error_message="Key not found";
   }
-
+  index = reply.header().revision();
   return *this;
 }
 

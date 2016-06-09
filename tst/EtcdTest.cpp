@@ -135,8 +135,6 @@ TEST_CASE("atomic compare-and-delete based on prevIndex")
   CHECK("42" == res.prev_value().as_string());
 }
 
-#if 0
-
 TEST_CASE("deep atomic compare-and-swap")
 {
   etcd::Client etcd("http://127.0.0.1:4001");
@@ -145,7 +143,6 @@ TEST_CASE("deep atomic compare-and-swap")
   // modify success
   etcd::Response res = etcd.modify_if("/test/key1", "43", "42").get();
   int index = res.index();
-  std::cout << "index to use: " << index << std::endl;
   REQUIRE(res.is_ok());
   CHECK("compareAndSwap" == res.action());
   CHECK("43" == res.value().as_string());
@@ -168,6 +165,8 @@ TEST_CASE("deep atomic compare-and-swap")
   CHECK(101 == res.error_code());
   CHECK("Compare failed" == res.error_message());
 }
+
+#if 0
 
 TEST_CASE("create a directory")
 {

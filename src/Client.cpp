@@ -2,6 +2,7 @@
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncPutResponse.hpp"
 #include "v3/include/AsyncDelResponse.hpp"
+#include "v3/include/AsyncModifyResponse.hpp"
 #include "v3/include/Utils.hpp"
 
 #include <iostream>
@@ -54,11 +55,44 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return send_asyncmodify_if(key, value, old_value);
 }
 
+pplx::task<etcd::Response> etcd::Client::modifyEntryWithValueAndOldIndex(std::string const & key, std::string const & value, int old_index) {
+
+
+	  etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(key, grpcClient);
+	  if(!resp->reply.kvs_size())
+	  {
+	    resp->error_code=100;
+	    resp->error_message="Key not found";
+	    return Response::createResponse(*resp);
+	  }
+	  else if(resp->reply.kvs(0).mod_revision() != old_index)
+	  {
+		  resp->error_code = 101;
+		  resp->error_message = "Compare failed";
+		  return Response::createResponse(*resp);
+	  }
+
+	  PutRequest put_request;
+	  put_request.set_key(key);
+	  put_request.set_value(value);
+
+	  etcdv3::AsyncModifyResponse* call= new etcdv3::AsyncModifyResponse("compareAndSwap");
+
+	  //below 2 lines can be removed once we are able to use Txn
+	  call->prev_value = resp->reply.kvs(0);
+	  call->client = &grpcClient;
+	  call->key = key;
+
+	  call->rpcInstance = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+
+	  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call);
+
+	  return Response::create(call);
+}
+
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("prevIndex", old_index);
-  return send_put_request(uri, "value", value);
+	return modifyEntryWithValueAndOldIndex(key, value, old_index);
 }
 
 //note: this one seems to not need the parseResponse() method
@@ -133,7 +167,6 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
 pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex) {
 
 	etcdv3::AsyncRangeResponse *searchResult = etcdv3::Utils::getKey(entryKey, grpcClient);
-	std::cout << "found revision in item is: " << searchResult->reply.kvs(0).create_revision() << std::endl;
 
 	if(!searchResult->reply.kvs_size()) {
 		searchResult->error_code = 100;
@@ -262,16 +295,16 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
   put_request.set_key(key);
   put_request.set_value(value);
     
-  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("compareAndSwap"); 
+  etcdv3::AsyncModifyResponse* call= new etcdv3::AsyncModifyResponse("compareAndSwap");
 
   //below 2 lines can be removed once we are able to use Txn
   call->prev_value = resp->reply.kvs(0);
   call->client = &grpcClient;
   call->key = key;
 
-  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+  call->rpcInstance = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call);
 
   return Response::create(call);
 
@@ -293,16 +326,16 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
   put_request.set_key(key);
   put_request.set_value(value);
     
-  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("update"); 
+  etcdv3::AsyncModifyResponse* call= new etcdv3::AsyncModifyResponse("update");
 
   //below 2 lines can be removed once we are able to use Txn
   call->prev_value = resp->reply.kvs(0);
   call->client = &grpcClient;
   call->key = key;
 
-  call->response_reader = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
+  call->rpcInstance = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call);
 
   return Response::create(call);
 

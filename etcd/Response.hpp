@@ -45,7 +45,6 @@ namespace etcd
         {
           auto v3resp = call->ParseResponse();
           resp = etcd::Response(v3resp);
-          resp._index = call->reply.header().revision();
         }
         else
         {

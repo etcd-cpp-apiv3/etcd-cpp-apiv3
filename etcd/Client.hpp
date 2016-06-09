@@ -168,7 +168,7 @@ private:
     pplx::task<Response> removeEntryWithKey(std::string const &entryKey);
     pplx::task<Response> removeEntryWithKeyAndValue(std::string const &entryKey, std::string const &oldValue);
     pplx::task<Response> removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex);
-
+    pplx::task<Response> modifyEntryWithValueAndOldIndex(std::string const & key, std::string const & value, int old_index);
   
     
   };
