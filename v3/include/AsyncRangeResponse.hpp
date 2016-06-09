@@ -21,6 +21,7 @@ namespace etcdv3
       AsyncRangeResponse(const AsyncRangeResponse& other);
       AsyncRangeResponse& operator=(const AsyncRangeResponse& other);
       RangeResponse reply;
+      etcdserverpb::PutResponse r;
       Status status;
       ClientContext context;
       CompletionQueue cq_;

@@ -1,6 +1,7 @@
 #include "etcd/Client.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncPutResponse.hpp"
+#include "v3/include/AsyncDelResponse.hpp"
 #include "v3/include/Utils.hpp"
 
 #include <iostream>
@@ -38,25 +39,6 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
   return send_asyncput(key,value);
 }
 
-//TODO: a temporary set, until set version 3 is implemented
-void etcd::Client::setv3(std::string const &key, std::string const &value)
-{
-	etcdserverpb::PutRequest putRequest;
-	putRequest.set_key(key);
-	putRequest.set_value(value);
-
-	etcdserverpb::PutResponse putResponse;
-	grpc::ClientContext context;
-	grpc::Status status = stub_->Put(&context, putRequest, &putResponse);
-
-	if(status.ok()){
-		std::cout << "put OK" << std::endl;
-	}
-	else {
-		std::cout << "put NOK" << std::endl;
-	}
-}
-
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value)
 {
   return send_asyncadd(key,value);
@@ -80,76 +62,73 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return send_put_request(uri, "value", value);
 }
 
-void etcd::Client::getEntryForPreviousValue(const std::string& entryKey, etcd::AsyncDeleteResponse* drp)
-{
-	std::cout << "get entry for previous value" << std::endl;
-	etcdserverpb::RangeRequest rangeRequest;
-	rangeRequest.set_key(entryKey);
-	etcdserverpb::RangeResponse rangeResponse;
-	grpc::ClientContext context;
-	grpc::Status status = grpcClient.stub_->Range(&context, rangeRequest, &rangeResponse);
-	if (status.ok()) {
-		std::cout << "get OK" << std::endl;
-		drp->fillUpV2ResponseValues(rangeResponse);
-	} else {
-		std::cout << "get NOK" << std::endl;
+//note: this one seems to not need the parseResponse() method
+pplx::task<etcd::Response> etcd::Client::removeEntryWithKey(std::string const & entryKey) {
+
+	etcdv3::AsyncRangeResponse* resp = etcdv3::Utils::getKey(entryKey, grpcClient);
+
+	if(!resp->reply.kvs_size())
+	{
+		std::cout << "nothing to delete" << std::endl;
+		resp->error_code = 100;
+		resp->error_message = "Nothing to delete";
+		return Response::createResponse(*resp);
 	}
-}
-
-pplx::task<etcd::Response> etcd::Client::removeEntry(std::string const & entryKey) {
-
-	etcd::AsyncDeleteResponse *drp = new etcd::AsyncDeleteResponse();
-	getEntryForPreviousValue(entryKey, drp); //TODO: failure case scenario handling
 
 	etcdserverpb::DeleteRangeRequest deleteRangeRequest;
 	deleteRangeRequest.set_key(entryKey);
 
-	drp->rpcInstance = grpcClient.stub_->AsyncDeleteRange(&drp->context, deleteRangeRequest, &drp->cq_);
-	drp->rpcInstance->Finish(&drp->deleteResponse, &drp->status, (void*)drp);
+	etcdv3::AsyncDelResponse* call = new etcdv3::AsyncDelResponse("delete");
 
-	return Response::createV2Response(drp);
-}
+	//mano-mano
+	call->prev_value = resp->reply.kvs(0);
+	call->client = &grpcClient;
+	call->key = entryKey;
 
+	call->rpcInstance = grpcClient.stub_->AsyncDeleteRange(&call->context, deleteRangeRequest, &call->cq_);
+	call->rpcInstance->Finish(&call->deleteResponse, &call->status, (void*)call);
 
-
-void etcd::Client::getv3(std::string const & key) {
-	std::cout<<"blocking call for get rpc " << key << std::endl;
-	etcdserverpb::RangeRequest rangeRequest;
-	rangeRequest.set_key(key);
-
-	etcdserverpb::RangeResponse rangeResponse;
-	grpc::ClientContext context;
-
-	grpc::Status status = stub_->Range(&context, rangeRequest, &rangeResponse);
-
-	std::cout << "checking status" << std::endl;
-	if(status.ok()) {
-		std::cout << "get OK" << std::endl;
-		std::cout << "size: " << rangeResponse.kvs_size() << std::endl;
-		std::cout << "kvs 0 key: " << rangeResponse.kvs(0).key() << std::endl;
-		std::cout << "kvs 0 value: " << rangeResponse.kvs(0).value() << std::endl;
-		std::cout << "kvs.Get 0 value: " << rangeResponse.kvs().Get(0).value() << std::endl;
-
-		AsyncDeleteResponse drp;
-		drp.fillUpV2ResponseValues(rangeResponse);
-	}
-	else {
-		std::cout << "get NOK" << std::endl;
-	}
+	return  Response::createResponse(*call);
 }
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
-	std::cout << "rm called" << std::endl;
-	return removeEntry(key);
+	return removeEntryWithKey(key);
+}
+
+pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndValue(std::string const &entryKey, std::string const &oldValue) {
+
+	etcdv3::AsyncRangeResponse *searchResult = etcdv3::Utils::getKey(entryKey, grpcClient);
+
+	if(!searchResult->reply.kvs_size()) {
+		searchResult->error_code = 100;
+		searchResult->error_message = "Key not Found";
+		return Response::createResponse(*searchResult);
+	}
+	else if(searchResult->reply.kvs(0).value() != oldValue) {
+		searchResult->error_code = 101;
+		searchResult->error_message = "Compare failed";
+		return Response::createResponse(*searchResult);
+	}
+
+	etcdserverpb::DeleteRangeRequest deleteRangeRequest;
+	deleteRangeRequest.set_key(entryKey);
+
+	etcdv3::AsyncDelResponse *deleteResponseCall = new etcdv3::AsyncDelResponse("compareAndDelete");
+
+	deleteResponseCall->prev_value = searchResult->reply.kvs(0);
+	deleteResponseCall->client = &grpcClient;
+	deleteResponseCall->key = entryKey;
+
+	deleteResponseCall->rpcInstance = grpcClient.stub_->AsyncDeleteRange(&deleteResponseCall->context, deleteRangeRequest, &deleteResponseCall->cq_);
+	deleteResponseCall->rpcInstance->Finish(&deleteResponseCall->deleteResponse, &deleteResponseCall->status, (void*)deleteResponseCall);
+
+	return Response::createResponse(*deleteResponseCall);
 }
 
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::string const & old_value)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("dir=false");
-  uri.append_query("prevValue", old_value);
-  return send_del_request(uri);
+	return removeEntryWithKeyAndValue(key, old_value);
 }
 
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
@@ -200,10 +179,6 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
     uri.append_query("recursive=true");
   return send_get_request(uri);
 }
-
-
-
-
 
 pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
 {

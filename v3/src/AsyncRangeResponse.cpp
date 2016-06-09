@@ -22,7 +22,7 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::operator=(const etcdv3::
 etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
 {
   action = "get";
-  
+
   if(reply.kvs_size())
   {
     if(reply.more())

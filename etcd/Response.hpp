@@ -11,6 +11,8 @@
 #include "v3/include/V3Response.hpp"
 #include <grpc++/grpc++.h>
 
+#include <iostream>
+
 namespace etcd
 {
   typedef std::vector<std::string> Keys;
@@ -22,35 +24,6 @@ namespace etcd
   {
   public:
     static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
-
-    template<typename T>static pplx::task<etcd::Response> createV2Response(T call)
-    {
-      return pplx::task<etcd::Response>([call]()
-      {
-        void* got_tag;
-        bool ok = false;
-        etcd::Response resp;
-
-        //blocking
-        call->cq_.Next(&got_tag, &ok);
-        GPR_ASSERT(got_tag == (void*)call);
-        GPR_ASSERT(ok);
-
-        T call = static_cast<T>(got_tag);
-        if(call->status.ok())
-        {
-//          auto v3resp = call->ParseResponse();
-          resp = *call;// stripping off instead of creating a new response class object
-        }
-        else
-        {
-          throw std::runtime_error(call->status.error_message());
-        }
-
-        delete call; //todo:make this a smart pointer
-        return resp;
-      });
-    };
 
     static pplx::task<Response> createResponse(const etcdv3::V3Response& response);
 

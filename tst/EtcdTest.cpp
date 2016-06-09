@@ -98,16 +98,62 @@ TEST_CASE("atomic compare-and-swap")
 
 TEST_CASE("delete a value")
 {
-	std::cout << "delete a value fbdl" << std::endl;
   etcd::Client etcd("http://127.0.0.1:4001");
-//  CHECK(3 == etcd.ls("/test").get().keys().size()); // not supported in v3
   etcd::Response resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
   CHECK("delete" == resp.action());
-//  CHECK(2 == etcd.ls("/test").get().keys().size()); // not supported in v3
+}
+
+TEST_CASE("atomic compare-and-delete based on prevValue")
+{
+  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd.set("/test/key1", "42").wait();
+
+  etcd::Response res = etcd.rm_if("/test/key1", "43").get();
+  CHECK(!res.is_ok());
+  CHECK(101 == res.error_code());
+  CHECK("Compare failed" == res.error_message());
+
+  res = etcd.rm_if("/test/key1", "42").get();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndDelete" == res.action());
+  CHECK("42" == res.prev_value().as_string());
+}
+
+TEST_CASE("atomic compare-and-delete based on prevValue checking index")
+{
+  etcd::Client etcd("http://127.0.0.1:4001");
+  std::cout << "index: " << etcd.set("/test/key1", "42").get().index() << std::endl;
+
+  etcd::Response res = etcd.rm_if("/test/key1", "43").get();
+  CHECK(!res.is_ok());
+  CHECK(101 == res.error_code());
+  CHECK("Compare failed" == res.error_message());
+
+  res = etcd.rm_if("/test/key1", "42").get();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndDelete" == res.action());
+  CHECK("42" == res.prev_value().as_string());
 }
 
 #if 0
+
+TEST_CASE("atomic compare-and-delete based on prevIndex")
+{
+  etcd::Client etcd("http://127.0.0.1:4001");
+  int index = etcd.set("/test/key1", "42").get().index();
+  std::cout << "index of old: " << index << std::endl;
+
+  etcd::Response res = etcd.rm_if("/test/key1", index - 1).get();
+  CHECK(!res.is_ok());
+  CHECK(101 == res.error_code());
+  CHECK("Compare failed" == res.error_message());
+
+  res = etcd.rm_if("/test/key1", index).get();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndDelete" == res.action());
+  CHECK("42" == res.prev_value().as_string());
+}
 
 TEST_CASE("create a directory")
 {
@@ -241,38 +287,6 @@ TEST_CASE("atomic compare-and-swap")
   CHECK(!res.is_ok());
   CHECK(101 == res.error_code());
   CHECK("Compare failed" == res.error_message());
-}
-
-TEST_CASE("atomic compare-and-delete based on prevValue")
-{
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd.set("/test/key1", "42").wait();
-
-  etcd::Response res = etcd.rm_if("/test/key1", "43").get();
-  CHECK(!res.is_ok());
-  CHECK(101 == res.error_code());
-  CHECK("Compare failed" == res.error_message());
-
-  res = etcd.rm_if("/test/key1", "42").get();
-  REQUIRE(res.is_ok());
-  CHECK("compareAndDelete" == res.action());
-  CHECK("42" == res.prev_value().as_string());
-}
-
-TEST_CASE("atomic compare-and-delete based on prevIndex")
-{
-  etcd::Client etcd("http://127.0.0.1:4001");
-  int index = etcd.set("/test/key1", "42").get().index();
-
-  etcd::Response res = etcd.rm_if("/test/key1", index - 1).get();
-  CHECK(!res.is_ok());
-  CHECK(101 == res.error_code());
-  CHECK("Compare failed" == res.error_message());
-
-  res = etcd.rm_if("/test/key1", index).get();
-  REQUIRE(res.is_ok());
-  CHECK("compareAndDelete" == res.action());
-  CHECK("42" == res.prev_value().as_string());
 }
 
 TEST_CASE("cleanup")
