@@ -1,4 +1,5 @@
 #include "v3/include/AsyncTxnResponse.hpp"
+#include "v3/include/AsyncRangeResponse.hpp"
 
 using etcdserverpb::ResponseOp;
 
@@ -33,57 +34,57 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
 
 etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 {
-  for(int index=0; index < reply.responses_size(); index++)
+  if(!status.ok())
   {
-    auto resp = reply.responses(index);
-    if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
+    error_code = status.error_code();
+    error_message = status.error_message();
+  }
+  else
+  {
+    std::vector<mvccpb::KeyValue> range_kvs;
+    for(int index=0; index < reply.responses_size(); index++)
     {
-      if(resp.response_range().kvs_size())
+      auto resp = reply.responses(index);
+      if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
       {
-        if(!resp.response_range().more())
+        AsyncRangeResponse response;
+        response.reply = resp.response_range();
+        auto v3resp = response.ParseResponse();
+     
+        error_code = v3resp.error_code;
+        error_message = v3resp.error_message;
+
+        if(!v3resp.values.empty())
         {
-          if(!values.empty())
-          {
-            prev_value = values[0];
-          }
-          values.clear();
-          values.push_back(resp.response_range().kvs(0));
+          range_kvs.insert(range_kvs.end(), v3resp.values.begin(), v3resp.values.end());
         }
       }
-      else
+    }
+
+    if(!reply.succeeded())
+    { 
+      if(action == "create")
       {
-        error_code=100;
-        error_message="Key not found";
+        error_code=105;
+        error_message="Key already exists";
+      }
+      else if(action == "compareAndSwap")
+      {
+        error_code=101;
+        error_message="Compare failed";
       }
     }
-    else if(ResponseOp::ResponseCase::kResponsePut == resp.response_case())
+
+    //find previous value of key do this for all actions except get
+    //retain only the last value gotten as the final value.
+    if(action != "get" && range_kvs.size() > 1)
     {
-      //do nothing for now.
+      prev_value = range_kvs.front();
+      values.push_back(range_kvs.back());    
     }
     else
     {
-      //do nothing for now.
-    }
-  }
-
-
-
-
-  if(action == "create")
-  {
-
-    if(!reply.succeeded())
-    {
-      error_code=105;
-      error_message="Key already exists";
-    }
-  }
-  else if(action == "compareAndSwap")
-  {
-    if(!reply.succeeded())
-    {
-      error_code=101;
-      error_message="Compare failed";
+      values = range_kvs;
     }
   }
   return *this;

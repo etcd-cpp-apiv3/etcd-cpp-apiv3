@@ -96,6 +96,29 @@ TEST_CASE("atomic compare-and-swap")
   CHECK("Compare failed" == res.error_message());
 }
 
+TEST_CASE("list a directory")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  //CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
+
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/sub_dir","value3").wait();
+
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+  CHECK("get" == resp.action());
+  REQUIRE(3 == resp.keys().size());
+  CHECK("key1" == resp.key(0));
+  CHECK("key2" == resp.key(1));
+  CHECK("sub_dir" == resp.key(2));
+  CHECK("value1" == resp.value(0).as_string());
+  CHECK("value2" == resp.value(1).as_string());
+  CHECK(resp.values()[2].is_dir());
+
+  CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
+}
+
+
 
 TEST_CASE("delete a value")
 {

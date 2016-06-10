@@ -23,7 +23,6 @@ pplx::task<etcd::Response> etcd::Response::createResponse(const etcdv3::V3Respon
 
 etcd::Response::Response(const etcdv3::V3Response& reply)
 {
-
   _index = reply.index;
   _error_code = reply.error_code;
   _error_message = reply.error_message;
@@ -31,8 +30,11 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
   int size = reply.values.size();
   if(size > 1)
   {
-    for(int x = 0; x < size; x++)
-    _values.push_back(Value(reply.values[x]));
+    for(int index = 0; index < size; index++)
+    {
+      _values.push_back(Value(reply.values[index]));
+      _keys.push_back(reply.values[index].key());
+    }
   }
   else if(size == 1)
   {

@@ -38,19 +38,13 @@ namespace etcd
         //blocking
         call->cq_.Next(&got_tag, &ok);
         GPR_ASSERT(got_tag == (void*)call);
-        GPR_ASSERT(ok);
 
         T call = static_cast<T>(got_tag);
-        if(call->status.ok())
-        {
-          auto v3resp = call->ParseResponse();
-          resp = etcd::Response(v3resp);
-        }
-        else
-        {
-          throw std::runtime_error(call->status.error_message());
-        }
-               
+
+        auto v3resp = call->ParseResponse();
+          
+        resp = etcd::Response(v3resp);    
+
         delete call; //todo:make this a smart pointer
         return resp;
       });

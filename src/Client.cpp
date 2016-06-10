@@ -12,6 +12,7 @@ using etcdserverpb::TxnRequest;
 using etcdserverpb::Compare;
 using etcdserverpb::RequestOp;
 
+
 etcd::Client::Client(std::string const & address)
   : client(address)
 {
@@ -230,9 +231,12 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool rec
 
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("sorted=true");
-  return send_get_request(uri);
+
+  std::string range_end(key); 
+  int ascii = (int)range_end[range_end.length()-1];
+  range_end.back() = ascii+1;
+
+  return send_asyncget(key,range_end);
 }
 
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
@@ -400,7 +404,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
 }
 
 
-pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key)
+pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key, std::string const& range_end)
 {
   //check key exist  
   TxnRequest txn_request;
@@ -410,16 +414,29 @@ pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key)
   compare->set_key(key);
   compare->set_version(0);
 
-  //get key on failure or success
+  //get key on success 
   std::unique_ptr<RangeRequest> get_request(new RangeRequest());
   get_request->set_key(key);
-  
+
+  if(!range_end.empty())
+  {
+    get_request->set_range_end(range_end);
+    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+  }  
   RequestOp* req_success = txn_request.add_success();
   req_success->set_allocated_request_range(get_request.release());
 
 
+  //get key on failure
   get_request.reset(new RangeRequest());
   get_request->set_key(key);
+  if(!range_end.empty())
+  {
+    get_request->set_range_end(range_end);
+    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+  }
 
   RequestOp* req_failure = txn_request.add_failure();
   req_failure->set_allocated_request_range(get_request.release());

@@ -7,6 +7,11 @@ etcdv3::AsyncRangeResponse::AsyncRangeResponse(const etcdv3::AsyncRangeResponse&
   index = other.index;
   action = other.action;
   values = other.values;
+  prev_value.set_key(other.prev_value.key());
+  prev_value.set_value(other.prev_value.value());
+  prev_value.set_create_revision(other.prev_value.create_revision());
+  prev_value.set_mod_revision(other.prev_value.mod_revision());
+
 }
 
 etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::operator=(const etcdv3::AsyncRangeResponse& other) 
@@ -16,34 +21,25 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::operator=(const etcdv3::
   index = other.index;
   action = other.action;
   values = other.values;
+  prev_value.set_key(other.prev_value.key());
+  prev_value.set_value(other.prev_value.value());
+  prev_value.set_create_revision(other.prev_value.create_revision());
+  prev_value.set_mod_revision(other.prev_value.mod_revision());
   return *this;
 }
 
 etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
 {
-  action = "get";
-
-  if(reply.kvs_size())
-  {
-    if(reply.more())
-    {
-      for(int index=0; reply.more(); index++)
-      {
-        values.push_back(reply.kvs(index));
-      }
-    }
-    else
-    {
-      values.push_back(reply.kvs(0));
-    }
-  }
-  else
+  if(reply.kvs_size() == 0)
   {
     error_code=100;
     error_message="Key not found";
   }
+
+  for(int index=0; index < reply.kvs_size(); index++)
+  {
+    values.push_back(reply.kvs(index)); 
+  }
   index = reply.header().revision();
   return *this;
 }
-
-
