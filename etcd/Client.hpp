@@ -154,6 +154,7 @@ namespace etcd
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_get(std::string const & key);
     pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);  
+    pplx::task<etcd::Response> send_asyncdelete(std::string const & key, bool recursive);
     
 
 private:

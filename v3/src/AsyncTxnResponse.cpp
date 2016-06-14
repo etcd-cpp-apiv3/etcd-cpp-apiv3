@@ -34,6 +34,8 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
 
 etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 {
+
+  index = reply.header().revision();
   if(!status.ok())
   {
     error_code = status.error_code();
@@ -59,6 +61,10 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
           range_kvs.insert(range_kvs.end(), v3resp.values.begin(), v3resp.values.end());
         }
       }
+      else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
+      {
+        std::cout << "deleted keys: " << resp.response_delete_range().deleted() << std:: endl;
+      }
     }
 
     if(!reply.succeeded())
@@ -75,17 +81,26 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
       }
     }
 
-    //find previous value of key do this for all actions except get
+    //find previous value of key
     //retain only the last value gotten as the final value.
-    if(action != "get" && range_kvs.size() > 1)
-    {
-      prev_value = range_kvs.front();
-      values.push_back(range_kvs.back());    
-    }
-    else
-    {
-      values = range_kvs;
-    }
+     if(action == "set" || action == "create" || action == "compareAndSwap" || action == "update")
+     {
+       if(range_kvs.size() > 1)
+       {
+         prev_value = range_kvs.front();
+         values.push_back(range_kvs.back());
+       }
+       else
+       {
+         values = range_kvs;
+       }
+     }
+     else
+     {
+       values = range_kvs;
+     }
+     
   }
+        
   return *this;
 }

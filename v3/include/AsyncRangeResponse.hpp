@@ -17,8 +17,7 @@ namespace etcdv3
   class AsyncRangeResponse : public etcdv3::V3Response
   {
     public:
-      AsyncRangeResponse(){};
-      AsyncRangeResponse(const std::string act){action = act;};
+      AsyncRangeResponse(){action = "get";};
       AsyncRangeResponse(const AsyncRangeResponse& other);
       AsyncRangeResponse& operator=(const AsyncRangeResponse& other);
       RangeResponse reply;

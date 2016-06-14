@@ -1,6 +1,7 @@
 #include <memory>
 #include "etcd/Client.hpp"
 #include "v3/include/AsyncTxnResponse.hpp"
+#include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncDelResponse.hpp"
 #include "v3/include/AsyncModifyResponse.hpp"
 #include <iostream>
@@ -9,6 +10,7 @@ using grpc::Channel;
 using etcdserverpb::PutRequest;
 using etcdserverpb::RangeRequest;
 using etcdserverpb::TxnRequest;
+using etcdserverpb::DeleteRangeRequest;
 using etcdserverpb::Compare;
 using etcdserverpb::RequestOp;
 
@@ -222,11 +224,13 @@ pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
 
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
+  /*web::http::uri_builder uri("/v2/keys" + key);
   uri.append_query("dir=true");
   if (recursive)
     uri.append_query("recursive=true");
-  return send_del_request(uri);
+  return send_del_request(uri);*/
+
+  return send_asyncdelete(key,recursive);
 }
 
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
@@ -406,45 +410,18 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
 
 pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key, std::string const& range_end)
 {
-  //check key exist  
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_GREATER);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  compare->set_key(key);
-  compare->set_version(0);
-
-  //get key on success 
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-
+  RangeRequest get_request;
+  get_request.set_key(key);
   if(!range_end.empty())
   {
-    get_request->set_range_end(range_end);
-    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
-  }  
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-
-  //get key on failure
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  if(!range_end.empty())
-  {
-    get_request->set_range_end(range_end);
-    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+    get_request.set_range_end(range_end);
+    get_request.set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+    get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
   }
-
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
     
-  etcdv3::AsyncTxnResponse* call= new etcdv3::AsyncTxnResponse("get");  
+  etcdv3::AsyncRangeResponse* call= new etcdv3::AsyncRangeResponse();  
 
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
+  call->response_reader = stub_->AsyncRange(&call->context,get_request,&call->cq_);
 
   call->response_reader->Finish(&call->reply, &call->status, (void*)call);
 
@@ -493,6 +470,82 @@ pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, 
   req_success->set_allocated_request_range(get_request.release());
 
   etcdv3::AsyncTxnResponse* call= new etcdv3::AsyncTxnResponse("set"); 
+
+  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
+
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & key, bool recursive)
+{
+
+  //check if key is present
+  TxnRequest txn_request;
+  Compare* compare = txn_request.add_compare();
+  compare->set_result(Compare::CompareResult::Compare_CompareResult_GREATER);
+  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
+  compare->set_key(key);
+  compare->set_version(0);
+
+  std::string range_end(key); 
+  if(recursive)
+  {
+    int ascii = (int)range_end[range_end.length()-1];
+    range_end.back() = ascii+1;
+  }
+
+  //if success, get key, delete
+  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
+  get_request->set_key(key);
+  if(recursive)
+  {
+    get_request->set_range_end(range_end);
+    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+  }
+
+  RequestOp* req_success = txn_request.add_success();
+  req_success->set_allocated_request_range(get_request.release());
+
+  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
+  del_request->set_key(key);
+  if(recursive)
+  {
+    del_request->set_range_end(range_end);
+  }
+
+  req_success = txn_request.add_success();
+  req_success->set_allocated_request_delete_range(del_request.release());
+
+
+  //if success, get key, delete
+  get_request.reset(new RangeRequest());
+  get_request->set_key(key);
+  if(recursive)
+  {
+    get_request->set_range_end(range_end);
+    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+  }
+  RequestOp* req_failure = txn_request.add_failure();
+  req_failure->set_allocated_request_range(get_request.release()); 
+
+  del_request.reset(new DeleteRangeRequest());
+  del_request->set_key(key);
+  if(recursive)
+  {
+    del_request->set_range_end(range_end);
+  }
+
+  req_failure = txn_request.add_failure();
+  req_failure->set_allocated_request_delete_range(del_request.release());
+
+
+
+
+  etcdv3::AsyncTxnResponse* call= new etcdv3::AsyncTxnResponse("delete"); 
 
   call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
 
