@@ -146,6 +146,7 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
+    std::unique_ptr<Watch::Stub> stub1_;
     pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
     std::unique_ptr<Watch::Stub> watchServiceStub;
     pplx::task<etcd::Response> send_asyncadd(std::string const & key, const std::string& value);

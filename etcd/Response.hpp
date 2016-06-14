@@ -27,25 +27,22 @@ namespace etcd
 
     static pplx::task<Response> createResponse(const etcdv3::V3Response& response);
 
-    template<typename T>static pplx::task<etcd::Response> create(T call)
+    template<typename T>static pplx::task<etcd::Response> create(std::shared_ptr<T> call)
     {
       return pplx::task<etcd::Response>([call]()
       {
         void* got_tag;
         bool ok = false;
-        etcd::Response resp;
+        etcd::Response resp;     
 
         //blocking
         call->cq_.Next(&got_tag, &ok);
-        GPR_ASSERT(got_tag == (void*)call);
-
-        T call = static_cast<T>(got_tag);
+        GPR_ASSERT(got_tag == (void*)call.get());
 
         auto v3resp = call->ParseResponse();
           
         resp = etcd::Response(v3resp);    
 
-        delete call; //todo:make this a smart pointer
         return resp;
       });
     };
