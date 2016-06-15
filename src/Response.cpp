@@ -41,7 +41,8 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
     _value = Value(reply.values[0]);
   }
   
-  _prev_value = Value(reply.prev_value);
+  if(reply.prev_values.size() == 1)
+    _prev_value = Value(reply.prev_values[0]);
 }
 
 

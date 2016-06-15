@@ -11,10 +11,7 @@ etcdv3::AsyncTxnResponse::AsyncTxnResponse(const etcdv3::AsyncTxnResponse& other
   index = other.index;
   action = other.action;
   values = other.values;
-  prev_value.set_key(other.prev_value.key());
-  prev_value.set_value(other.prev_value.value());
-  prev_value.set_create_revision(other.prev_value.create_revision());
-  prev_value.set_mod_revision(other.prev_value.mod_revision());
+  prev_values = other.prev_values;
 
 }
 
@@ -25,10 +22,7 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
   index = other.index;
   action = other.action;
   values = other.values;
-  prev_value.set_key(other.prev_value.key());
-  prev_value.set_value(other.prev_value.value());
-  prev_value.set_create_revision(other.prev_value.create_revision());
-  prev_value.set_mod_revision(other.prev_value.mod_revision());
+  prev_values = other.prev_values;
   return *this;
 }
 
@@ -44,6 +38,7 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
   else
   {
     std::vector<mvccpb::KeyValue> range_kvs;
+    std::vector<mvccpb::KeyValue> prev_range_kvs;
     for(int index=0; index < reply.responses_size(); index++)
     {
       auto resp = reply.responses(index);
@@ -58,7 +53,8 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 
         if(!v3resp.values.empty())
         {
-          range_kvs.insert(range_kvs.end(), v3resp.values.begin(), v3resp.values.end());
+          prev_range_kvs=range_kvs;
+          range_kvs = v3resp.values;
         }
       }
       else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
@@ -81,26 +77,15 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
       }
     }
 
-    //find previous value of key
-    //retain only the last value gotten as the final value.
-     if(action == "set" || action == "create" || action == "compareAndSwap" || action == "update")
-     {
-       if(range_kvs.size() > 1)
-       {
-         prev_value = range_kvs.front();
-         values.push_back(range_kvs.back());
-       }
-       else
-       {
-         values = range_kvs;
-       }
-     }
-     else
-     {
-       values = range_kvs;
-     }
-     
-  }
-        
+    prev_values = prev_range_kvs;
+
+    values = range_kvs;    
+
+    if(action == "delete")
+    {
+      prev_values = values;
+    }
+
+  }       
   return *this;
 }
