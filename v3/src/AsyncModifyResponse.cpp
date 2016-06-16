@@ -16,10 +16,7 @@ etcdv3::AsyncModifyResponse::AsyncModifyResponse(const etcdv3::AsyncModifyRespon
 	index = other.index;
 	action = other.action;
 	values = other.values;
-	prev_value.set_key(other.prev_value.key());
-	prev_value.set_value(other.prev_value.value());
-	prev_value.set_create_revision(other.prev_value.create_revision());
-	prev_value.set_mod_revision(other.prev_value.mod_revision());
+        prev_values= other.prev_values;
 }
 
 etcdv3::AsyncModifyResponse::AsyncModifyResponse(const std::string &input) {
@@ -32,10 +29,7 @@ etcdv3::AsyncModifyResponse& etcdv3::AsyncModifyResponse::operator=(const etcdv3
 	  index = other.index;
 	  action = other.action;
 	  values = other.values;
-	  prev_value.set_key(other.prev_value.key());
-	  prev_value.set_value(other.prev_value.value());
-	  prev_value.set_create_revision(other.prev_value.create_revision());
-	  prev_value.set_mod_revision(other.prev_value.mod_revision());
+          prev_values= other.prev_values;
 	  return *this;
 }
 

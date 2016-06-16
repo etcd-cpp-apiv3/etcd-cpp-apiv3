@@ -4,6 +4,7 @@
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncDelResponse.hpp"
 #include "v3/include/AsyncModifyResponse.hpp"
+#include "v3/include/Utils.hpp"
 #include <iostream>
 
 using grpc::Channel;
@@ -97,16 +98,16 @@ pplx::task<etcd::Response> etcd::Client::modifyEntryWithValueAndOldIndex(std::st
 	  put_request.set_key(key);
 	  put_request.set_value(value);
 
-	  etcdv3::AsyncModifyResponse* call= new etcdv3::AsyncModifyResponse("compareAndSwap");
+	  std::shared_ptr<etcdv3::AsyncModifyResponse>call(new etcdv3::AsyncModifyResponse("compareAndSwap"));
 
 	  //below 2 lines can be removed once we are able to use Txn
-	  call->prev_value = resp->reply.kvs(0);
+	  call->prev_values.push_back(resp->reply.kvs(0));
 	  call->client = &grpcClient;
 	  call->key = key;
 
 	  call->rpcInstance = grpcClient.stub_->AsyncPut(&call->context,put_request,&call->cq_);
 
-	  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call);
+	  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call.get());
 
 	  return Response::create(call);
 }
@@ -135,7 +136,7 @@ pplx::task<etcd::Response> etcd::Client::removeEntryWithKey(std::string const & 
 	etcdv3::AsyncDelResponse* call = new etcdv3::AsyncDelResponse("delete");
 
 	//mano-mano
-	call->prev_value = resp->reply.kvs(0);
+	call->prev_values.push_back(resp->reply.kvs(0));
 	call->client = &grpcClient;
 	call->key = entryKey;
 
@@ -170,7 +171,7 @@ pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndValue(std::string 
 
 	etcdv3::AsyncDelResponse *deleteResponseCall = new etcdv3::AsyncDelResponse("compareAndDelete");
 
-	deleteResponseCall->prev_value = searchResult->reply.kvs(0);
+	deleteResponseCall->prev_values.push_back(searchResult->reply.kvs(0));
 	deleteResponseCall->client = &grpcClient;
 	deleteResponseCall->key = entryKey;
 
@@ -205,7 +206,7 @@ pplx::task<etcd::Response> etcd::Client::removeEntryWithKeyAndIndex(std::string 
 
 	etcdv3::AsyncDelResponse *deleteResponseCall = new etcdv3::AsyncDelResponse("compareAndDelete");
 
-	deleteResponseCall->prev_value = searchResult->reply.kvs(0);
+	deleteResponseCall->prev_values.push_back(searchResult->reply.kvs(0));
 	deleteResponseCall->client = &grpcClient;
 	deleteResponseCall->key = entryKey;
 
@@ -323,7 +324,6 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
   compare->set_key(key);
   compare->set_value(old_value);
 
-  etcdv3::AsyncPutResponse* call= new etcdv3::AsyncPutResponse("compareAndSwap"); 
   //get key on failure 
   std::unique_ptr<RangeRequest> get_request(new RangeRequest());
   get_request->set_key(key);
@@ -401,7 +401,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
 
   call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
 
-  call->rpcInstance->Finish(&call->putResponse, &call->status, (void*)call);
+  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
 
