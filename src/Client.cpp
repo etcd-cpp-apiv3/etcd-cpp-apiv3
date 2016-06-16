@@ -20,7 +20,7 @@ using etcdserverpb::WatchResponse;
 using etcdserverpb::WatchCreateRequest;
 
 etcd::Client::Client(std::string const & address)
-  : client(address)
+  : client(address), grpcClient(address)
 {
   std::string stripped_address(address);
   std::string substr("http://");
