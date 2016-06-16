@@ -229,11 +229,6 @@ pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
 
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
-  /*web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("dir=true");
-  if (recursive)
-    uri.append_query("recursive=true");
-  return send_del_request(uri);*/
 
   return send_asyncdelete(key,recursive);
 }
@@ -436,39 +431,6 @@ pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key, 
 
 pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, std::string const & value)
 {
-#if 0
-  //try watch here:
-  ClientContext context;
-  std::shared_ptr<ClientReaderWriter<WatchRequest,WatchResponse>> stream(stub1_->Watch(&context));
-  
-  WatchRequest watch_req;
-  WatchCreateRequest watch_create_req;
-  watch_create_req.set_key(key);
-  watch_req.mutable_create_request()->CopyFrom(watch_create_req);
-  
-  stream->Write(watch_req);
-
-  std::cout<< "write finished" << std::endl;
-
-  WatchResponse server_resp;
-  while(stream->Read(&server_resp))
-  {
-    std::cout<< "read...watch id: "<< server_resp.watch_id()<< std::endl;
-    if(server_resp.events_size())
-    {
-      std::cout << "event type: " << server_resp.events(0).type() << std::endl;
-      std::cout << "key: " << server_resp.events(0).kv().key() << std::endl;
-      std::cout << "value: " << server_resp.events(0).kv().value() << std::endl;
-      stream->WritesDone();
-      
-    }
-  }
-  Status status = stream->Finish();
-  if(!status.ok())
-  {
-    std::cout << "rpc failed" << std::endl;
-  }
-#endif
   //check if key is not present
   TxnRequest txn_request;
   Compare* compare = txn_request.add_compare();
