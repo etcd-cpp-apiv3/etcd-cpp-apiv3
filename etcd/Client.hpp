@@ -8,14 +8,7 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
-#include "v3/include/grpcClient.hpp"
 
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Status;
-using etcdserverpb::PutResponse;
-using etcdserverpb::RangeResponse;
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 
@@ -147,25 +140,19 @@ namespace etcd
     web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
-    std::unique_ptr<Watch::Stub> stub1_;
-    pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
     std::unique_ptr<Watch::Stub> watchServiceStub;
+
+    pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_asyncadd(std::string const & key, const std::string& value);
     pplx::task<etcd::Response> send_asyncmodify(std::string const & key, std::string const & value);
     pplx::task<etcd::Response> send_asyncget(std::string const & key,std::string const& range_end="");
     pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
     pplx::task<etcd::Response> send_get(std::string const & key);
     pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);  
+    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, int old_index);
     pplx::task<etcd::Response> send_asyncdelete(std::string const & key, bool recursive);
-
-    etcdv3::grpcClient grpcClient;
-    
-
-private:
-    pplx::task<Response> removeEntryWithKey(std::string const &entryKey);
-    pplx::task<Response> removeEntryWithKeyAndValue(std::string const &entryKey, std::string const &oldValue);
-    pplx::task<Response> removeEntryWithKeyAndIndex(std::string const &entryKey, int oldIndex);
-    pplx::task<Response> modifyEntryWithValueAndOldIndex(std::string const & key, std::string const & value, int old_index);
+    pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, std::string const &old_value);
+    pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, int old_index);
   };
 
 

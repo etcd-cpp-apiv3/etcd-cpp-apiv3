@@ -59,7 +59,7 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
       }
       else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
       {
-        std::cout << "deleted keys: " << resp.response_delete_range().deleted() << std:: endl;
+        //do nothing yet
       }
     }
 
@@ -70,7 +70,7 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
         error_code=105;
         error_message="Key already exists";
       }
-      else if(action == "compareAndSwap")
+      else if(action == "compareAndSwap" || action == "compareAndDelete")
       {
         error_code=101;
         error_message="Compare failed";
@@ -81,7 +81,7 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 
     values = range_kvs;    
 
-    if(action == "delete")
+    if(action == "delete" || action == "compareAndDelete")
     {
       prev_values = values;
     }
