@@ -72,8 +72,11 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
       }
       else if(action == "compareAndSwap" || action == "compareAndDelete")
       {
-        error_code=101;
-        error_message="Compare failed";
+        if(!error_code)
+        {
+          error_code=101;
+          error_message="Compare failed";
+        }
       }
     }
 
