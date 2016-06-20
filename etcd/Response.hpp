@@ -25,8 +25,6 @@ namespace etcd
   public:
     static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
 
-    static pplx::task<Response> createResponse(const etcdv3::V3Response& response);
-
     template<typename T>static pplx::task<etcd::Response> create(std::shared_ptr<T> call)
     {
       return pplx::task<etcd::Response>([call]()
