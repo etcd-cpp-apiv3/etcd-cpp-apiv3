@@ -3,6 +3,7 @@
 #include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/Utils.hpp"
+#include "v3/include/Transaction.hpp"
 #include <iostream>
 
 using grpc::Channel;
@@ -139,84 +140,33 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
 
 pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
 {
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  //check if key is not present
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  compare->set_key(key);
-  compare->set_version(0);
+  transaction.setup_basic_failure_operation(key);
+  transaction.setup_basic_create_sequence(key, value);
 
 
-  //get key on failure  
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-
-  //if success, add key and then get new value of key
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("create")); 
-   
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  //to be done in one method, where txn_request is a field of a class
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("create"));
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
-
 }
 
 pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value)
 {
-  //check key value is equal to old_value
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VALUE);
-  compare->set_key(key);
-  compare->set_value(old_value);
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(old_value, Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  	  	  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VALUE);
 
-  //get key on failure 
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-  //on success get key value then modify and get new value 
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release()); 
+  transaction.setup_basic_failure_operation(key);
+  transaction.setup_compare_and_swap_sequence(value);
     
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndSwap")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
@@ -224,41 +174,15 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
 
 pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const & key, std::string const & value, int old_index)
 {
-  //check key value is equal to old_value
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_MOD);
-  compare->set_key(key);
-  compare->set_mod_revision(old_index);
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(old_index, Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  	  	  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_MOD);
 
-  //get key on failure 
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-  //on success get key value then modify and get new value 
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
+  transaction.setup_basic_failure_operation(key);
+  transaction.setup_compare_and_swap_sequence(value);
    
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndSwap")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
@@ -267,44 +191,15 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
 
 pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & key, std::string const & value)
 {
-  //check if key is present
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_GREATER);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  compare->set_key(key);
-  compare->set_version(0);
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
+		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  //success or failure
-  //get key value before modification  
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  //if success, modify key and then get new value of key
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
+  transaction.setup_basic_failure_operation(key);
+  transaction.setup_compare_and_swap_sequence(value);
   
-
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("update")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
@@ -323,9 +218,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key, 
   }
     
   std::shared_ptr<etcdv3::AsyncRangeResponse> call(new etcdv3::AsyncRangeResponse());  
-
   call->response_reader = stub_->AsyncRange(&call->context,get_request,&call->cq_);
-
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
@@ -334,48 +227,15 @@ pplx::task<etcd::Response> etcd::Client::send_asyncget(std::string const & key, 
 
 pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, std::string const & value)
 {
-  //check if key is not present
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  compare->set_key(key);
-  compare->set_version(0);
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-
-  //get key on failure, get key before put, modify and then get updated key  
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release()); 
-
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-  //if success, put key and then get new value of key
-  put_request.reset(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
+  transaction.setup_set_failure_operation(key, value);
+  transaction.setup_basic_create_sequence(key, value);
 
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("set")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
         
   return Response::create(call);
@@ -383,14 +243,9 @@ pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, 
 
 pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & key, bool recursive)
 {
-
-  //check if key is present
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_GREATER);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  compare->set_key(key);
-  compare->set_version(0);
+	etcdv3::Transaction transaction(key);
+	transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
+							  Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
   std::string range_end(key); 
   if(recursive)
@@ -399,57 +254,11 @@ pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & ke
     range_end.back() = ascii+1;
   }
 
-  //if success, get key, delete
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  if(recursive)
-  {
-    get_request->set_range_end(range_end);
-    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
-  }
-
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  if(recursive)
-  {
-    del_request->set_range_end(range_end);
-  }
-
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
-
-
-  //if fail, get key, delete
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  if(recursive)
-  {
-    get_request->set_range_end(range_end);
-    get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-    get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
-  }
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release()); 
-
-  del_request.reset(new DeleteRangeRequest());
-  del_request->set_key(key);
-  if(recursive)
-  {
-    del_request->set_range_end(range_end);
-  }
-
-  req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_delete_range(del_request.release());
-
+  transaction.setup_delete_sequence(key, range_end, recursive);
+  transaction.setup_delete_failure_operation(key, range_end, recursive);
 
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("delete")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
@@ -457,82 +266,33 @@ pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & ke
 
 pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key, std::string const &old_value) 
 {
+	etcdv3::Transaction transaction(key);
+	transaction.init_compare(old_value, Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  Compare::CompareTarget::Compare_CompareTarget_VALUE);
 
-  //check if key's value is equl to oldvalue
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_VALUE);
-  compare->set_key(key);
-  compare->set_value(old_value);
-
-
-  //if success, get key, delete
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
-
-
-  //if fail, get key
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release()); 
-
+	transaction.setup_compare_and_delete_operation(key);
+	transaction.setup_basic_failure_operation(key);
 
   std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndDelete")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
+  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key, int old_index) 
-{
+pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key, int old_index) {
+	etcdv3::Transaction transaction(key);
+	transaction.init_compare(old_index, Compare::CompareResult::Compare_CompareResult_EQUAL,
+								Compare::CompareTarget::Compare_CompareTarget_MOD);
 
-  //check if key's mod revision is equal to old index
-  TxnRequest txn_request;
-  Compare* compare = txn_request.add_compare();
-  compare->set_result(Compare::CompareResult::Compare_CompareResult_EQUAL);
-  compare->set_target(Compare::CompareTarget::Compare_CompareTarget_MOD);
-  compare->set_key(key);
-  compare->set_mod_revision(old_index);
+	transaction.setup_compare_and_delete_operation(key);
+	transaction.setup_basic_failure_operation(key);
 
+	std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndDelete"));
+	call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
+	call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
-  //if success, get key, delete
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_success = txn_request.add_success();
-  req_success->set_allocated_request_range(get_request.release());
-
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  req_success = txn_request.add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
-
-
-  //if fail, get key
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request.add_failure();
-  req_failure->set_allocated_request_range(get_request.release()); 
-
-
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndDelete")); 
-
-  call->response_reader = stub_->AsyncTxn(&call->context,txn_request,&call->cq_);
-
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
-
-  return Response::create(call);
+	return Response::create(call);
 }
 
 
