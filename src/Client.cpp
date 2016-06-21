@@ -2,8 +2,6 @@
 #include "etcd/Client.hpp"
 #include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
-#include "v3/include/AsyncDelResponse.hpp"
-#include "v3/include/AsyncModifyResponse.hpp"
 #include "v3/include/Utils.hpp"
 #include <iostream>
 
