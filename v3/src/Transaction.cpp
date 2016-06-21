@@ -14,12 +14,9 @@ using etcdserverpb::RequestOp;
 using etcdserverpb::DeleteRangeRequest;
 
 etcdv3::Transaction::Transaction() {
-	// TODO Auto-generated constructor stub
-
 }
 
 etcdv3::Transaction::Transaction(const std::string& key) : key(key) {
-
 }
 
 void etcdv3::Transaction::init_compare(Compare::CompareResult result, Compare::CompareTarget target){
@@ -49,6 +46,9 @@ void etcdv3::Transaction::init_compare(int old_index, Compare::CompareResult res
 	compare->set_mod_revision(old_index);
 }
 
+/**
+ * get key on failure
+ */
 void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) {
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest()); //then this can be just a raw pointer
 	get_request->set_key(key);
@@ -56,6 +56,9 @@ void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) 
 	req_failure->set_allocated_request_range(get_request.release()); //why not get()?
 }
 
+/**
+ * get key on failure, get key before put, modify and then get updated key
+ */
 void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, std::string const &value) {
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
@@ -74,6 +77,9 @@ void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, st
 	req_failure->set_allocated_request_range(get_request.release());
 }
 
+/**
+ * get key, delete
+ */
 void etcdv3::Transaction::setup_delete_failure_operation(std::string const &key, std::string const &range_end, bool recursive) {
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
@@ -136,14 +142,17 @@ void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& val
 	req_success->set_allocated_request_range(get_request.release());
 }
 
+/**
+ * get key, delete
+ */
 void etcdv3::Transaction::setup_delete_sequence(std::string const &key, std::string const &range_end, bool recursive) {
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
 	if(recursive)
 	{
-	get_request->set_range_end(range_end);
-	get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-	get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
+		get_request->set_range_end(range_end);
+		get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
+		get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
 	}
 
 	RequestOp* req_success = txn_request.add_success();
@@ -153,7 +162,7 @@ void etcdv3::Transaction::setup_delete_sequence(std::string const &key, std::str
 	del_request->set_key(key);
 	if(recursive)
 	{
-	del_request->set_range_end(range_end);
+		del_request->set_range_end(range_end);
 	}
 
 	req_success = txn_request.add_success();
@@ -174,5 +183,4 @@ void etcdv3::Transaction::setup_compare_and_delete_operation(std::string const& 
 
 
 etcdv3::Transaction::~Transaction() {
-	// TODO Auto-generated destructor stub
 }
