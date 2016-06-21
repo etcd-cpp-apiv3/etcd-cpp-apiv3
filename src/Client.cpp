@@ -70,15 +70,18 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::st
   return send_asyncmodify(key,value);
 }
 
+
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value)
 {
   return send_asyncmodify_if(key, value, old_value);
 }
 
+
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index)
 {
 	return send_asyncmodify_if(key, value, old_index);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
@@ -91,11 +94,13 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
 	return send_asyncrm_if(key, old_value);
 }
 
+
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
 {
 	return send_asyncrm_if(key, old_index);
 
 }
+
 
 pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
 {
@@ -103,11 +108,13 @@ pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
   return send_put_request(uri, "dir", "true");
 }
 
+
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
 
   return send_asyncdelete(key,recursive);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 {
@@ -119,6 +126,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
   return send_asyncget(key,range_end);
 }
 
+
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
 {
   web::http::uri_builder uri("/v2/keys" + key);
@@ -127,6 +135,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool rec
     uri.append_query("recursive=true");
   return send_get_request(uri);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int fromIndex, bool recursive)
 {
@@ -138,6 +147,17 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
   return send_get_request(uri);
 }
 
+
+std::shared_ptr<etcdv3::AsyncTxnResponse> etcd::Client::initiate_transaction(const std::string &operation,
+		etcdv3::Transaction& transaction)
+{
+	std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse(operation));
+	call->response_reader = stub_->AsyncTxn(&call->context, transaction.txn_request, &call->cq_);
+	call->response_reader->Finish(&call->reply, &call->status, (void*) (call.get()));
+	return call;
+}
+
+
 pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
 {
   etcdv3::Transaction transaction(key);
@@ -147,14 +167,10 @@ pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, 
   transaction.setup_basic_failure_operation(key);
   transaction.setup_basic_create_sequence(key, value);
 
-
-  //to be done in one method, where txn_request is a field of a class
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("create"));
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
-
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("create", transaction);
   return Response::create(call);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value)
 {
@@ -164,13 +180,11 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
 
   transaction.setup_basic_failure_operation(key);
   transaction.setup_compare_and_swap_sequence(value);
-    
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndSwap")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("compareAndSwap", transaction);
   return Response::create(call);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const & key, std::string const & value, int old_index)
 {
@@ -180,11 +194,8 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify_if(std::string const &
 
   transaction.setup_basic_failure_operation(key);
   transaction.setup_compare_and_swap_sequence(value);
-   
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndSwap")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("compareAndSwap", transaction);
   return Response::create(call);
 }
 
@@ -197,11 +208,8 @@ pplx::task<etcd::Response> etcd::Client::send_asyncmodify(std::string const & ke
 
   transaction.setup_basic_failure_operation(key);
   transaction.setup_compare_and_swap_sequence(value);
-  
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("update")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("update", transaction);
   return Response::create(call);
 }
 
@@ -233,13 +241,11 @@ pplx::task<etcd::Response> etcd::Client::send_asyncput(std::string const & key, 
 
   transaction.setup_set_failure_operation(key, value);
   transaction.setup_basic_create_sequence(key, value);
-
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("set")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
         
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("set", transaction);
   return Response::create(call);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & key, bool recursive)
 {
@@ -257,28 +263,24 @@ pplx::task<etcd::Response> etcd::Client::send_asyncdelete(std::string const & ke
   transaction.setup_delete_sequence(key, range_end, recursive);
   transaction.setup_delete_failure_operation(key, range_end, recursive);
 
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("delete")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
-
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("delete", transaction);
   return Response::create(call);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key, std::string const &old_value) 
 {
-	etcdv3::Transaction transaction(key);
-	transaction.init_compare(old_value, Compare::CompareResult::Compare_CompareResult_EQUAL,
+  etcdv3::Transaction transaction(key);
+  transaction.init_compare(old_value, Compare::CompareResult::Compare_CompareResult_EQUAL,
 		  Compare::CompareTarget::Compare_CompareTarget_VALUE);
 
-	transaction.setup_compare_and_delete_operation(key);
-	transaction.setup_basic_failure_operation(key);
+  transaction.setup_compare_and_delete_operation(key);
+  transaction.setup_basic_failure_operation(key);
 
-  std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndDelete")); 
-  call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-  call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
-
+  std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("compareAndDelete", transaction);
   return Response::create(call);
 }
+
 
 pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key, int old_index) {
 	etcdv3::Transaction transaction(key);
@@ -288,11 +290,6 @@ pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key,
 	transaction.setup_compare_and_delete_operation(key);
 	transaction.setup_basic_failure_operation(key);
 
-	std::shared_ptr<etcdv3::AsyncTxnResponse> call(new etcdv3::AsyncTxnResponse("compareAndDelete"));
-	call->response_reader = stub_->AsyncTxn(&call->context,transaction.txn_request,&call->cq_);
-	call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
-
+	std::shared_ptr<etcdv3::AsyncTxnResponse> call = initiate_transaction("compareAndDelete", transaction);
 	return Response::create(call);
 }
-
-
