@@ -26,6 +26,15 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
   return *this;
 }
 
+void etcdv3::AsyncTxnResponse::waitForResponse() 
+{
+  void* got_tag;
+  bool ok = false;    
+
+  cq_.Next(&got_tag, &ok);
+  GPR_ASSERT(got_tag == (void*)this);
+}
+
 etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
 {
 

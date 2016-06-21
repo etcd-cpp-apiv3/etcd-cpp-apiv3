@@ -213,71 +213,72 @@ TEST_CASE("delete a directory")
 }
 
 
-//TEST_CASE("wait for a value change")
-//{
-//  etcd::Client etcd("http://127.0.0.1:2379");
-//  etcd.set("/test/key1", "42").wait();
-//
-//  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
-//  CHECK(!res.is_done());
-//  sleep(1);
-//  CHECK(!res.is_done());
-//
-//  etcd.set("/test/key1", "43").get();
-//  sleep(1);
-//  REQUIRE(res.is_done());
-//  REQUIRE("set" == res.get().action());
-//  CHECK("43" == res.get().value().as_string());
-//}
-//
-//TEST_CASE("wait for a directory change")
-//{
-//  etcd::Client etcd("http://127.0.0.1:4001");
-//
-//  pplx::task<etcd::Response> res = etcd.watch("/test", true);
-//  CHECK(!res.is_done());
-//  sleep(1);
-//  CHECK(!res.is_done());
-//
-//  etcd.add("/test/key4", "44").wait();
-//  sleep(1);
-//  REQUIRE(res.is_done());
-//  CHECK("create" == res.get().action());
-//  CHECK("44" == res.get().value().as_string());
-//
-//  pplx::task<etcd::Response> res2 = etcd.watch("/test", true);
-//  CHECK(!res2.is_done());
-//  sleep(1);
-//  CHECK(!res2.is_done());
-//
-//  etcd.set("/test/key4", "45").wait();
-//  REQUIRE(res2.is_done());
-//  CHECK("set" == res2.get().action());
-//  CHECK("45" == res2.get().value().as_string());
-//}
-//
-//TEST_CASE("watch changes in the past")
-//{
-//  etcd::Client etcd("http://127.0.0.1:4001");
-//
-//  int index = etcd.set("/test/key1", "42").get().index();
-//
-//  etcd.set("/test/key1", "43").wait();
-//  etcd.set("/test/key1", "44").wait();
-//  etcd.set("/test/key1", "45").wait();
-//
-//  etcd::Response res = etcd.watch("/test/key1", ++index).get();
-//  CHECK("set" == res.action());
-//  CHECK("43" == res.value().as_string());
-//
-//  res = etcd.watch("/test/key1", ++index).get();
-//  CHECK("set" == res.action());
-//  CHECK("44" == res.value().as_string());
-//
-//  res = etcd.watch("/test", ++index, true).get();
-//  CHECK("set" == res.action());
-//  CHECK("45" == res.value().as_string());
-//}
+TEST_CASE("wait for a value change")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd.set("/test/key1", "42").wait();
+
+  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
+  CHECK(!res.is_done());
+  sleep(1);
+  CHECK(!res.is_done());
+  
+  etcd.set("/test/key1", "43").get();
+  sleep(1);
+  REQUIRE(res.is_done());
+  REQUIRE("set" == res.get().action());
+  CHECK("43" == res.get().value().as_string());
+}
+
+TEST_CASE("wait for a directory change")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  pplx::task<etcd::Response> res = etcd.watch("/test", true);
+  CHECK(!res.is_done());
+  sleep(1);
+  CHECK(!res.is_done());
+
+  etcd.add("/test/key4", "44").wait();
+  sleep(1);
+  REQUIRE(res.is_done());
+  CHECK("create" == res.get().action());
+  CHECK("44" == res.get().value().as_string());
+
+  pplx::task<etcd::Response> res2 = etcd.watch("/test", true);
+  CHECK(!res2.is_done());
+  sleep(1);
+  CHECK(!res2.is_done());
+
+  etcd.set("/test/key4", "45").wait();
+  sleep(1);
+  REQUIRE(res2.is_done());
+  CHECK("set" == res2.get().action());
+  CHECK("45" == res2.get().value().as_string());
+}
+
+TEST_CASE("watch changes in the past")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  int index = etcd.set("/test/key1", "42").get().index();
+
+  etcd.set("/test/key1", "43").wait();
+  etcd.set("/test/key1", "44").wait();
+  etcd.set("/test/key1", "45").wait();
+
+  etcd::Response res = etcd.watch("/test/key1", ++index).get();
+  CHECK("set" == res.action());
+  CHECK("43" == res.value().as_string());
+
+  res = etcd.watch("/test/key1", ++index).get();
+  CHECK("set" == res.action());
+  CHECK("44" == res.value().as_string());
+
+  res = etcd.watch("/test", ++index, true).get();
+  CHECK("set" == res.action());
+  CHECK("45" == res.value().as_string());
+}
 
 
 TEST_CASE("cleanup")

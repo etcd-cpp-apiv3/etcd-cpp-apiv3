@@ -155,6 +155,8 @@ namespace etcd
     pplx::task<etcd::Response> send_asyncdelete(std::string const & key, bool recursive);
     pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, std::string const &old_value);
     pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, int old_index);
+    pplx::task<etcd::Response> send_asyncwatch(std::string const & key, bool recursive);
+    pplx::task<etcd::Response> send_asyncwatch(std::string const & key, int fromIndex, bool recursive);
 
 private:
 	std::shared_ptr<etcdv3::AsyncTxnResponse> initiate_transaction(const std::string &operation,

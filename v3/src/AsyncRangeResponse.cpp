@@ -22,6 +22,15 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::operator=(const etcdv3::
   return *this;
 }
 
+void etcdv3::AsyncRangeResponse::waitForResponse() 
+{
+  void* got_tag;
+  bool ok = false;    
+
+  cq_.Next(&got_tag, &ok);
+  GPR_ASSERT(got_tag == (void*)this);
+}
+
 etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
 {
   index = reply.header().revision();
