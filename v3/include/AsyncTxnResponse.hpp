@@ -20,12 +20,13 @@ namespace etcdv3
       AsyncTxnResponse(const std::string act){action = act;};
       AsyncTxnResponse(const AsyncTxnResponse& other);
       AsyncTxnResponse& operator=(const AsyncTxnResponse& other);
+      AsyncTxnResponse& ParseResponse();
+      void waitForResponse();
       TxnResponse reply;
       Status status;
       ClientContext context;
       CompletionQueue cq_;
       std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-      AsyncTxnResponse& ParseResponse();
   };
 }
 

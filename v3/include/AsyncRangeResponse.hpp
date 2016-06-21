@@ -20,13 +20,14 @@ namespace etcdv3
       AsyncRangeResponse(){action = "get";};
       AsyncRangeResponse(const AsyncRangeResponse& other);
       AsyncRangeResponse& operator=(const AsyncRangeResponse& other);
+      AsyncRangeResponse& ParseResponse();
+      void waitForResponse();
       RangeResponse reply;
       etcdserverpb::PutResponse r;
       Status status;
       ClientContext context;
       CompletionQueue cq_;
       std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-      AsyncRangeResponse& ParseResponse();
   };
 }
 

@@ -4,6 +4,7 @@
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncDelResponse.hpp"
 #include "v3/include/AsyncModifyResponse.hpp"
+#include "v3/include/AsyncWatchResponse.hpp"
 #include "v3/include/Utils.hpp"
 #include <iostream>
 
@@ -32,6 +33,7 @@ etcd::Client::Client(std::string const & address)
   }
   std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
   stub_= KV::NewStub(channel);
+  watchServiceStub= Watch::NewStub(channel);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)
@@ -122,21 +124,12 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("wait=true");
-  if (recursive)
-    uri.append_query("recursive=true");
-  return send_get_request(uri);
+  return send_asyncwatch(key,recursive);
 }
 
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int fromIndex, bool recursive)
 {
-  web::http::uri_builder uri("/v2/keys" + key);
-  uri.append_query("wait=true");
-  uri.append_query("waitIndex", fromIndex);
-  if (recursive)
-    uri.append_query("recursive=true");
-  return send_get_request(uri);
+  return send_asyncwatch(key, fromIndex, recursive);
 }
 
 pplx::task<etcd::Response> etcd::Client::send_asyncadd(std::string const & key, std::string const & value)
@@ -535,6 +528,57 @@ pplx::task<etcd::Response> etcd::Client::send_asyncrm_if(std::string const &key,
   call->response_reader->Finish(&call->reply, &call->status, (void*)call.get());
 
   return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::send_asyncwatch(std::string const & key, bool recursive)
+{
+  std::shared_ptr<etcdv3::AsyncWatchResponse> call(new etcdv3::AsyncWatchResponse()); 
+  call->stream = watchServiceStub->AsyncWatch(&call->context,&call->cq_,(void*)call.get());
+
+  WatchRequest watch_req;
+  WatchCreateRequest watch_create_req;
+  watch_create_req.set_key(key);
+
+  std::string range_end(key); 
+  if(recursive)
+  {
+    int ascii = (int)range_end[range_end.length()-1];
+    range_end.back() = ascii+1;
+    watch_create_req.set_range_end(range_end);
+  }
+
+
+  watch_req.mutable_create_request()->CopyFrom(watch_create_req);
+  call->stream->Write(watch_req, (void*)call.get());
+  call->stub_ = stub_.get();
+ 
+  return Response::create(call);  
+}
+
+pplx::task<etcd::Response> etcd::Client::send_asyncwatch(std::string const & key, int fromIndex, bool recursive)
+{
+  std::shared_ptr<etcdv3::AsyncWatchResponse> call(new etcdv3::AsyncWatchResponse()); 
+  call->stream = watchServiceStub->AsyncWatch(&call->context,&call->cq_,(void*)call.get());
+
+  WatchRequest watch_req;
+  WatchCreateRequest watch_create_req;
+  watch_create_req.set_key(key);
+  watch_create_req.set_start_revision(fromIndex);
+
+  std::string range_end(key); 
+  if(recursive)
+  {
+    int ascii = (int)range_end[range_end.length()-1];
+    range_end.back() = ascii+1;
+    watch_create_req.set_range_end(range_end);
+  }
+
+
+  watch_req.mutable_create_request()->CopyFrom(watch_create_req);
+  call->stream->Write(watch_req, (void*)call.get());
+  call->stub_ = stub_.get();
+ 
+  return Response::create(call);  
 }
 
 

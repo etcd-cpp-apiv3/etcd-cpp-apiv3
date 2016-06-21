@@ -29,13 +29,9 @@ namespace etcd
     {
       return pplx::task<etcd::Response>([call]()
       {
-        void* got_tag;
-        bool ok = false;
         etcd::Response resp;     
 
-        //blocking
-        call->cq_.Next(&got_tag, &ok);
-        GPR_ASSERT(got_tag == (void*)call.get());
+        call->waitForResponse();
 
         auto v3resp = call->ParseResponse();
           
