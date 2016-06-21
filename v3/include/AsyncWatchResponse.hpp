@@ -19,7 +19,7 @@ namespace etcdv3
   class AsyncWatchResponse : public etcdv3::V3Response
   {
     public:
-      AsyncWatchResponse(){};
+      AsyncWatchResponse(){fromIndex = -1;};
       AsyncWatchResponse(const std::string act){action = act;};
       AsyncWatchResponse(const AsyncWatchResponse& other);
       AsyncWatchResponse& operator=(const AsyncWatchResponse& other);
@@ -31,6 +31,7 @@ namespace etcdv3
       CompletionQueue cq_;
       std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;
       KV::Stub* stub_;
+      int fromIndex;
   };
 }
 

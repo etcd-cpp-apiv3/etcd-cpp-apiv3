@@ -335,6 +335,7 @@ pplx::task<etcd::Response> etcd::Client::send_asyncwatch(std::string const & key
   watch_req.mutable_create_request()->CopyFrom(watch_create_req);
   call->stream->Write(watch_req, (void*)call.get());
   call->stub_ = stub_.get();
+  call->fromIndex = fromIndex;
  
   return Response::create(call);  
 }

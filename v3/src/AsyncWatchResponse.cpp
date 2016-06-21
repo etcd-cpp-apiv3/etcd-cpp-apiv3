@@ -56,6 +56,7 @@ etcdv3::AsyncWatchResponse& etcdv3::AsyncWatchResponse::ParseResponse()
 
   mvccpb::KeyValue kv;
   std::map<std::string, mvccpb::KeyValue> mapValue;
+  std::map<std::string, mvccpb::KeyValue> prev_mapValue;
 
   for(int cnt =0; cnt < reply.events_size(); cnt++)
   {
@@ -73,7 +74,6 @@ etcdv3::AsyncWatchResponse& etcdv3::AsyncWatchResponse::ParseResponse()
         {
           action = "set";
         }
-        //values.push_back(kv);
         mapValue.emplace(kv.key(), kv);
       }
     }
@@ -84,7 +84,7 @@ etcdv3::AsyncWatchResponse& etcdv3::AsyncWatchResponse::ParseResponse()
     //get previous value index - 1
     RangeRequest get_request;
     get_request.set_key(kv.key());
-    get_request.set_revision(index - 1);
+    get_request.set_revision((fromIndex >=0)?fromIndex - 1:index-1);
 
     RangeResponse response;
     ClientContext ctx;
@@ -94,10 +94,15 @@ etcdv3::AsyncWatchResponse& etcdv3::AsyncWatchResponse::ParseResponse()
     {
       for(int cnt=0; cnt < response.kvs_size(); cnt++)
       {
-        prev_values.push_back(response.kvs(cnt));
-      }
+        prev_mapValue.emplace(response.kvs(cnt).key(),response.kvs(cnt));
+      }     
     } 
   }
+  for(auto x: prev_mapValue) 
+  {
+    prev_values.push_back(x.second);  
+  } 
+
   for(auto x: mapValue) 
   {
     values.push_back(x.second);
