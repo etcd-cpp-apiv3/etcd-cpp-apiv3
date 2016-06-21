@@ -23,7 +23,6 @@ namespace etcdv3
       AsyncRangeResponse& ParseResponse();
       void waitForResponse();
       RangeResponse reply;
-      etcdserverpb::PutResponse r;
       Status status;
       ClientContext context;
       CompletionQueue cq_;

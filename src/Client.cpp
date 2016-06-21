@@ -3,7 +3,6 @@
 #include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncWatchResponse.hpp"
-#include "v3/include/Utils.hpp"
 #include "v3/include/Transaction.hpp"
 #include <iostream>
 
