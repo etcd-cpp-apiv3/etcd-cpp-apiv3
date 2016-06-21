@@ -222,7 +222,7 @@ TEST_CASE("wait for a value change")
   CHECK(!res.is_done());
   sleep(1);
   CHECK(!res.is_done());
-
+  
   etcd.set("/test/key1", "43").get();
   sleep(1);
   REQUIRE(res.is_done());
@@ -232,7 +232,7 @@ TEST_CASE("wait for a value change")
 
 TEST_CASE("wait for a directory change")
 {
-  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd::Client etcd("http://127.0.0.1:2379");
 
   pplx::task<etcd::Response> res = etcd.watch("/test", true);
   CHECK(!res.is_done());
@@ -251,6 +251,7 @@ TEST_CASE("wait for a directory change")
   CHECK(!res2.is_done());
 
   etcd.set("/test/key4", "45").wait();
+  sleep(1);
   REQUIRE(res2.is_done());
   CHECK("set" == res2.get().action());
   CHECK("45" == res2.get().value().as_string());
@@ -258,7 +259,7 @@ TEST_CASE("wait for a directory change")
 
 TEST_CASE("watch changes in the past")
 {
-  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd::Client etcd("http://127.0.0.1:2379");
 
   int index = etcd.set("/test/key1", "42").get().index();
 
