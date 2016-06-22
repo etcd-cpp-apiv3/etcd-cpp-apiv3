@@ -135,8 +135,6 @@ namespace etcd
 
   protected:
 
-    pplx::task<Response> send_get_request(web::http::uri_builder & uri);
-    pplx::task<Response> send_del_request(web::http::uri_builder & uri);
     pplx::task<Response> send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value);
 
     web::http::client::http_client client;

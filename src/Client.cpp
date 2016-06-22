@@ -34,16 +34,6 @@ etcd::Client::Client(std::string const & address)
   watchServiceStub= Watch::NewStub(channel);
 }
 
-pplx::task<etcd::Response> etcd::Client::send_get_request(web::http::uri_builder & uri)
-{
-  return Response::create(client.request(web::http::methods::GET, uri.to_string()));
-}
-
-pplx::task<etcd::Response> etcd::Client::send_del_request(web::http::uri_builder & uri)
-{
-  return Response::create(client.request(web::http::methods::DEL, uri.to_string()));
-}
-
 pplx::task<etcd::Response> etcd::Client::send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value)
 {
   std::string data = key + "=" + value;

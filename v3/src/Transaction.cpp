@@ -1,10 +1,3 @@
-/*
- * Transaction.cpp
- *
- *  Created on: Jun 21, 2016
- *      Author: ubuntu
- */
-
 #include "v3/include/Transaction.hpp"
 
 using etcdserverpb::Compare;
@@ -50,10 +43,10 @@ void etcdv3::Transaction::init_compare(int old_index, Compare::CompareResult res
  * get key on failure
  */
 void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) {
-	std::unique_ptr<RangeRequest> get_request(new RangeRequest()); //then this can be just a raw pointer
+	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
 	RequestOp* req_failure = txn_request.add_failure();
-	req_failure->set_allocated_request_range(get_request.release()); //why not get()?
+	req_failure->set_allocated_request_range(get_request.release());
 }
 
 /**

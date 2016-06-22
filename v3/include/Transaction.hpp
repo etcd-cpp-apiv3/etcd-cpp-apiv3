@@ -1,10 +1,3 @@
-/*
- * Transaction.hpp
- *
- *  Created on: Jun 21, 2016
- *      Author: ubuntu
- */
-
 #ifndef V3_SRC_TRANSACTION_HPP_
 #define V3_SRC_TRANSACTION_HPP_
 
@@ -38,6 +31,6 @@ private:
 	std::string key;
 };
 
-} /* namespace etcdv3 */
+}
 
-#endif /* V3_SRC_TRANSACTION_HPP_ */
+#endif
