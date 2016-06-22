@@ -5,6 +5,15 @@ etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-c
    * [C++ REST SDK](http://casablanca.codeplex.com/)
    * Boost libraries
    * [Catch](https://github.com/philsquared/Catch) for testing 
+   * protobuf (https://github.com/google/protobuf/blob/master/src/README.md)
+   * grpc (https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md)
+
+## compiling .proto
+Proto files are stored iin /proto.
+You can compile it like this(if you are running this command inside /proto folder)
+$ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
+$ protoc -I . --cpp_out=. ./*.proto
+
 
 ## generic notes
 
