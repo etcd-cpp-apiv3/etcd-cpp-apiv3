@@ -20,7 +20,6 @@ using etcdserverpb::WatchResponse;
 using etcdserverpb::WatchCreateRequest;
 
 etcd::Client::Client(std::string const & address)
-  : client(address)
 {
   std::string stripped_address(address);
   std::string substr("http://");
@@ -34,12 +33,6 @@ etcd::Client::Client(std::string const & address)
   watchServiceStub= Watch::NewStub(channel);
 }
 
-pplx::task<etcd::Response> etcd::Client::send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value)
-{
-  std::string data = key + "=" + value;
-  std::string content_type = "application/x-www-form-urlencoded; param=" + key;
-  return Response::create(client.request(web::http::methods::PUT, uri.to_string(), data.c_str(), content_type.c_str()));
-}
 
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
@@ -92,12 +85,6 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_
 
 }
 
-
-pplx::task<etcd::Response> etcd::Client::mkdir(std::string const & key)
-{
-  web::http::uri_builder uri("/v2/keys" + key);
-  return send_put_request(uri, "dir", "true");
-}
 
 
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)

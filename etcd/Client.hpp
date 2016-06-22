@@ -102,11 +102,6 @@ namespace etcd
      */
     pplx::task<Response> ls(std::string const & key);
 
-    /**
-     * Creates a new directory node. Fails if the parent directory dos not exists or not a directory.
-     * @param key is the directory to be created to be listed
-     */
-    pplx::task<Response> mkdir(std::string const & key);
 
     /**
      * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
@@ -134,10 +129,6 @@ namespace etcd
     pplx::task<Response> watch(std::string const & key, int fromIndex, bool recursive = false);
 
   protected:
-
-    pplx::task<Response> send_put_request(web::http::uri_builder & uri, std::string const & key, std::string const & value);
-
-    web::http::client::http_client client;
 
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
