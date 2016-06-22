@@ -1,4 +1,4 @@
-etcd-cpp-api is a C++ API for [etcd](https://github.com/coreos/etcd).
+etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-cpp-apiv3.git)
 
 ## Requirements
 
@@ -14,9 +14,9 @@ etcd-cpp-api is a C++ API for [etcd](https://github.com/coreos/etcd).
   std::cout << response.value().as_string();
 ```
 
-Methods of the etcd client object are sending the corresponding HTTP requests and are returning
+Methods of the etcd client object are sending the corresponding gRPC requests and are returning
 immediatelly with a ```pplx::task``` object. The task object is responsible for handling the
-reception of the HTTP response as well as parsing the JSON body of the response. All of this is done
+reception of the HTTP response as well as parsing the gRPC of the response. All of this is done
 asynchronously in a background thread so you can continue your code to do other operations while the
 current etcd operation is executing in the background or you can wait for the response with the
 ```wait()``` or ```get()``` methods if a synchron behaviour is enough for your needs. These methods
@@ -166,22 +166,16 @@ should point to an existing value. There are conditional variations for deletion
      failed" error (code 101)
 
 ### handling directory nodes
+Directory nodes are not supported anymore in etcdv3.
 
-Directory nodes can be created, listed and deleted with the mkdir, ls and rmdir methods. For
-directory creation you just have to specify the full path of the new directory. Naturally the parent
-has to exists and it has to be another directory.
+However, ls and rmdir will list/delete keys defined by the prefix. mkdir method is removed since 
+etcdv3 treats everything as keys. 
 
-```c++
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::Response resp = etcd.mkdir("/test").get();
-```
 
 When you list a directory the response object's ```keys()``` and ```values()``` methods gives you a
-vector of directory entry names and values. The ```value()``` method with an integer parameter also
+vector of key names and values. The ```value()``` method with an integer parameter also
 returns with the i-th element of the values vector, so ```response.values()[i] ==
-response.value(i)```. Entry names in the keys vector are relative to the parent directory. Elements
-in the values vector can be subdirectories or actual string values. To decide which one you can use
-the ```is_dir()``` method.
+response.value(i)```. 
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
@@ -196,7 +190,7 @@ the ```is_dir()``` method.
   }
 ```
 
-Directories can only be deleted if they are empty by default. If you want the delete recursively
+If you want the delete recursively
 then you have to pass a second ```true``` parameter to rmdir. This parameter defaults to ```false```.
 
 ```c++
