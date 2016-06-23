@@ -229,13 +229,15 @@ response.value(i)```.
 
 3. Removing directory:
 If you want the delete recursively then you have to pass a second ```true``` parameter 
-to rmdir and supply a prefix. All keys that match the prefix will
+to rmdir and supply a key. This key will be treated as a prefix. All keys that match the prefix will
 be deleted. This parameter defaults to ```false```.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
   etcd.rmdir("/test", true).get();
 ```
+However, if recursive parameter is false, functionality will be the same as just deleting a key.
+The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
 
 ### watching for changes
 
