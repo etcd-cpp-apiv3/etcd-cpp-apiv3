@@ -183,6 +183,31 @@ Directory nodes are not supported anymore in etcdv3.
 However, ls and rmdir will list/delete keys defined by the prefix. mkdir method is removed since 
 etcdv3 treats everything as keys. 
 
+1. Creating a directory:
+Creating a directory is not supported anymore in etcdv3 cpp client. Users should remove the 
+API from their code.
+
+2. Listing a directory:
+Listing directory in etcd3 cpp client will return all keys that matched the given prefix recursively.
+
+```c++
+  etcd.set("/test/key1", "value1").wait();
+  etcd.set("/test/key2", "value2").wait();
+  etcd.set("/test/key3", "value3").wait();
+  etcd.set("/test/subdir/foo", "foo").wait();
+  
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+```
+resp.key() will have the following values:
+/test/key1 
+/test/key2 
+/test/key3
+/test/subdir/foo
+
+
+Note: Regarding the returned keys when listing a directory:
+In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is treated as keys in etcdv3.
+While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should be created first before you can set "key1".
 
 When you list a directory the response object's ```keys()``` and ```values()``` methods gives you a
 vector of key names and values. The ```value()``` method with an integer parameter also
@@ -201,33 +226,8 @@ response.value(i)```.
       std::cout << " = " << resp.value(i).as_string() << std::endl;
   }
 ```
-Note regarding the returned keys when listing a directory:
-```c++
-  etcd.set("/test/new_dir/key1", "value1").wait();
-  etcd.set("/test/new_dir/key2", "value2").wait();
-  
-  etcd::Response resp = etcd.ls("/test/new_dir").get();
-  std::cout << resp.key(0); 
-```
-In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is treated as keys in etcdv3.
-While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should be created first before you can set "key1".
 
-listing directory in etcd3 cpp client will list all keys that matched the given prefix recursively.
-
-```c++
-  etcd.set("/test/key1", "value1").wait();
-  etcd.set("/test/key2", "value2").wait();
-  etcd.set("/test/key3", "value3").wait();
-  etcd.set("/test/key3/foo", "foo").wait();
-  
-  etcd::Response resp = etcd.ls("/test/new_dir").get();
-```
-resp.key() will have the following values:
-/test/key1 
-/test/key2 
-/test/key3
-/test/key3/foo
-
+3. Removing directory:
 If you want the delete recursively then you have to pass a second ```true``` parameter 
 to rmdir and supply a prefix. All keys that match the prefix will
 be deleted. This parameter defaults to ```false```.
