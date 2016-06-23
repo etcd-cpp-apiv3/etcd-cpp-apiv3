@@ -8,8 +8,11 @@ etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-c
    * protobuf (https://github.com/google/protobuf/blob/master/src/README.md)
    * grpc (https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md)
 
+## Updates from etcdv2 cpp client to etcdv3 cpp client  
+See "handling directory nodes" section
+
 ## compiling .proto
-Proto files are stored iin /proto.
+Proto files are stored in /proto. The proto files defined the interface of etcdv3.
 You can compile it like this(if you are running this command inside /proto folder)
 $ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
 $ protoc -I . --cpp_out=. ./*.proto
@@ -198,9 +201,36 @@ response.value(i)```.
       std::cout << " = " << resp.value(i).as_string() << std::endl;
   }
 ```
+Note regarding the returned keys when listing a directory:
+```c++
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+  std::cout << resp.key(0); 
+```
+In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is treated as keys in etcdv3.
+While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should be created first before you can set "key1".
 
-If you want the delete recursively
-then you have to pass a second ```true``` parameter to rmdir. This parameter defaults to ```false```.
+listing directory in etcd3 cpp client will list all keys that matched the given prefix recursively.
+
+```c++
+  etcd.set("/test/key1", "value1").wait();
+  etcd.set("/test/key2", "value2").wait();
+  etcd.set("/test/key3", "value3").wait();
+  etcd.set("/test/key3/foo", "foo").wait();
+  
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+```
+resp.key() will have the following values:
+/test/key1 
+/test/key2 
+/test/key3
+/test/key3/foo
+
+If you want the delete recursively then you have to pass a second ```true``` parameter 
+to rmdir and supply a prefix. All keys that match the prefix will
+be deleted. This parameter defaults to ```false```.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
