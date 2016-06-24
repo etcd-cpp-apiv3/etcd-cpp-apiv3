@@ -245,15 +245,16 @@ Watching for a change is possible with the ```watch()``` operation of the client
 simply does not deliver a response object until the watched value changes in any way (modified or
 deleted). When a change happens the returned result object will be the same as the result object of
 the modification operation. So if the change is triggered by a value change, then
-```response.action()``` will return "set" or "modify", ```response.value()``` will hold the new
+```response.action()``` will return "set", ```response.value()``` will hold the new
 value and ```response.prev_value()``` will contain the previous value. In case of a delete
 ```response.action()``` will return "delete", ```response.value()``` will be empty and should not be
 called at all and ```response.prev_value()``` will contain the deleted value.
 
-It is also possible to watch a whole directory subtree for changes with passing ```true``` to the second
-```recursive``` parameter of ```watch``` (this parameter defaults to ```false``` if omitted). In
-this case the modified value object's ```key()``` method can be handy to determine what key is
-actually changed. Since this can be a long lasting operation you have to be prepared that is
+As mentioned in the section "handling directory nodes", directory nodes are not supported anymore in etcdv3.
+However it is still possible to watch a whole "directory subtree", or more specifically a set of keys that match the 
+prefix, for changes with passing ```true``` to the second ```recursive``` parameter of ```watch``` 
+(this parameter defaults to ```false``` if omitted). In this case the modified value object's ```key()``` method can be 
+handy to determine what key is actually changed. Since this can be a long lasting operation you have to be prepared that is
 terminated by an exception and you have to restart the watch operation.
 
 The watch also accepts an index parameter that specifies what is the first change we are interested
