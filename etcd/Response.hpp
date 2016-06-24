@@ -23,7 +23,6 @@ namespace etcd
   class Response
   {
   public:
-    static pplx::task<Response> create(pplx::task<web::http::http_response> response_task);
 
     template<typename T>static pplx::task<etcd::Response> create(std::shared_ptr<T> call)
     {
@@ -99,7 +98,6 @@ namespace etcd
     std::string const & key(int index) const;
 
   protected:  
-    Response(web::http::http_response http_response, web::json::value json_value);
     Response(const etcdv3::V3Response& response);
 
     int         _error_code;

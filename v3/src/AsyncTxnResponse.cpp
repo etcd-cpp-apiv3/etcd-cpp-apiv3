@@ -1,8 +1,13 @@
 #include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
+#include "v3/include/action_constants.hpp"
 
 using etcdserverpb::ResponseOp;
 
+etcdv3::AsyncTxnResponse::AsyncTxnResponse(TxnResponse& resp) 
+{
+  reply = resp;
+}
 
 etcdv3::AsyncTxnResponse::AsyncTxnResponse(const etcdv3::AsyncTxnResponse& other) 
 {
@@ -12,7 +17,6 @@ etcdv3::AsyncTxnResponse::AsyncTxnResponse(const etcdv3::AsyncTxnResponse& other
   action = other.action;
   values = other.values;
   prev_values = other.prev_values;
-
 }
 
 etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::AsyncTxnResponse& other) 
@@ -26,78 +30,30 @@ etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::operator=(const etcdv3::Asyn
   return *this;
 }
 
-void etcdv3::AsyncTxnResponse::waitForResponse() 
+void etcdv3::AsyncTxnResponse::ParseResponse()
 {
-  void* got_tag;
-  bool ok = false;    
-
-  cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(got_tag == (void*)this);
-}
-
-etcdv3::AsyncTxnResponse& etcdv3::AsyncTxnResponse::ParseResponse()
-{
-
   index = reply.header().revision();
-  if(!status.ok())
+  std::vector<mvccpb::KeyValue> range_kvs;
+  std::vector<mvccpb::KeyValue> prev_range_kvs;
+  for(int index=0; index < reply.responses_size(); index++)
   {
-    error_code = status.error_code();
-    error_message = status.error_message();
-  }
-  else
-  {
-    std::vector<mvccpb::KeyValue> range_kvs;
-    std::vector<mvccpb::KeyValue> prev_range_kvs;
-    for(int index=0; index < reply.responses_size(); index++)
+    auto resp = reply.responses(index);
+    if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
     {
-      auto resp = reply.responses(index);
-      if(ResponseOp::ResponseCase::kResponseRange == resp.response_case())
-      {
-        AsyncRangeResponse response;
-        response.reply = resp.response_range();
-        auto v3resp = response.ParseResponse();
+      AsyncRangeResponse response(*(resp.mutable_response_range()));
+      response.ParseResponse();
      
-        error_code = v3resp.error_code;
-        error_message = v3resp.error_message;
+      error_code = response.error_code;
+      error_message = response.error_message;
 
-        if(!v3resp.values.empty())
-        {
-          prev_range_kvs=range_kvs;
-          range_kvs = v3resp.values;
-        }
-      }
-      else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
+      if(!response.values.empty())
       {
-        //do nothing yet
+        prev_range_kvs=range_kvs;
+        range_kvs = response.values;
       }
     }
-
-    if(!reply.succeeded())
-    { 
-      if(action == "create")
-      {
-        error_code=105;
-        error_message="Key already exists";
-      }
-      else if(action == "compareAndSwap" || action == "compareAndDelete")
-      {
-        if(!error_code)
-        {
-          error_code=101;
-          error_message="Compare failed";
-        }
-      }
-    }
-
-    prev_values = prev_range_kvs;
-
-    values = range_kvs;    
-
-    if(action == "delete" || action == "compareAndDelete")
-    {
-      prev_values = values;
-    }
-
-  }       
-  return *this;
+  }
+  prev_values = prev_range_kvs;
+  values = range_kvs; 
+  
 }

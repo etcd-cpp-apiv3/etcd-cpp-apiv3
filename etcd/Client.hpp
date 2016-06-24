@@ -133,20 +133,6 @@ namespace etcd
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
 
-    pplx::task<etcd::Response> send_asyncput(const std::string& key, const std::string& value);
-    pplx::task<etcd::Response> send_asyncadd(std::string const & key, const std::string& value);
-    pplx::task<etcd::Response> send_asyncmodify(std::string const & key, std::string const & value);
-    pplx::task<etcd::Response> send_asyncget(std::string const & key,std::string const& range_end="");
-    pplx::task<etcd::Response> send_put(const std::string& key, const std::string& value);
-    pplx::task<etcd::Response> send_get(std::string const & key);
-    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, std::string const & old_value);  
-    pplx::task<etcd::Response> send_asyncmodify_if(std::string const & key, std::string const & value, int old_index);
-    pplx::task<etcd::Response> send_asyncdelete(std::string const & key, bool recursive);
-    pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, std::string const &old_value);
-    pplx::task<etcd::Response> send_asyncrm_if(std::string const &key, int old_index);
-    pplx::task<etcd::Response> send_asyncwatch(std::string const & key, bool recursive);
-    pplx::task<etcd::Response> send_asyncwatch(std::string const & key, int fromIndex, bool recursive);
-
 private:
 	std::shared_ptr<etcdv3::AsyncTxnResponse> initiate_transaction(const std::string &operation,
 			etcdv3::Transaction& transaction);

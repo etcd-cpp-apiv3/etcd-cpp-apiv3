@@ -1,4 +1,10 @@
 #include "v3/include/AsyncRangeResponse.hpp"
+#include "v3/include/action_constants.hpp"
+
+etcdv3::AsyncRangeResponse::AsyncRangeResponse(RangeResponse& resp) 
+{
+  reply = resp;
+}
 
 etcdv3::AsyncRangeResponse::AsyncRangeResponse(const etcdv3::AsyncRangeResponse& other) 
 {
@@ -22,37 +28,17 @@ etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::operator=(const etcdv3::
   return *this;
 }
 
-void etcdv3::AsyncRangeResponse::waitForResponse() 
-{
-  void* got_tag;
-  bool ok = false;    
-
-  cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(got_tag == (void*)this);
-}
-
-etcdv3::AsyncRangeResponse& etcdv3::AsyncRangeResponse::ParseResponse()
+void etcdv3::AsyncRangeResponse::ParseResponse()
 {
   index = reply.header().revision();
-  if(!status.ok())
+  if(reply.kvs_size() == 0)
   {
-    error_code = status.error_code();
-    error_message = status.error_message();
+    error_code=100;
+    error_message="Key not found";
   }
-  else
+
+  for(int index=0; index < reply.kvs_size(); index++)
   {
-
-    if(reply.kvs_size() == 0)
-    {
-      error_code=100;
-      error_message="Key not found";
-    }
-
-    for(int index=0; index < reply.kvs_size(); index++)
-    {
-      values.push_back(reply.kvs(index)); 
-    }
+    values.push_back(reply.kvs(index)); 
   }
-  index = reply.header().revision();
-  return *this;
 }

@@ -1,14 +1,9 @@
 #ifndef __ASYNC_TXNRESPONSE_HPP__
 #define __ASYNC_TXNRESPONSE_HPP__
 
-#include <grpc++/grpc++.h>
-#include "proto/rpc.grpc.pb.h"
 #include "v3/include/V3Response.hpp"
+#include "proto/rpc.pb.h"
 
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Status;
 using etcdserverpb::TxnResponse;
 
 namespace etcdv3
@@ -16,17 +11,11 @@ namespace etcdv3
   class AsyncTxnResponse : public etcdv3::V3Response
   {
     public:
-      AsyncTxnResponse(){};
-      AsyncTxnResponse(const std::string act){action = act;};
-      AsyncTxnResponse(const AsyncTxnResponse& other);
+      AsyncTxnResponse(TxnResponse& resp);
       AsyncTxnResponse& operator=(const AsyncTxnResponse& other);
-      AsyncTxnResponse& ParseResponse();
-      void waitForResponse();
+      AsyncTxnResponse(const AsyncTxnResponse& other);
+      void ParseResponse();
       TxnResponse reply;
-      Status status;
-      ClientContext context;
-      CompletionQueue cq_;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
   };
 }
 
