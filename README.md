@@ -17,6 +17,10 @@ You can compile it like this(if you are running this command inside /proto folde
 $ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
 $ protoc -I . --cpp_out=. ./*.proto
 
+Protofiles for etcdv3 can be found here:
+https://github.com/coreos/etcd/tree/master/auth/authpb
+https://github.com/coreos/etcd/tree/master/etcdserver/etcdserverpb
+https://github.com/coreos/etcd/tree/master/mvcc/mvccpb
 
 ## generic notes
 
@@ -284,3 +288,9 @@ At first glance it seems that ```watch_for_changes()``` calls itself on every va
 fact it just sends the asynchron request, sets up a callback for the response and then returns.  The
 callback is executed by some thread from the pplx library's thread pool and the callback (in this
 case a small lambda function actually) will call ```watch_for_changes``` again from there.
+
+Note: etcdv3 watch functionality uses a stream for both request and response. This means that clients can 
+watch a key(s) as long as it will not terminate the stream. However, as stated above existing watch() will
+return once an event is received for the watch request(a httpv1 limitation) and watch for the key(s) will
+cancelled. Current set of API does not yet support watching a key(s) for indefinite periods. This functionality
+can be added in the future releases of etcd-cpp-clientv3.
