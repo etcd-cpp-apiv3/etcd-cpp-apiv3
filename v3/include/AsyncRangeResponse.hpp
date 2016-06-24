@@ -7,9 +7,6 @@
 
 
 using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Status;
 using etcdserverpb::RangeResponse;
 
 namespace etcdv3
@@ -17,16 +14,11 @@ namespace etcdv3
   class AsyncRangeResponse : public etcdv3::V3Response
   {
     public:
-      AsyncRangeResponse(){action = "get";};
+      AsyncRangeResponse(RangeResponse& resp);
       AsyncRangeResponse(const AsyncRangeResponse& other);
       AsyncRangeResponse& operator=(const AsyncRangeResponse& other);
-      AsyncRangeResponse& ParseResponse();
-      void waitForResponse();
+      void ParseResponse();
       RangeResponse reply;
-      Status status;
-      ClientContext context;
-      CompletionQueue cq_;
-      std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
   };
 }
 
