@@ -16,7 +16,15 @@ in etcd master branch as this fix is not yet part of any etcd release.
 See etcd documentation on how to build etcd from source:
 https://github.com/coreos/etcd/blob/master/Documentation/dl_build.md
 
-## Updates from etcdv2 cpp client to etcdv3 cpp client  
+## Compatible etcd version
+While developing the etcd-cpp-api for etcd version 3, we found a bug in etcd and was
+eventually fixed in master branch(see: https://github.com/coreos/etcd/issues/5504#event-684957506).
+This means that the etcd to be used with this etcd cpp client should be build from latest sources
+in etcd master branch.
+See etcd documentation on how to build etcd from source:
+https://github.com/coreos/etcd/blob/master/Documentation/dl_build.md
+
+## Updates from etcdv2 cpp client to etcdv3 cpp client
 See "handling directory nodes" section
 
 ## compiling .proto
