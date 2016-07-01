@@ -189,10 +189,16 @@ TEST_CASE("list a directory")
   CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
 
   etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+  CHECK("get" == resp.action());
+  REQUIRE(1 == resp.keys().size());
+  CHECK("/test/new_dir/key1" == resp.key(0));
+  CHECK("value1" == resp.value(0).as_string());
+
   etcd.set("/test/new_dir/key2", "value2").wait();
   etcd.set("/test/new_dir/sub_dir", "value3").wait();
 
-  etcd::Response resp = etcd.ls("/test/new_dir").get();
+  resp = etcd.ls("/test/new_dir").get();
   CHECK("get" == resp.action());
   REQUIRE(3 == resp.keys().size());
   CHECK("/test/new_dir/key1" == resp.key(0));

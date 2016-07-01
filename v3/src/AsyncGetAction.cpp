@@ -9,6 +9,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(std::string const & key, KV::Stub* stub_,
   get_request.set_key(key);
   if(withPrefix)
   {
+    prefix = withPrefix;
     std::string range_end(key); 
     int ascii = (int)range_end[range_end.length()-1];
     range_end.back() = ascii+1;
@@ -35,6 +36,7 @@ etcdv3::AsyncRangeResponse etcdv3::AsyncGetAction::ParseResponse()
   { 
     range_resp.ParseResponse();
     range_resp.action = etcdv3::GET_ACTION;
+    range_resp.isPrefix = prefix;
   }
     
   return range_resp;

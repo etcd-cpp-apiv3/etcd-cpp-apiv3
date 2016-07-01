@@ -10,7 +10,7 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
   _error_message = reply.error_message;
   _action = reply.action;
   int size = reply.values.size();
-  if(size > 1)
+  if(reply.isPrefix)
   {
     for(int index = 0; index < size; index++)
     {

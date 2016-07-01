@@ -20,6 +20,7 @@ namespace etcdv3
       AsyncRangeResponse ParseResponse();
       RangeResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
+      bool prefix;
   };
 }
 
