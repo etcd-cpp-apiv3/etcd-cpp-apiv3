@@ -36,6 +36,13 @@ etcd::Response::Response()
 {
 }
 
+etcd::Response::Response(int error_code, char const * error_message)
+  : _error_code(error_code),
+    _error_message(error_message),
+    _index(0)
+{
+}
+
 int etcd::Response::error_code() const
 {
   return _error_code;

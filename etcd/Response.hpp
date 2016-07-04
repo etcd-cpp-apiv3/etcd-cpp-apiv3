@@ -99,6 +99,7 @@ namespace etcd
 
   protected:  
     Response(const etcdv3::V3Response& response);
+    Response(int error_code, char const * error_message);
 
     int         _error_code;
     std::string _error_message;
@@ -108,6 +109,7 @@ namespace etcd
     Value       _prev_value;
     Values      _values;
     Keys        _keys;
+    friend class SyncClient;
   };
 }
 
