@@ -1,7 +1,6 @@
 #ifndef __ETCD_RESPONSE_HPP__
 #define __ETCD_RESPONSE_HPP__
 
-#include <cpprest/http_client.h>
 #include <string>
 #include <vector>
 
@@ -9,9 +8,11 @@
 #include <grpc++/grpc++.h>
 
 #include "v3/include/V3Response.hpp"
-#include <grpc++/grpc++.h>
 
 #include <iostream>
+namespace etcdv3 {
+  class AsyncWatchAction;
+}
 
 namespace etcd
 {
@@ -110,6 +111,7 @@ namespace etcd
     Values      _values;
     Keys        _keys;
     friend class SyncClient;
+    friend class etcdv3::AsyncWatchAction;
   };
 }
 

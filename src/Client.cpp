@@ -100,7 +100,7 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_
 
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
-  std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(key,stub_.get(),true));;
+  std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(key,stub_.get(),true));
   return Response::create(call);
 }
 

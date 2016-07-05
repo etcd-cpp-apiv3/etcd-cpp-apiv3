@@ -52,6 +52,10 @@ void etcdv3::AsyncTxnResponse::ParseResponse()
         range_kvs = response.values;
       }
     }
+    else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
+    {
+      std::cout << "number of deleted keys: " << resp.response_delete_range().deleted() <<std::endl;
+    }
   }
   prev_values = prev_range_kvs;
   values = range_kvs; 
