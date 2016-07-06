@@ -10,25 +10,26 @@ using etcdserverpb::RequestOp;
 using etcdserverpb::ResponseOp;
 using etcdserverpb::TxnRequest;
 
-etcdv3::AsyncSetAction::AsyncSetAction(std::string const & key, std::string const & value, KV::Stub* stub_, bool create) 
+etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool create)
+  : etcdv3::Actionv2(param) 
 {
-  etcdv3::Transaction transaction(key);
+  etcdv3::Transaction transaction(parameters.key);
   isCreate = create;
-  if(create)
+  if(isCreate)
   {
     transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
 		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
-    transaction.setup_basic_failure_operation(key);
-    transaction.setup_basic_create_sequence(key, value);
+    transaction.setup_basic_failure_operation(parameters.key);
+    transaction.setup_basic_create_sequence(parameters.key, parameters.value);
   }
   else
   {
     transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
 		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
-    transaction.setup_set_failure_operation(key, value);
-    transaction.setup_basic_create_sequence(key, value);
+    transaction.setup_set_failure_operation(parameters.key, parameters.value);
+    transaction.setup_basic_create_sequence(parameters.key, parameters.value);
   }
-  response_reader = stub_->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 

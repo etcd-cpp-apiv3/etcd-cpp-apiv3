@@ -7,6 +7,7 @@
 
 #include <grpc++/grpc++.h>
 
+using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using grpc::Channel;
 
@@ -17,7 +18,6 @@ namespace etcd
   public:
     Watcher(std::string const & etcd_url, std::string const & key, std::function<void(Response)> callback);
     void Cancel();
-    void AddKey(std::string const & key);
     ~Watcher();
 
   protected:
@@ -27,6 +27,7 @@ namespace etcd
     std::function<void(Response)> callback;
     pplx::task<void> currentTask;
     std::unique_ptr<Watch::Stub> watchServiceStub;
+    std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<etcdv3::AsyncWatchAction> call;
   };
 }

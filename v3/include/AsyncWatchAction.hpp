@@ -11,26 +11,23 @@
 using grpc::ClientAsyncReaderWriter;
 using etcdserverpb::WatchRequest;
 using etcdserverpb::WatchResponse;
-using etcdserverpb::KV;
-using etcdserverpb::Watch;
+
 
 namespace etcdv3
 {
-  class AsyncWatchAction : public etcdv3::Action
+  class AsyncWatchAction : public etcdv3::Actionv2
   {
     public:
-      AsyncWatchAction(std::string const & key, bool recursive, KV::Stub* stub_, Watch::Stub* watchServiceStub);
-      AsyncWatchAction(std::string const & key, int fromIndex, bool recursive, KV::Stub* stub_, Watch::Stub* watchServiceStub);
+      AsyncWatchAction(etcdv3::ActionParameters param);
       AsyncWatchResponse ParseResponse();
       void waitForResponse();
       void waitForResponse(std::function<void(etcd::Response)> callback); 
       void CancelWatch();
       void WatchReq(std::string const & key);
       WatchResponse reply;
-      KV::Stub* stub_;
-      std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;
-      bool prefix;
-    
+      KV::Stub* kv_stub;
+      std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;   
+      bool isCancelled;
   };
 }
 

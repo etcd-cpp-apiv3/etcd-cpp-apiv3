@@ -13,10 +13,10 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncUpdateAction : public etcdv3::Action
+  class AsyncUpdateAction : public etcdv3::Actionv2
   {
     public:
-      AsyncUpdateAction(std::string const & key, std::string const & value, KV::Stub* stub_);
+      AsyncUpdateAction(etcdv3::ActionParameters param);
       AsyncTxnResponse ParseResponse();
       TxnResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;

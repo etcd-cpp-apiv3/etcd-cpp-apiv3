@@ -13,14 +13,13 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncGetAction : public etcdv3::Action
+  class AsyncGetAction : public etcdv3::Actionv2
   {
     public:
-      AsyncGetAction(std::string const & key, KV::Stub* stub_, bool withPrefix=false);
+      AsyncGetAction(etcdv3::ActionParameters param);
       AsyncRangeResponse ParseResponse();
       RangeResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-      bool prefix;
   };
 }
 

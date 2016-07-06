@@ -15,6 +15,7 @@ etcd::Watcher::Watcher(std::string const & address, std::string const & key, std
   doWatch(key, callback);
 }
 
+
 etcd::Watcher::~Watcher()
 {
   call->CancelWatch();
@@ -27,42 +28,17 @@ void etcd::Watcher::Cancel()
   currentTask.wait();
 }
 
-void etcd::Watcher::AddKey(std::string const & key)
-{
-  call->WatchReq(key);
-}
-
 void etcd::Watcher::doWatch(std::string const & key, std::function<void(Response)> callback)
 {
-
-  call.reset(new etcdv3::AsyncWatchAction(key,true,NULL,watchServiceStub.get()));
+  etcdv3::ActionParameters params;
+  params.key.assign(key);
+  params.withPrefix = true;
+  params.watch_stub = watchServiceStub.get();
+  params.revision = 0;
+  call.reset(new etcdv3::AsyncWatchAction(params));
 
   currentTask = pplx::task<void>([this, callback]()
   {  
     return call->waitForResponse(callback);
   });
-
-
-  //return Response::create(call);
-
-  /*currentTask = client.request(web::http::methods::GET, uri.to_string(), cancellation_source.get_token())
-    .then([this](pplx::task<web::http::http_response> response_task)
-          {
-            try
-            {
-              auto http_response = response_task.get();
-              auto json_task = http_response.extract_json();
-              auto json_value = json_task.get();
-              callback(etcd::Response(http_response, json_value));
-            }
-            catch (std::exception const & ex)
-            {
-              if (pplx::is_task_cancellation_requested() || (ex.what() == std::string("Operation canceled")))
-                return;
-
-              if(ex.what() != std::string("Retrieving message chunk header"))
-                throw;
-            }
-            doWatch();
-          });*/
 }

@@ -4,22 +4,23 @@
 
 using etcdserverpb::Compare;
 
-etcdv3::AsyncDeleteAction::AsyncDeleteAction(std::string const & key, KV::Stub* stub_, bool recursive) 
+etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
+  : etcdv3::Actionv2(param) 
 {
-  etcdv3::Transaction transaction(key);
+  etcdv3::Transaction transaction(parameters.key);
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
 							  Compare::CompareTarget::Compare_CompareTarget_VERSION);
-  std::string range_end(key); 
-  if(recursive)
+  std::string range_end(parameters.key); 
+  if(parameters.withPrefix)
   {
     int ascii = (int)range_end[range_end.length()-1];
     range_end.back() = ascii+1;
   }
 
-  transaction.setup_delete_sequence(key, range_end, recursive);
-  transaction.setup_delete_failure_operation(key, range_end, recursive);
+  transaction.setup_delete_sequence(parameters.key, range_end, parameters.withPrefix);
+  transaction.setup_delete_failure_operation(parameters.key, range_end, parameters.withPrefix);
 
-  response_reader = stub_->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 

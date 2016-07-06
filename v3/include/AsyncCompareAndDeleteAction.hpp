@@ -13,11 +13,10 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncCompareAndDeleteAction : public etcdv3::Action
+  class AsyncCompareAndDeleteAction : public etcdv3::Actionv2
   {
     public:
-      AsyncCompareAndDeleteAction(std::string const & key, std::string const & old_value, KV::Stub* stub_);
-      AsyncCompareAndDeleteAction(std::string const & key, int old_index, KV::Stub* stub_);
+      AsyncCompareAndDeleteAction(etcdv3::ActionParameters param, etcdv3::Atomicity_Type type);
       AsyncTxnResponse ParseResponse();
       TxnResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;

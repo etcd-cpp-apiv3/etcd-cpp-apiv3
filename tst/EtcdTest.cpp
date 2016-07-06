@@ -234,6 +234,7 @@ TEST_CASE("wait for a value change")
   REQUIRE(res.is_done());
   REQUIRE("set" == res.get().action());
   CHECK("43" == res.get().value().as_string());
+  CHECK("42" == res.get().prev_value().as_string());
 }
 
 TEST_CASE("wait for a directory change")
@@ -266,7 +267,7 @@ TEST_CASE("wait for a directory change")
 TEST_CASE("watch changes in the past")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
-
+  REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
   int index = etcd.set("/test/key1", "42").get().index();
 
   etcd.set("/test/key1", "43").wait();
@@ -276,6 +277,7 @@ TEST_CASE("watch changes in the past")
   etcd::Response res = etcd.watch("/test/key1", ++index).get();
   CHECK("set" == res.action());
   CHECK("43" == res.value().as_string());
+  CHECK("42" == res.prev_value().as_string());
 
   res = etcd.watch("/test/key1", ++index).get();
   CHECK("set" == res.action());

@@ -132,10 +132,6 @@ namespace etcd
 
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
-
-private:
-	std::shared_ptr<etcdv3::AsyncTxnResponse> initiate_transaction(const std::string &operation,
-			etcdv3::Transaction& transaction);
 };
 
 

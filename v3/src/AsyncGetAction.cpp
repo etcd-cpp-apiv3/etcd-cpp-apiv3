@@ -3,14 +3,14 @@
 
 using etcdserverpb::RangeRequest;
 
-etcdv3::AsyncGetAction::AsyncGetAction(std::string const & key, KV::Stub* stub_, bool withPrefix) 
+etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
+  : etcdv3::Actionv2(param)
 {
   RangeRequest get_request;
-  get_request.set_key(key);
-  prefix = withPrefix;
-  if(withPrefix)
+  get_request.set_key(parameters.key);
+  if(parameters.withPrefix)
   {
-    std::string range_end(key); 
+    std::string range_end(parameters.key); 
     int ascii = (int)range_end[range_end.length()-1];
     range_end.back() = ascii+1;
 
@@ -19,7 +19,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(std::string const & key, KV::Stub* stub_,
     get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
   }
       
-  response_reader = stub_->AsyncRange(&context,get_request,&cq_);
+  response_reader = parameters.kv_stub->AsyncRange(&context,get_request,&cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 
@@ -36,8 +36,7 @@ etcdv3::AsyncRangeResponse etcdv3::AsyncGetAction::ParseResponse()
   { 
     range_resp.ParseResponse();
     range_resp.action = etcdv3::GET_ACTION;
-    range_resp.isPrefix = prefix;
+    range_resp.isPrefix = parameters.withPrefix;
   }
-
   return range_resp;
 }

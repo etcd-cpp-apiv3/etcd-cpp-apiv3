@@ -18,6 +18,29 @@ void printResponse(etcd::Response const & resp)
   }
 }
 
+TEST_CASE("create watcher with cancel")
+{
+  
+  etcd::SyncClient etcd(etcd_uri);
+  etcd.rmdir("/test", true);
+
+  watcher_called = 0;
+  etcd::Watcher watcher(etcd_uri, "/test", printResponse);
+  sleep(1);
+  etcd.set("/test/key", "42");
+  etcd.set("/test/key", "43");
+  sleep(1);
+  CHECK(2 == watcher_called);
+  watcher.Cancel();
+  etcd.set("/test/key", "50");
+  etcd.set("/test/key", "51");
+  sleep(1);
+  CHECK(2 == watcher_called);
+
+  etcd.rmdir("/test", true);
+
+}
+
 TEST_CASE("create watcher")
 {
   
@@ -25,17 +48,13 @@ TEST_CASE("create watcher")
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
-  //{
-    std::cout << "watch started" << std::endl;
+  {
     etcd::Watcher watcher(etcd_uri, "/test", printResponse);
     sleep(1);
     etcd.set("/test/key", "42");
-    std::cout << "first set finished" << std::endl;
     etcd.set("/test/key", "43");
-    std::cout << "second set finished" << std::endl;
-  //}
+  }
   
-  sleep(1);
   CHECK(2 == watcher_called);
 // TEST_CASE("wait for a value change")
 // {
@@ -121,7 +140,5 @@ TEST_CASE("create watcher")
 //     std::cout << "std::exception: " << ex.what() << "\n";
 //   }
 // }
-  std::cout << "start rmdir" << std::endl;
   etcd.rmdir("/test", true).error_code();
-  std::cout << "end rmdir" << std::endl;
 }

@@ -13,10 +13,10 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncDeleteAction : public etcdv3::Action
+  class AsyncDeleteAction : public etcdv3::Actionv2
   {
     public:
-      AsyncDeleteAction(std::string const & key, KV::Stub* stub_, bool recursive=false);
+      AsyncDeleteAction(etcdv3::ActionParameters param);
       AsyncTxnResponse ParseResponse();
       TxnResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;

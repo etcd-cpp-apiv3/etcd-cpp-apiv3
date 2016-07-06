@@ -10,16 +10,17 @@ using etcdserverpb::RequestOp;
 using etcdserverpb::ResponseOp;
 using etcdserverpb::TxnRequest;
 
-etcdv3::AsyncUpdateAction::AsyncUpdateAction(std::string const & key, std::string const & value, KV::Stub* stub_) 
+etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters param)
+  : etcdv3::Actionv2(param) 
 {
-  etcdv3::Transaction transaction(key);
+  etcdv3::Transaction transaction(parameters.key);
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
-		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
+		  	  	  	  	  	   Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  transaction.setup_basic_failure_operation(key);
-  transaction.setup_compare_and_swap_sequence(value);
+  transaction.setup_basic_failure_operation(parameters.key);
+  transaction.setup_compare_and_swap_sequence(parameters.value);
 
-  response_reader = stub_->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 
