@@ -5,7 +5,7 @@
 using etcdserverpb::Compare;
 
 etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
-  : etcdv3::Actionv2(param) 
+  : etcdv3::Action(param) 
 {
   etcdv3::Transaction transaction(parameters.key);
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,

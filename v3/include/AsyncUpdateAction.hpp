@@ -13,7 +13,7 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncUpdateAction : public etcdv3::Actionv2
+  class AsyncUpdateAction : public etcdv3::Action
   {
     public:
       AsyncUpdateAction(etcdv3::ActionParameters param);

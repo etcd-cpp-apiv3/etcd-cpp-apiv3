@@ -13,7 +13,7 @@ using etcdserverpb::KV;
 
 namespace etcdv3
 {
-  class AsyncCompareAndSwapAction : public etcdv3::Actionv2
+  class AsyncCompareAndSwapAction : public etcdv3::Action
   {
     public:
       AsyncCompareAndSwapAction(etcdv3::ActionParameters param, etcdv3::Atomicity_Type type);

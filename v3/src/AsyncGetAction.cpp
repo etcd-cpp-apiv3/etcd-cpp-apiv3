@@ -4,7 +4,7 @@
 using etcdserverpb::RangeRequest;
 
 etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
-  : etcdv3::Actionv2(param)
+  : etcdv3::Action(param)
 {
   RangeRequest get_request;
   get_request.set_key(parameters.key);

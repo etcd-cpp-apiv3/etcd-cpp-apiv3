@@ -11,7 +11,7 @@ using etcdserverpb::ResponseOp;
 using etcdserverpb::TxnRequest;
 
 etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool create)
-  : etcdv3::Actionv2(param) 
+  : etcdv3::Action(param) 
 {
   etcdv3::Transaction transaction(parameters.key);
   isCreate = create;
