@@ -94,6 +94,13 @@ TEST_CASE("atomic compare-and-swap")
   CHECK(!res.is_ok());
   CHECK(101 == res.error_code());
   CHECK("Compare failed" == res.error_message());
+
+  // modify fails the second time
+  res = etcd.modify_if("/test/key222", "44", "42").get();
+  CHECK(!res.is_ok());
+  CHECK(100 == res.error_code());
+  CHECK("Key not found" == res.error_message());
+
 }
 
 
@@ -192,8 +199,10 @@ TEST_CASE("list a directory")
   etcd::Response resp = etcd.ls("/test/new_dir").get();
   CHECK("get" == resp.action());
   REQUIRE(1 == resp.keys().size());
+  REQUIRE(1 == resp.values().size());
   CHECK("/test/new_dir/key1" == resp.key(0));
   CHECK("value1" == resp.value(0).as_string());
+  CHECK(resp.values()[0].as_string() == "value1");
 
   etcd.set("/test/new_dir/key2", "value2").wait();
   etcd.set("/test/new_dir/sub_dir", "value3").wait();
