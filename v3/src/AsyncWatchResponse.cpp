@@ -36,7 +36,6 @@ void etcdv3::AsyncWatchResponse::ParseResponse()
   index = reply.header().revision();
   std::map<std::string, mvccpb::KeyValue> mapValue; 
   std::map<std::string, mvccpb::KeyValue> mapPrevValue; 
-  std::cout << "events size: " << reply.events_size() <<std::endl;
   for(int cnt =0; cnt < reply.events_size(); cnt++)
   {
     auto event = reply.events(cnt);
@@ -54,8 +53,7 @@ void etcdv3::AsyncWatchResponse::ParseResponse()
       // just store the first occurence of the key in values.
       // this is done so tas client will not need to change their behaviour.
       // and then break immediately
-      mapValue.emplace(kv.key(), kv);  
-      break;      
+      mapValue.emplace(kv.key(), kv);        
 
     }
     else if(mvccpb::Event::EventType::Event_EventType_DELETE == event.type())
@@ -65,16 +63,15 @@ void etcdv3::AsyncWatchResponse::ParseResponse()
       // this is done so tas client will not need to change their behaviour.
       // break immediately
       mapValue.emplace(kv.key(), kv); 
-      break;
     } 
-
     if(event.has_prev_kv())
     {
       
       auto kv = event.prev_kv();
-      std::cout << "previous value of key: " << kv.key() << " is " << kv.value() << std::endl;
       mapPrevValue.emplace(kv.key(),kv);     
     }
+    break;
+
     
   }
   for(auto x: mapPrevValue) 

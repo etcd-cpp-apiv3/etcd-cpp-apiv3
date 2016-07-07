@@ -17,7 +17,6 @@ etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters param)
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
 		  	  	  	  	  	   Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  transaction.setup_basic_failure_operation(parameters.key);
   transaction.setup_compare_and_swap_sequence(parameters.value);
 
   response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
@@ -35,8 +34,17 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse()
   }
   else
   { 
-    txn_resp.ParseResponse();
-    txn_resp.action = etcdv3::UPDATE_ACTION;
+    if(reply.succeeded())
+    {
+      txn_resp.ParseResponse();
+      txn_resp.action = etcdv3::UPDATE_ACTION;
+    }
+    else
+    {
+      txn_resp.error_code = 100;
+      txn_resp.error_message = "Key not found";
+    }
+
   }
   return txn_resp;
 }

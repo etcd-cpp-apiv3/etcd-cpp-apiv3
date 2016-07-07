@@ -53,18 +53,14 @@ void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) 
  * get key on failure, get key before put, modify and then get updated key
  */
 void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, std::string const &value) {
-	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-	get_request->set_key(key);
-	RequestOp* req_failure = txn_request.add_failure();
-	req_failure->set_allocated_request_range(get_request.release());
-
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
-	req_failure = txn_request.add_failure();
+        put_request->set_prev_kv(true);
+	RequestOp* req_failure = txn_request.add_failure();
 	req_failure->set_allocated_request_put(put_request.release());
 
-	get_request.reset(new RangeRequest());
+	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
 	req_failure = txn_request.add_failure();
 	req_failure->set_allocated_request_range(get_request.release());
@@ -117,19 +113,14 @@ void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, st
  * get key value then modify and get new value
  */
 void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& value) {
-	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-	get_request.reset(new RangeRequest());
-	get_request->set_key(key);
-	RequestOp* req_success = txn_request.add_success();
-	req_success->set_allocated_request_range(get_request.release());
-
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
-	req_success = txn_request.add_success();
+        put_request->set_prev_kv(true);
+	RequestOp* req_success = txn_request.add_success();
 	req_success->set_allocated_request_put(put_request.release());
 
-	get_request.reset(new RangeRequest());
+	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
 	req_success = txn_request.add_success();
 	req_success->set_allocated_request_range(get_request.release());

@@ -15,19 +15,20 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool crea
 {
   etcdv3::Transaction transaction(parameters.key);
   isCreate = create;
+  transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
+		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
+
+  transaction.setup_basic_create_sequence(parameters.key, parameters.value);
   if(isCreate)
   {
-    transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
-		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
+
     transaction.setup_basic_failure_operation(parameters.key);
-    transaction.setup_basic_create_sequence(parameters.key, parameters.value);
+    //transaction.setup_basic_create_sequence(parameters.key, parameters.value);
   }
   else
   {
-    transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
-		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
     transaction.setup_set_failure_operation(parameters.key, parameters.value);
-    transaction.setup_basic_create_sequence(parameters.key, parameters.value);
+    //transaction.setup_basic_create_sequence(parameters.key, parameters.value);
   }
   response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);

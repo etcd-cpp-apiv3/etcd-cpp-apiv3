@@ -45,19 +45,21 @@ void etcdv3::AsyncTxnResponse::ParseResponse()
      
       error_code = response.error_code;
       error_message = response.error_message;
-
+      
       if(!response.values.empty())
       {
-        prev_range_kvs=range_kvs;
-        range_kvs = response.values;
+        values.insert(values.end(), response.values.begin(),response.values.end());
       }
     }
-    else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
+    else if(ResponseOp::ResponseCase::kResponsePut == resp.response_case())
     {
-      std::cout << "number of deleted keys: " << resp.response_delete_range().deleted() <<std::endl;
+      auto put_resp = resp.response_put();
+      if(put_resp.has_prev_kv())
+      {
+        prev_values.push_back(put_resp.prev_kv());
+      }
     }
   }
-  prev_values = prev_range_kvs;
-  values = range_kvs; 
+
   
 }
