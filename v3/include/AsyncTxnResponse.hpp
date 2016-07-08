@@ -11,11 +11,8 @@ namespace etcdv3
   class AsyncTxnResponse : public etcdv3::V3Response
   {
     public:
-      AsyncTxnResponse(TxnResponse& resp);
-      AsyncTxnResponse& operator=(const AsyncTxnResponse& other);
-      AsyncTxnResponse(const AsyncTxnResponse& other);
-      void ParseResponse();
-      TxnResponse reply;
+      AsyncTxnResponse(){};
+      void ParseResponse(std::string const& key, bool prefix,TxnResponse& resp);
   };
 }
 

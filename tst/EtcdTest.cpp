@@ -107,9 +107,24 @@ TEST_CASE("atomic compare-and-swap")
 TEST_CASE("delete a value")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
-  etcd::Response resp = etcd.rm("/test/key1").get();
+  etcd::Response resp = etcd.rm("/test/key11111").get();
+  CHECK(!resp.is_ok());
+  CHECK(100 == resp.error_code());
+  CHECK("Key not found" == resp.error_message());
+
+  int index = etcd.get("/test/key1").get().index();
+  int create_index = etcd.get("/test/key1").get().value().created_index();
+  int modify_index = etcd.get("/test/key1").get().value().modified_index();
+  resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
+  CHECK( "/test/key1" == resp.prev_value().key());
+  CHECK( create_index == resp.prev_value().created_index());
+  CHECK( modify_index == resp.prev_value().modified_index());
   CHECK("delete" == resp.action());
+  CHECK( resp.index() == resp.value().modified_index());
+  CHECK( create_index == resp.value().created_index());
+  CHECK("" == resp.value().as_string());
+  CHECK( "/test/key1" == resp.value().key());
 }
 
 TEST_CASE("atomic compare-and-delete based on prevValue")
@@ -224,9 +239,41 @@ TEST_CASE("delete a directory")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
   //CHECK(108 == etcd.rmdir("/test/new_dir").get().error_code()); // Directory not empty
-  CHECK(0 == etcd.rmdir("/test/new_dir", true).get().error_code());
-}
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+  //get the lowest created index
+  std::vector<int> myset;
+  for(unsigned int cnt=0; cnt < resp.values().size(); cnt++)
+  {
+    myset.push_back(resp.value(cnt).created_index());
+  }
+  std::sort(myset.begin(),myset.end());
+  
+  //get the latest modified index
+  std::vector<int> myset1;
+  for(unsigned int cnt=0; cnt < resp.values().size(); cnt++)
+  {
+    myset1.push_back(resp.value(cnt).modified_index());
+  }
+  std::sort(myset1.begin(),myset1.end());
 
+
+  resp = etcd.rmdir("/test/new_dir", true).get();
+  int index = resp.index();
+  
+  CHECK("" == resp.prev_value().as_string());
+  CHECK( myset[0] == resp.prev_value().created_index());
+  CHECK( myset1[myset1.size() - 1] == resp.prev_value().modified_index());
+  CHECK( "/test/new_dir" == resp.prev_value().key());
+  CHECK("delete" == resp.action());
+  CHECK( index == resp.value().modified_index());
+  CHECK( myset[0]  == resp.value().created_index());
+  CHECK("" == resp.value().as_string());
+
+  resp = etcd.rmdir("/test/dirnotfound", true).get();
+  CHECK(!resp.is_ok());
+  CHECK(100 == resp.error_code());
+  CHECK("Key not found" == resp.error_message());
+}
 
 TEST_CASE("wait for a value change")
 {

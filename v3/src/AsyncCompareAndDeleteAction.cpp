@@ -33,7 +33,7 @@ etcdv3::AsyncCompareAndDeleteAction::AsyncCompareAndDeleteAction(etcdv3::ActionP
 
 etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndDeleteAction::ParseResponse()
 {
-  AsyncTxnResponse txn_resp(reply);
+  AsyncTxnResponse txn_resp;
   if(!status.ok())
   {
     txn_resp.error_code = status.error_code();
@@ -41,7 +41,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndDeleteAction::ParseResponse()
   }
   else
   { 
-    txn_resp.ParseResponse();
+    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
     txn_resp.prev_values = txn_resp.values;
     txn_resp.action = etcdv3::COMPAREDELETE_ACTION;
 

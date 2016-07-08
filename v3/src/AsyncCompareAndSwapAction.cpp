@@ -33,7 +33,7 @@ etcdv3::AsyncCompareAndSwapAction::AsyncCompareAndSwapAction(etcdv3::ActionParam
 
 etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndSwapAction::ParseResponse()
 {
-  AsyncTxnResponse txn_resp(reply);
+  AsyncTxnResponse txn_resp;
   
   if(!status.ok())
   {
@@ -42,7 +42,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndSwapAction::ParseResponse()
   }
   else
   { 
-    txn_resp.ParseResponse();
+    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
     txn_resp.action = etcdv3::COMPARESWAP_ACTION;
 
     //if there is an error code returned by parseResponse, we must 

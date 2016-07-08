@@ -13,3 +13,4 @@ void etcdv3::Action::waitForResponse()
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(got_tag == (void*)this);
 }
+

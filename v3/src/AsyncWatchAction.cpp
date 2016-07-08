@@ -9,6 +9,7 @@ using etcdserverpb::WatchCreateRequest;
 etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters param)
   : etcdv3::Action(param) 
 {
+  isCancelled = false;
   stream = parameters.watch_stub->AsyncWatch(&context,&cq_,(void*)"create");
 
   WatchRequest watch_req;
@@ -92,7 +93,7 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
 etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
 {
 
-  AsyncWatchResponse watch_resp(reply);
+  AsyncWatchResponse watch_resp;
   if(!status.ok())
   {
     watch_resp.error_code = status.error_code();
@@ -100,7 +101,7 @@ etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
   }
   else
   { 
-    watch_resp.ParseResponse();
+    watch_resp.ParseResponse(reply);
   }
   return watch_resp;
 }

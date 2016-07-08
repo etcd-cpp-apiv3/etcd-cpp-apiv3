@@ -25,7 +25,7 @@ etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters param)
 
 etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse()
 {
-  AsyncTxnResponse txn_resp(reply);
+  AsyncTxnResponse txn_resp;
   
   if(!status.ok())
   {
@@ -36,7 +36,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse()
   { 
     if(reply.succeeded())
     {
-      txn_resp.ParseResponse();
+      txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
       txn_resp.action = etcdv3::UPDATE_ACTION;
     }
     else

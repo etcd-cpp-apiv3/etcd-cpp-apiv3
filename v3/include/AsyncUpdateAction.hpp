@@ -18,6 +18,7 @@ namespace etcdv3
     public:
       AsyncUpdateAction(etcdv3::ActionParameters param);
       AsyncTxnResponse ParseResponse();
+    private:
       TxnResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
   };

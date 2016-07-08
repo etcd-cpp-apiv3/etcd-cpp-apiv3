@@ -9,7 +9,6 @@
 
 using grpc::ClientAsyncResponseReader;
 using etcdserverpb::RangeResponse;
-using etcdserverpb::KV;
 
 namespace etcdv3
 {
@@ -18,6 +17,7 @@ namespace etcdv3
     public:
       AsyncGetAction(etcdv3::ActionParameters param);
       AsyncRangeResponse ParseResponse();
+    private:
       RangeResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
   };

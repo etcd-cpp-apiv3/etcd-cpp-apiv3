@@ -15,6 +15,7 @@ void printResponse(etcd::Response const & resp)
   else
   {
     std::cout << resp.action() << " " << resp.value().as_string() << std::endl;
+    std::cout << "Previous value: " << resp.prev_value().as_string() << std::endl;
   }
 }
 
@@ -29,13 +30,15 @@ TEST_CASE("create watcher with cancel")
   sleep(1);
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
+  etcd.rm("/test/key");
+  etcd.set("/test/key", "44");
   sleep(1);
-  CHECK(2 == watcher_called);
+  CHECK(4 == watcher_called);
   watcher.Cancel();
   etcd.set("/test/key", "50");
   etcd.set("/test/key", "51");
   sleep(1);
-  CHECK(2 == watcher_called);
+  CHECK(4 == watcher_called);
 
   etcd.rmdir("/test", true);
 
@@ -140,5 +143,5 @@ TEST_CASE("create watcher")
 //     std::cout << "std::exception: " << ex.what() << "\n";
 //   }
 // }
-  etcd.rmdir("/test", true).error_code();
+   etcd.rmdir("/test", true).error_code();
 }

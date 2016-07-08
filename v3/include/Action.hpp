@@ -33,14 +33,16 @@ namespace etcdv3
 
   class Action
   {
-    public:
+  public:
     Action(etcdv3::ActionParameters params);
     Action(){};
+    void waitForResponse();
+  protected:
     Status status;
     ClientContext context;
     CompletionQueue cq_;
     etcdv3::ActionParameters parameters;
-    void waitForResponse();
+    
   };
 }
 #endif
