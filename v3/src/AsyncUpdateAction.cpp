@@ -29,20 +29,20 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse()
   
   if(!status.ok())
   {
-    txn_resp.error_code = status.error_code();
-    txn_resp.error_message = status.error_message();
+    txn_resp.set_error_code(status.error_code());
+    txn_resp.set_error_message(status.error_message());
   }
   else
   { 
     if(reply.succeeded())
     {
       txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
-      txn_resp.action = etcdv3::UPDATE_ACTION;
+      txn_resp.set_action(etcdv3::UPDATE_ACTION);
     }
     else
     {
-      txn_resp.error_code = 100;
-      txn_resp.error_message = "Key not found";
+      txn_resp.set_error_code(100);
+      txn_resp.set_error_message("Key not found");
     }
 
   }

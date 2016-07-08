@@ -96,8 +96,8 @@ etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
   AsyncWatchResponse watch_resp;
   if(!status.ok())
   {
-    watch_resp.error_code = status.error_code();
-    watch_resp.error_message = status.error_message();
+    watch_resp.set_error_code(status.error_code());
+    watch_resp.set_error_message(status.error_message());
   }
   else
   { 

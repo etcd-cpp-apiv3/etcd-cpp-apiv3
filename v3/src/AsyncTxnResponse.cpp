@@ -16,11 +16,11 @@ void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix
       AsyncRangeResponse response;
       response.ParseResponse(*(resp.mutable_response_range()),prefix);
      
-      error_code = response.error_code;
-      error_message = response.error_message;
+      error_code = response.get_error_code();
+      error_message = response.get_error_message();
       
-      values = response.values;
-      value = response.value;
+      values = response.get_values();
+      value = response.get_value();
     }
     else if(ResponseOp::ResponseCase::kResponsePut == resp.response_case())
     {
@@ -35,10 +35,10 @@ void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix
       AsyncDeleteRangeResponse response;
       response.ParseResponse(key,prefix,*(resp.mutable_response_delete_range()));
 
-      prev_value = response.prev_value;
+      prev_value = response.get_prev_value();
      
-      values = response.values;
-      value = response.value;
+      values = response.get_values();
+      value = response.get_value();
     }
   }
 }

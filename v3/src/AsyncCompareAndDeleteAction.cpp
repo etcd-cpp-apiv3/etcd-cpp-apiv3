@@ -36,19 +36,18 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndDeleteAction::ParseResponse()
   AsyncTxnResponse txn_resp;
   if(!status.ok())
   {
-    txn_resp.error_code = status.error_code();
-    txn_resp.error_message = status.error_message();
+    txn_resp.set_error_code(status.error_code());
+    txn_resp.set_error_message(status.error_message());
   }
   else
   { 
     txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
-    txn_resp.prev_values = txn_resp.values;
-    txn_resp.action = etcdv3::COMPAREDELETE_ACTION;
+    txn_resp.set_action(etcdv3::COMPAREDELETE_ACTION);
 
     if(!reply.succeeded())
     {
-      txn_resp.error_code=101;
-      txn_resp.error_message="Compare failed";
+      txn_resp.set_error_code(101);
+      txn_resp.set_error_message("Compare failed");
     } 
   }
     

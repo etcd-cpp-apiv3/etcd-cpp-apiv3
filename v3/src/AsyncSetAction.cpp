@@ -45,12 +45,13 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncSetAction::ParseResponse()
   else
   { 
     txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
-    txn_resp.set_action(isCreate? etcdv3::CREATE_ACTION:etcdv3::SET_ACTION);
+    std::string action = isCreate? etcdv3::CREATE_ACTION:etcdv3::SET_ACTION;
+    txn_resp.set_action(action);
 
-    if(!reply.succeeded() && txn_resp.action == etcdv3::CREATE_ACTION)
+    if(!reply.succeeded() && action == etcdv3::CREATE_ACTION)
     {
-      txn_resp.error_code=105;
-      txn_resp.error_message="Key already exists";
+      txn_resp.set_error_code(105);
+      txn_resp.set_error_message("Key already exists");
     } 
   }
   return txn_resp;

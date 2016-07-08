@@ -37,20 +37,20 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndSwapAction::ParseResponse()
   
   if(!status.ok())
   {
-    txn_resp.error_code = status.error_code();
-    txn_resp.error_message = status.error_message();
+    txn_resp.set_error_code(status.error_code());
+    txn_resp.set_error_message(status.error_message());
   }
   else
   { 
     txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
-    txn_resp.action = etcdv3::COMPARESWAP_ACTION;
+    txn_resp.set_action(etcdv3::COMPARESWAP_ACTION);
 
     //if there is an error code returned by parseResponse, we must 
     //not overwrite it.
-    if(!reply.succeeded() && !txn_resp.error_code)
+    if(!reply.succeeded() && !txn_resp.get_error_code())
     {
-      txn_resp.error_code=101;
-      txn_resp.error_message="Compare failed";
+      txn_resp.set_error_code(101);
+      txn_resp.set_error_message("Compare failed");
     } 
   }
     

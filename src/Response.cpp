@@ -5,29 +5,25 @@
 
 etcd::Response::Response(const etcdv3::V3Response& reply)
 {
-  _index = reply.index;
-  _action = reply.action;
-  _error_code = reply.error_code;
-  _error_message = reply.error_message;
-  int size = reply.values.size();
-  //with prefix means that we expect that
-  //values could have at least one result(e.g. ls, rmdir)
-  if(size)
+  _index = reply.get_index();
+  _action = reply.get_action();
+  _error_code = reply.get_error_code();
+  _error_message = reply.get_error_message();
+  if(reply.has_values())
   {
-    for(int index = 0; index < size; index++)
+    auto val = reply.get_values();
+    for(unsigned int index = 0; index < val.size(); index++)
     {
-      _values.push_back(Value(reply.values[index]));
-      _keys.push_back(reply.values[index].key());
+      _values.push_back(Value(val[index]));
+      _keys.push_back(val[index].key());
     }
   }
-  //values where we expect that 
-  // at most one result.(e.g. set, add, modify, rm, watch)
   else
   {
-    _value = Value(reply.value);
+    _value = Value(reply.get_value());
   }
 
-  _prev_value = Value(reply.prev_value);
+  _prev_value = Value(reply.get_prev_value());
 
 }
 
