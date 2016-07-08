@@ -141,7 +141,7 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool rec
 {
   etcdv3::ActionParameters params;
   params.key.assign(key);
-  params.withPrefix = true;
+  params.withPrefix = recursive;
   params.kv_stub = stub_.get();
   std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(params));
   return Response::create(call);
