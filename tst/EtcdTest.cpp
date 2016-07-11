@@ -16,6 +16,7 @@ TEST_CASE("add a new key")
 {
   
   etcd::Client etcd("http://127.0.0.1:2379");
+  etcd.rmdir("/test", true).wait();
   etcd::Response resp = etcd.add("/test/key1", "42").get();
   REQUIRE(0 == resp.error_code());
   CHECK("create" == resp.action());
@@ -50,6 +51,7 @@ TEST_CASE("simplified read")
   etcd::Client etcd("http://127.0.0.1:2379");
   CHECK("42" == etcd.get("/test/key1").get().value().as_string());
   CHECK(100  == etcd.get("/test/key2").get().error_code()); // Key not found
+  CHECK(""  == etcd.get("/test/key2").get().value().as_string()); // Key not found
 }
 
 
@@ -129,7 +131,7 @@ TEST_CASE("delete a value")
   CHECK( create_index == resp.prev_value().created_index());
   CHECK( modify_index == resp.prev_value().modified_index());
   CHECK("delete" == resp.action());
-  CHECK( resp.index() == resp.value().modified_index());
+  CHECK( modify_index == resp.value().modified_index());
   CHECK( create_index == resp.value().created_index());
   CHECK("" == resp.value().as_string());
   CHECK( "/test/key1" == resp.value().key());
@@ -246,38 +248,27 @@ TEST_CASE("list a directory")
 TEST_CASE("delete a directory")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
+
   //CHECK(108 == etcd.rmdir("/test/new_dir").get().error_code()); // Directory not empty
   etcd::Response resp = etcd.ls("/test/new_dir").get();
-  //get the lowest created index
-  std::vector<int> myset;
-  for(unsigned int cnt=0; cnt < resp.values().size(); cnt++)
-  {
-    myset.push_back(resp.value(cnt).created_index());
-  }
-  std::sort(myset.begin(),myset.end());
-  
-  //get the latest modified index
-  std::vector<int> myset1;
-  for(unsigned int cnt=0; cnt < resp.values().size(); cnt++)
-  {
-    myset1.push_back(resp.value(cnt).modified_index());
-  }
-  std::sort(myset1.begin(),myset1.end());
 
 
   resp = etcd.rmdir("/test/new_dir", true).get();
   int index = resp.index();
-  
-  CHECK("" == resp.prev_value().as_string());
-  CHECK( myset[0] == resp.prev_value().created_index());
-  CHECK( myset1[myset1.size() - 1] == resp.prev_value().modified_index());
-  CHECK( "/test/new_dir" == resp.prev_value().key());
   CHECK("delete" == resp.action());
-  CHECK( index == resp.value().modified_index());
-  CHECK( myset[0]  == resp.value().created_index());
-  CHECK("" == resp.value().as_string());
+  REQUIRE(3 == resp.keys().size());
+  CHECK("/test/new_dir/key1" == resp.key(0));
+  CHECK("/test/new_dir/key2" == resp.key(1));
+  CHECK("value1" == resp.value(0).as_string());
+  CHECK("value2" == resp.value(1).as_string());
+
 
   resp = etcd.rmdir("/test/dirnotfound", true).get();
+  CHECK(!resp.is_ok());
+  CHECK(100 == resp.error_code());
+  CHECK("Key not found" == resp.error_message());
+
+  resp = etcd.rmdir("/test/new_dir", false).get();
   CHECK(!resp.is_ok());
   CHECK(100 == resp.error_code());
   CHECK("Key not found" == resp.error_message());
