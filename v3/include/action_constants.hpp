@@ -11,6 +11,6 @@ namespace etcdv3
   extern char const * COMPARESWAP_ACTION;
   extern char const * COMPAREDELETE_ACTION;
 
-};
+}
 
 #endif

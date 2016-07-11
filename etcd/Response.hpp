@@ -39,7 +39,7 @@ namespace etcd
 
         return resp;
       });
-    };
+    }
 
     Response();
 
