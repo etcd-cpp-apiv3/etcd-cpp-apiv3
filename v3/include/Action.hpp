@@ -10,6 +10,7 @@ using grpc::Status;
 
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
+using etcdserverpb::Lease;
 
 namespace etcdv3
 {
@@ -21,14 +22,18 @@ namespace etcdv3
 
   struct ActionParameters
   {
+    ActionParameters();
     bool withPrefix;
     int revision;
     int old_revision;
+    int64_t lease_id;
+    int ttl;
     std::string key;
     std::string value;
     std::string old_value;
     KV::Stub* kv_stub;
     Watch::Stub* watch_stub;
+    Lease::Stub* lease_stub;
   };
 
   class Action

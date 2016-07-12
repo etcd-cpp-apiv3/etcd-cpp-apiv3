@@ -18,14 +18,16 @@ public:
 	void init_compare(int, etcdserverpb::Compare::CompareResult, etcdserverpb::Compare::CompareTarget);
 
 	void setup_basic_failure_operation(std::string const &key);
-	void setup_set_failure_operation(std::string const &key, std::string const &value);
-	void setup_basic_create_sequence(std::string const &key, std::string const &value);
-	void setup_compare_and_swap_sequence(std::string const &valueToSwap);
+	void setup_set_failure_operation(std::string const &key, std::string const &value, int64_t leaseid);
+	void setup_basic_create_sequence(std::string const &key, std::string const &value, int64_t leaseid);
+	void setup_compare_and_swap_sequence(std::string const &valueToSwap, int64_t leaseid);
 	void setup_delete_sequence(std::string const &key, std::string const &range_end, bool recursive);
 	void setup_delete_failure_operation(std::string const &key, std::string const &range_end, bool recursive);
 	void setup_compare_and_delete_operation(std::string const& key);
+        void setup_lease_grant_operation(int ttl);
 
 	etcdserverpb::TxnRequest txn_request;
+        etcdserverpb::LeaseGrantRequest leasegrant_request;
 
 private:
 	std::string key;

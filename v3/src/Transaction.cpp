@@ -52,11 +52,12 @@ void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) 
 /**
  * get key on failure, get key before put, modify and then get updated key
  */
-void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, std::string const &value) {
+void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, std::string const &value, int64_t leaseid) {
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
         put_request->set_prev_kv(true);
+        put_request->set_lease(leaseid);
 	RequestOp* req_failure = txn_request.add_failure();
 	req_failure->set_allocated_request_put(put_request.release());
 
@@ -97,11 +98,12 @@ void etcdv3::Transaction::setup_delete_failure_operation(std::string const &key,
 /**
  * add key and then get new value of key
  */
-void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, std::string const& value) {
+void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, std::string const& value, int64_t leaseid) {
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
         put_request->set_prev_kv(true);
+        put_request->set_lease(leaseid);
 	RequestOp* req_success = txn_request.add_success();
 	req_success->set_allocated_request_put(put_request.release());
 
@@ -114,11 +116,12 @@ void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, st
 /**
  * get key value then modify and get new value
  */
-void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& value) {
+void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& value, int64_t leaseid) {
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
         put_request->set_prev_kv(true);
+        put_request->set_lease(leaseid);
 	RequestOp* req_success = txn_request.add_success();
 	req_success->set_allocated_request_put(put_request.release());
 
@@ -150,6 +153,11 @@ void etcdv3::Transaction::setup_compare_and_delete_operation(std::string const& 
         del_request->set_prev_kv(true);
 	RequestOp* req_success = txn_request.add_success();
 	req_success->set_allocated_request_delete_range(del_request.release());
+}
+
+void etcdv3::Transaction::setup_lease_grant_operation(int ttl)
+{
+  leasegrant_request.set_ttl(ttl);
 }
 
 

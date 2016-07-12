@@ -17,7 +17,7 @@ etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters param)
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_GREATER,
 		  	  	  	  	  	   Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  transaction.setup_compare_and_swap_sequence(parameters.value);
+  transaction.setup_compare_and_swap_sequence(parameters.value, parameters.lease_id);
 
   response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);

@@ -36,22 +36,22 @@ void etcdv3::V3Response::set_action(std::string action)
   this->action = action;
 }
 
-std::vector<mvccpb::KeyValue> const & etcdv3::V3Response::get_values() const
+std::vector<etcdv3::KeyValue> const & etcdv3::V3Response::get_values() const
 {
   return values;
 }
 
-std::vector<mvccpb::KeyValue> const & etcdv3::V3Response::get_prev_values() const
+std::vector<etcdv3::KeyValue> const & etcdv3::V3Response::get_prev_values() const
 {
   return prev_values;
 }
 
-mvccpb::KeyValue const & etcdv3::V3Response::get_value() const
+etcdv3::KeyValue const & etcdv3::V3Response::get_value() const
 {
   return value;
 }
 
-mvccpb::KeyValue const & etcdv3::V3Response::get_prev_value() const
+etcdv3::KeyValue const & etcdv3::V3Response::get_prev_value() const
 {
   return prev_value;
 }

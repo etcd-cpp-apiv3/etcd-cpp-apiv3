@@ -75,6 +75,14 @@ TEST_CASE("set a key")
   CHECK("43" == etcd.set("/test/key2", "44").get().prev_value().as_string());
   CHECK(""   == etcd.set("/test/key3", "44").get().prev_value().as_string());
   CHECK(0  == etcd.set("/test",      "42").get().error_code()); // Not a file
+
+  //set with ttl
+  resp = etcd.set("/test/key1", "50", 10).get();
+  REQUIRE(0  == resp.error_code()); // overwrite
+  CHECK("set" == resp.action());
+  CHECK("43" == resp.prev_value().as_string());
+  CHECK("50" == resp.value().as_string());
+  CHECK( 0 < resp.value().lease());
 }
 
 TEST_CASE("atomic compare-and-swap")
@@ -344,6 +352,86 @@ TEST_CASE("watch changes in the past")
   CHECK("45" == res.value().as_string());
 }
 
+TEST_CASE("lease grant")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Response res = etcd.leasegrant(60).get();
+  REQUIRE(res.is_ok());
+  CHECK(60 == res.value().ttl());
+  CHECK(0 <  res.value().lease());
+  int64_t leaseid = res.value().lease();
+
+  res = etcd.set("/test/key1", "43", leaseid).get();
+  REQUIRE(0  == res.error_code()); // overwrite
+  CHECK("set" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+
+  //change leaseid
+  res = etcd.leasegrant(10).get();
+  leaseid = res.value().lease();
+  res = etcd.set("/test/key1", "43", leaseid).get();
+  REQUIRE(0  == res.error_code()); // overwrite
+  CHECK("set" == res.action());
+  CHECK(leaseid == res.value().lease());
+
+  //failure to attach lease id
+  res = etcd.set("/test/key1", "43", leaseid+1).get();
+  REQUIRE(!res.is_ok());
+  REQUIRE(5  == res.error_code()); 
+  CHECK("etcdserver: requested lease not found" == res.error_message());
+
+  res = etcd.modify("/test/key1", "44", leaseid).get();
+  REQUIRE(0  == res.error_code()); // overwrite
+  CHECK("update" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+  CHECK("44" ==  res.value().as_string());
+
+  //failure to attach lease id
+  res = etcd.modify("/test/key1", "45", leaseid+1).get();
+  REQUIRE(!res.is_ok());
+  REQUIRE(5  == res.error_code()); 
+  CHECK("etcdserver: requested lease not found" == res.error_message());
+
+  res = etcd.modify_if("/test/key1", "45", "44", leaseid).get();
+  int index = res.index();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndSwap" == res.action());
+  CHECK("45" == res.value().as_string());
+
+  //failure to attach lease id
+  res = etcd.modify_if("/test/key1", "46", "45", leaseid+1).get();
+  REQUIRE(!res.is_ok());
+  REQUIRE(5  == res.error_code()); 
+  CHECK("etcdserver: requested lease not found" == res.error_message());
+
+  // succes with the correct index
+  res = etcd.modify_if("/test/key1", "44", index, leaseid).get();
+  index = res.index();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndSwap" == res.action());
+  CHECK("44" == res.value().as_string());
+
+  res = etcd.modify_if("/test/key1", "44", index, leaseid+1).get();
+  REQUIRE(!res.is_ok());
+  REQUIRE(5  == res.error_code()); 
+  CHECK("etcdserver: requested lease not found" == res.error_message());
+
+  res = etcd.add("/test/key11111", "43", leaseid).get();
+  REQUIRE(0  == res.error_code()); 
+  CHECK("create" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+
+  //failure to attach lease id
+  res = etcd.set("/test/key11111", "43", leaseid+1).get();
+  REQUIRE(!res.is_ok());
+  REQUIRE(5  == res.error_code()); 
+  CHECK("etcdserver: requested lease not found" == res.error_message());
+
+
+
+
+
+}
 
 TEST_CASE("cleanup")
 {

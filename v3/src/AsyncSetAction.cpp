@@ -1,14 +1,8 @@
 #include "v3/include/AsyncSetAction.hpp"
-#include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/action_constants.hpp"
 #include "v3/include/Transaction.hpp"
 
 using etcdserverpb::Compare;
-using etcdserverpb::RangeRequest;
-using etcdserverpb::PutRequest;
-using etcdserverpb::RequestOp;
-using etcdserverpb::ResponseOp;
-using etcdserverpb::TxnRequest;
 
 etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool create)
   : etcdv3::Action(param) 
@@ -18,7 +12,7 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool crea
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
 		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
-  transaction.setup_basic_create_sequence(parameters.key, parameters.value);
+  transaction.setup_basic_create_sequence(parameters.key, parameters.value, parameters.lease_id);
 
   if(isCreate)
   {
@@ -26,7 +20,7 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool crea
   }
   else
   {
-    transaction.setup_set_failure_operation(parameters.key, parameters.value);
+    transaction.setup_set_failure_operation(parameters.key, parameters.value, parameters.lease_id);
   }
   response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);

@@ -1,21 +1,26 @@
+#include <iomanip>
 #include "etcd/Value.hpp"
-#include "proto/kv.pb.h"
+#include "v3/include/KeyValue.hpp"
 
 etcd::Value::Value()
   : dir(false),
     created(0),
-    modified(0)
+    modified(0),
+    _ttl(0),
+    leaseId(0)
 {
 }
 
 
-etcd::Value::Value(mvccpb::KeyValue const & kvs)
+etcd::Value::Value(etcdv3::KeyValue const & kvs)
 {
   dir=false;
   _key=kvs.key();
   value=kvs.value();
   created=kvs.create_revision();
   modified=kvs.mod_revision();
+  leaseId = kvs.lease();
+  _ttl = kvs.get_ttl();
 }
 
 std::string const & etcd::Value::key() const
@@ -42,3 +47,15 @@ int etcd::Value::modified_index() const
 {
   return modified;
 }
+
+int etcd::Value::ttl() const
+{
+  return _ttl;
+}
+
+int64_t etcd::Value::lease() const
+{
+  return leaseId;
+}
+
+

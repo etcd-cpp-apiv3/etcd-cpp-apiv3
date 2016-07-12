@@ -4,7 +4,7 @@
 #include <cpprest/http_client.h>
 #include <string>
 #include <vector>
-#include "proto/kv.pb.h"
+#include "v3/include/KeyValue.hpp"
 
 namespace etcd
 {
@@ -40,6 +40,13 @@ namespace etcd
      */
     int modified_index() const;
 
+    /**
+     * Returns the ttl of this value or 0 if ttl is not set
+     */
+    int ttl() const;
+  
+    int64_t lease() const;
+
   protected:
     friend class Response;
     friend class BaseResponse; //deliberately done since Value class will be removed during full V3
@@ -47,12 +54,14 @@ namespace etcd
     friend class AsyncDeleteResponse;
     Value();
     Value(web::json::value const & json_value);
-    Value(mvccpb::KeyValue const & kvs);
+    Value(etcdv3::KeyValue const & kvs);
     std::string _key;
     bool        dir;
     std::string value;
     int         created;
     int         modified;
+    int         _ttl;
+    int64_t     leaseId;
   };
 
   typedef std::vector<Value> Values;

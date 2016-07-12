@@ -112,6 +112,7 @@ namespace etcd
     Keys        _keys;
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
+    friend class Client;
   };
 }
 

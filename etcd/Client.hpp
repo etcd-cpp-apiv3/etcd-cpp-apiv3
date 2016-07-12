@@ -13,6 +13,7 @@
 
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
+using etcdserverpb::Lease;
 
 namespace etcd
 {
@@ -41,21 +42,47 @@ namespace etcd
      * @param key is the key to be created or modified
      * @param value is the new value to be set
      */
-    pplx::task<Response> set(std::string const & key, std::string const & value);
+    pplx::task<Response> set(std::string const & key, std::string const & value, int ttl = 0);
+
+    /**
+     * Sets the value of a key. The key will be modified if already exists or created
+     * if it does not exists.
+     * @param key is the key to be created or modified
+     * @param value is the new value to be set
+     * @param leaseId is the lease attached to the key
+     */
+    pplx::task<Response> set(std::string const & key, std::string const & value, int64_t leaseId);
+
 
     /**
      * Creates a new key and sets it's value. Fails if the key already exists.
      * @param key is the key to be created
      * @param value is the value to be set
      */
-    pplx::task<Response> add(std::string const & key, std::string const & value);
+    pplx::task<Response> add(std::string const & key, std::string const & value, int ttl = 0);
+
+    /**
+     * Creates a new key and sets it's value. Fails if the key already exists.
+     * @param key is the key to be created
+     * @param value is the value to be set
+     * @param leaseId is the lease attached to the key
+     */
+    pplx::task<Response> add(std::string const & key, std::string const & value, int64_t leaseId);
 
     /**
      * Modifies an existing key. Fails if the key does not exists.
      * @param key is the key to be modified
      * @param value is the new value to be set
      */
-    pplx::task<Response> modify(std::string const & key, std::string const & value);
+    pplx::task<Response> modify(std::string const & key, std::string const & value, int ttl = 0);
+
+    /**
+     * Modifies an existing key. Fails if the key does not exists.
+     * @param key is the key to be modified
+     * @param value is the new value to be set
+     * @param leaseId is the lease attached to the key
+     */
+    pplx::task<Response> modify(std::string const & key, std::string const & value, int64_t leaseId);
 
     /**
      * Modifies an existing key only if it has a specific value. Fails if the key does not exists
@@ -64,7 +91,17 @@ namespace etcd
      * @param value is the new value to be set
      * @param old_value is the value to be replaced
      */
-    pplx::task<Response> modify_if(std::string const & key, std::string const & value, std::string const & old_value);
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl = 0);
+
+    /**
+     * Modifies an existing key only if it has a specific value. Fails if the key does not exists
+     * or the original value differs from the expected one.
+     * @param key is the key to be modified
+     * @param value is the new value to be set
+     * @param old_value is the value to be replaced
+     * @param leaseId is the lease attached to the key
+     */
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseId);
 
     /**
      * Modifies an existing key only if it has a specific modification index value. Fails if the key
@@ -73,7 +110,17 @@ namespace etcd
      * @param value is the new value to be set
      * @param old_index is the expected index of the original value
      */
-    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int old_index);
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int old_index, int ttl = 0);
+
+    /**
+     * Modifies an existing key only if it has a specific modification index value. Fails if the key
+     * does not exists or the modification index of the previous value differs from the expected one.
+     * @param key is the key to be modified
+     * @param value is the new value to be set
+     * @param old_index is the expected index of the original value
+     * @param leaseId is the lease attached to the key
+     */
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId);
 
     /**
      * Removes a single key. The key has to point to a plain, non directory entry.
@@ -128,10 +175,17 @@ namespace etcd
      */
     pplx::task<Response> watch(std::string const & key, int fromIndex, bool recursive = false);
 
-  protected:
+    /**
+     * Grants a lease.
+     * @param ttl is the time to live of the lease
+     */
+    pplx::task<Response> leasegrant(int ttl);
+
+  private:
 
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
+    std::unique_ptr<Lease::Stub> leaseServiceStub;
 };
 
 
