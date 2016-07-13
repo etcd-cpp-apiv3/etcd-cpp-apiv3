@@ -22,27 +22,27 @@ etcd::Response etcd::SyncClient::get(std::string const & key)
 
 etcd::Response etcd::SyncClient::set(std::string const & key, std::string const & value, int ttl)
 {
-  CHECK_EXCEPTIONS(client.set(key, value).get());
+  CHECK_EXCEPTIONS(client.set(key, value, ttl).get());
 }
 
 etcd::Response etcd::SyncClient::add(std::string const & key, std::string const & value, int ttl)
 {
-  CHECK_EXCEPTIONS(client.add(key, value).get());
+  CHECK_EXCEPTIONS(client.add(key, value, ttl).get());
 }
 
 etcd::Response etcd::SyncClient::modify(std::string const & key, std::string const & value, int ttl)
 {
-  CHECK_EXCEPTIONS(client.modify(key, value).get());
+  CHECK_EXCEPTIONS(client.modify(key, value, ttl).get());
 }
 
 etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl)
 {
-  CHECK_EXCEPTIONS(client.modify_if(key, value, old_value).get());
+  CHECK_EXCEPTIONS(client.modify_if(key, value, old_value, ttl).get());
 }
 
 etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int old_index, int ttl)
 {
-  CHECK_EXCEPTIONS(client.modify_if(key, value, old_index).get());
+  CHECK_EXCEPTIONS(client.modify_if(key, value, old_index, ttl).get());
 }
 
 etcd::Response etcd::SyncClient::rm(std::string const & key)
