@@ -24,16 +24,22 @@ namespace etcd
 
     Response get(std::string const & key);
     Response set(std::string const & key, std::string const & value, int ttl = 0);
+    Response set(std::string const & key, std::string const & value, int64_t leaseId);
     Response add(std::string const & key, std::string const & value, int ttl = 0);
+    Response add(std::string const & key, std::string const & value, int64_t leaseId);
     Response modify(std::string const & key, std::string const & value, int ttl = 0);
+    Response modify(std::string const & key, std::string const & value, int64_t leaseId);
     Response modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl = 0);
+    Response modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseId);
     Response modify_if(std::string const & key, std::string const & value, int old_index, int ttl = 0);
+    Response modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId);
     Response rm(std::string const & key);
     Response rm_if(std::string const & key, std::string const & old_value);
     Response rm_if(std::string const & key, int old_index);
     Response ls(std::string const & key);
     Response mkdir(std::string const & key, int ttl = 0);
     Response rmdir(std::string const & key, bool recursive = false);
+    Response leasegrant(int ttl);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and

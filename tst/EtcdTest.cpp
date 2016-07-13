@@ -417,11 +417,6 @@ TEST_CASE("lease grant")
   REQUIRE(!res.is_ok());
   REQUIRE(5  == res.error_code()); 
   CHECK("etcdserver: requested lease not found" == res.error_message());
-
-
-
-
-
 }
 
 TEST_CASE("cleanup")

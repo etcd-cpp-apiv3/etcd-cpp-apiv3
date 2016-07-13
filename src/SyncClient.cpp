@@ -25,9 +25,19 @@ etcd::Response etcd::SyncClient::set(std::string const & key, std::string const 
   CHECK_EXCEPTIONS(client.set(key, value, ttl).get());
 }
 
+etcd::Response etcd::SyncClient::set(std::string const & key, std::string const & value, int64_t leaseId)
+{
+  CHECK_EXCEPTIONS(client.set(key, value, leaseId).get());
+}
+
 etcd::Response etcd::SyncClient::add(std::string const & key, std::string const & value, int ttl)
 {
   CHECK_EXCEPTIONS(client.add(key, value, ttl).get());
+}
+
+etcd::Response etcd::SyncClient::add(std::string const & key, std::string const & value, int64_t leaseId)
+{
+  CHECK_EXCEPTIONS(client.add(key, value, leaseId).get());
 }
 
 etcd::Response etcd::SyncClient::modify(std::string const & key, std::string const & value, int ttl)
@@ -35,14 +45,29 @@ etcd::Response etcd::SyncClient::modify(std::string const & key, std::string con
   CHECK_EXCEPTIONS(client.modify(key, value, ttl).get());
 }
 
+etcd::Response etcd::SyncClient::modify(std::string const & key, std::string const & value, int64_t leaseId)
+{
+  CHECK_EXCEPTIONS(client.modify(key, value, leaseId).get());
+}
+
 etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl)
 {
   CHECK_EXCEPTIONS(client.modify_if(key, value, old_value, ttl).get());
 }
 
+etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseId)
+{
+  CHECK_EXCEPTIONS(client.modify_if(key, value, old_value, leaseId).get());
+}
+
 etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int old_index, int ttl)
 {
   CHECK_EXCEPTIONS(client.modify_if(key, value, old_index, ttl).get());
+}
+
+etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId)
+{
+  CHECK_EXCEPTIONS(client.modify_if(key, value, old_index, leaseId).get());
 }
 
 etcd::Response etcd::SyncClient::rm(std::string const & key)
@@ -69,6 +94,11 @@ etcd::Response etcd::SyncClient::rmdir(std::string const & key, bool recursive)
 etcd::Response etcd::SyncClient::ls(std::string const & key)
 {
   CHECK_EXCEPTIONS(client.ls(key).get());
+}
+
+etcd::Response etcd::SyncClient::leasegrant(int ttl)
+{
+  CHECK_EXCEPTIONS(client.leasegrant(ttl).get());
 }
 
 // etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)

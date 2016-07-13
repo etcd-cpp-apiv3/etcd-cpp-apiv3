@@ -62,6 +62,46 @@ TEST_CASE("sync operations")
   CHECK(101 == etcd.rm_if("/test/key1", index - 1).error_code());
   CHECK(0   == etcd.rm_if("/test/key1", index).error_code());
 
+  //leasegrant
+  etcd::Response res = etcd.leasegrant(60);
+  REQUIRE(res.is_ok());
+  CHECK(60 == res.value().ttl());
+  CHECK(0 <  res.value().lease());
+  int64_t leaseid = res.value().lease();
+
+  //add with lease
+  res = etcd.add("/test/key1111", "43", leaseid);
+  REQUIRE(0  == res.error_code()); // overwrite
+  CHECK("create" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+
+  //set with lease
+  res = etcd.set("/test/key1", "43", leaseid);
+  REQUIRE(0  == res.error_code());
+  CHECK("set" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+
+  //modify with lease
+  res = etcd.modify("/test/key1", "44", leaseid);
+  REQUIRE(0  == res.error_code()); 
+  CHECK("update" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+  CHECK("44" ==  res.value().as_string());
+
+  res = etcd.modify_if("/test/key1", "45", "44", leaseid);
+  index = res.index();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndSwap" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+  CHECK("45" == res.value().as_string());
+
+  res = etcd.modify_if("/test/key1", "44", index, leaseid);
+  index = res.index();
+  REQUIRE(res.is_ok());
+  CHECK("compareAndSwap" == res.action());
+  CHECK(leaseid ==  res.value().lease());
+  CHECK("44" == res.value().as_string());
+
 // TEST_CASE("wait for a value change")
 // {
 //   etcd::Client etcd(etcd_uri);
