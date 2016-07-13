@@ -9,9 +9,8 @@ etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-c
    * grpc (https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md)
    
 ## Compatible etcd version
-Use https://github.com/coreos/etcd/releases/tag/v3.0.0 onwards.
-
-## Compatible etcd version
+Build master branch of etcd in github.
+https://github.com/coreos/etcd/blob/master/Documentation/dl_build.md (see: Build the latest version)
 
 ## Updates from etcdv2 cpp client to etcdv3 cpp client
 See "handling directory nodes" section
@@ -229,21 +228,27 @@ response.value(i)```.
   for (int i = 0; i < resp.keys().size(); ++i)
   {
     std::cout << resp.keys(i);
-    if (resp.value(i).is_dir())
-      std::cout << "/" << std::endl;
-    else
-      std::cout << " = " << resp.value(i).as_string() << std::endl;
+    std::cout << " = " << resp.value(i).as_string() << std::endl;
   }
 ```
 
 3. Removing directory:
 If you want the delete recursively then you have to pass a second ```true``` parameter 
 to rmdir and supply a key. This key will be treated as a prefix. All keys that match the prefix will
-be deleted. This parameter defaults to ```false```.
+be deleted. All deleted keys will be placed in response.values() and response.keys(). This parameter defaults to ```false```.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  etcd.rmdir("/test", true).get();
+  etcd.set("/test/key1", "foo");
+  etcd.set("/test/key2", "bar");
+  etcd.set("/test/key3", "foo_bar");
+  etcd::Response resp = etcd.rmdir("/test", true).get();
+  for (int i = 0; i < resp.keys().size(); ++i)
+  {
+    std::cout << resp.keys(i);
+    std::cout << " = " << resp.value(i).as_string() << std::endl;
+  }  
+
 ```
 However, if recursive parameter is false, functionality will be the same as just deleting a key.
 The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
@@ -294,8 +299,29 @@ fact it just sends the asynchron request, sets up a callback for the response an
 callback is executed by some thread from the pplx library's thread pool and the callback (in this
 case a small lambda function actually) will call ```watch_for_changes``` again from there.
 
-Note: etcdv3 watch functionality uses a stream for both request and response. This means that clients can 
-watch a key(s) as long as it will not terminate the stream. However, as stated above existing watch() will
-return once an event is received for the watch request(a httpv1 limitation) and watch for the key(s) will
-cancelled. Current set of API does not yet support watching a key(s) for indefinite periods. This functionality
-can be added in the future releases of etcd-cpp-clientv3.
+
+### requesting for lease
+Users can request for lease which is governed by a time-to-live(TTL) value given by the user.
+Moreover, user can attached the lease to a key(s) by indicating the lease id in add(), set(), modify() and modify_if(). 
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:4001");
+  int64_t leasid = etcd.leasegrant(60);
+  etcd.set("/test/key2", "bar", leaseid);
+
+```
+
+### Watcher Class
+Users can watch a key indefinitely or until user cancels the watch. This can be done by instantiating a Watcher class.
+The supplied callback function in Watcher class will be called everytime there is an event for the specified key.
+Watch stream will be cancelled either by user implicitly calling Cancel() or when watcher class is destroyed.
+
+```c++
+  etcd::Watcher watcher("http://127.0.0.1:2379", "/test", printResponse);
+  etcd.set("/test/key", "42"); /* print response will be called */
+  etcd.set("/test/key", "43"); /* print response will be called */
+  watcher.Cancel();
+  etcd.set("/test/key", "43"); /* print response will NOT be called, since watch is already cancelled */
+}
+```
+
