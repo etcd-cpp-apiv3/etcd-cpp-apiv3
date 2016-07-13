@@ -306,7 +306,7 @@ Moreover, user can attached the lease to a key(s) by indicating the lease id in 
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  int64_t leasid = etcd.leasegrant(60);
+  int64_t leasid = etcd.leasegrant(60).value().lease();
   etcd.set("/test/key2", "bar", leaseid);
 
 ```
