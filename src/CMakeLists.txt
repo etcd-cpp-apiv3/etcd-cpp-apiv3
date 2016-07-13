@@ -5,7 +5,9 @@ target_link_libraries(etcd-cpp-api ${CPPREST_LIB} boost_system ssl crypto protob
 
 install (TARGETS etcd-cpp-api DESTINATION lib)
 install (FILES ../etcd/Client.hpp
+               ../etcd/SyncClient.hpp
                ../etcd/Response.hpp
                ../etcd/Value.hpp
+               ../etcd/Watcher.hpp
                DESTINATION include/etcd)
 
