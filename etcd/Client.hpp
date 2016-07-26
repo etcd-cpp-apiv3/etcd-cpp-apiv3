@@ -4,8 +4,8 @@
 #include "etcd/Response.hpp"
 #include "v3/include/Transaction.hpp"
 #include "v3/include/AsyncTxnResponse.hpp"
+#include "v3/include/Action.hpp"
 
-#include <cpprest/http_client.h>
 #include <string>
 
 #include <grpc++/grpc++.h>

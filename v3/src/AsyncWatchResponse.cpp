@@ -17,17 +17,17 @@ void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply)
       {
         action = etcdv3::SET_ACTION;
       }
-      value = event.kv();       
+      value.kvs = event.kv();       
 
     }
     else if(mvccpb::Event::EventType::Event_EventType_DELETE == event.type())
     {
       action = etcdv3::DELETE_ACTION;
-      value = event.kv();
+      value.kvs = event.kv();
     } 
     if(event.has_prev_kv())
     {
-      prev_value = event.prev_kv();   
+      prev_value.kvs = event.prev_kv();   
     }
     // just store the first occurence of the key in values.
     // this is done so tas client will not need to change their behaviour.

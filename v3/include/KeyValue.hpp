@@ -6,11 +6,11 @@
 
 namespace etcdv3
 {
-  class KeyValue : public mvccpb::KeyValue
+  class KeyValue
   {
   public:
     KeyValue();
-    KeyValue(const mvccpb::KeyValue& from);
+    mvccpb::KeyValue kvs;
     void set_ttl(int ttl);
     int get_ttl() const;
   private:

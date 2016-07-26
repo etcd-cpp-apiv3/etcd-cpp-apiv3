@@ -27,7 +27,7 @@ void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix
       auto put_resp = resp.response_put();
       if(put_resp.has_prev_kv())
       {
-        prev_value.CopyFrom(put_resp.prev_kv());
+        prev_value.kvs.CopyFrom(put_resp.prev_kv());
       }
     }
     else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
@@ -35,7 +35,7 @@ void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix
       AsyncDeleteRangeResponse response;
       response.ParseResponse(key,prefix,*(resp.mutable_response_delete_range()));
 
-      prev_value.CopyFrom(response.get_prev_value());
+      prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
      
       values = response.get_values();
       value = response.get_value();

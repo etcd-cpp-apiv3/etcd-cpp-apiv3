@@ -17,7 +17,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
     get_request.set_range_end(range_end);
     get_request.set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
     get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
-  }    
+  }   
   response_reader = parameters.kv_stub->AsyncRange(&context,get_request,&cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
@@ -33,8 +33,6 @@ etcdv3::AsyncRangeResponse etcdv3::AsyncGetAction::ParseResponse()
   else
   { 
     range_resp.ParseResponse(reply, parameters.withPrefix);
-    //range_resp.set_action(etcdv3::GET_ACTION);
-    //range_resp.isPrefix = parameters.withPrefix;
   }
   return range_resp;
 }

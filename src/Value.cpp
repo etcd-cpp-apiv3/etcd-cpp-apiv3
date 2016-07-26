@@ -12,15 +12,15 @@ etcd::Value::Value()
 }
 
 
-etcd::Value::Value(etcdv3::KeyValue const & kvs)
+etcd::Value::Value(etcdv3::KeyValue const & kv)
 {
   dir=false;
-  _key=kvs.key();
-  value=kvs.value();
-  created=kvs.create_revision();
-  modified=kvs.mod_revision();
-  leaseId = kvs.lease();
-  _ttl = kvs.get_ttl();
+  _key=kv.kvs.key();
+  value=kv.kvs.value();
+  created=kv.kvs.create_revision();
+  modified=kv.kvs.mod_revision();
+  leaseId = kv.kvs.lease();
+  _ttl = kv.get_ttl();
 }
 
 std::string const & etcd::Value::key() const

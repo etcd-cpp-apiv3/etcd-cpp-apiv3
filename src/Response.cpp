@@ -15,7 +15,7 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
     for(unsigned int index = 0; index < val.size(); index++)
     {
       _values.push_back(Value(val[index]));
-      _keys.push_back(val[index].key());
+      _keys.push_back(val[index].kvs.key());
     }
   }
   else

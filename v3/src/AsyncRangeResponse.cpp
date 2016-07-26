@@ -16,8 +16,9 @@ void etcdv3::AsyncRangeResponse::ParseResponse(RangeResponse& resp, bool prefix)
   {
     for(int index=0; index < resp.kvs_size(); index++)
     {
-      etcdv3::KeyValue kvs(resp.kvs(index));
-      values.push_back(kvs); 
+      etcdv3::KeyValue kv;
+      kv.kvs.CopyFrom(resp.kvs(index));
+      values.push_back(kv); 
     }
 
     if(!prefix)
