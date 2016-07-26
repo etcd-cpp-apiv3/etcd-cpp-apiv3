@@ -36,22 +36,24 @@ void etcdv3::AsyncWatchAction::waitForResponse()
 {
   void* got_tag;
   bool ok = false;    
-
+  
   while(cq_.Next(&got_tag, &ok))
   {
+    if(ok == false || (got_tag == (void*)"writes done"))
+    {
+      break;
+    }
     if(got_tag == (void*)this) // read tag
     {
       if(reply.events_size())
       {
-        stream->WritesDone((void*)this);
-        cq_.Next(&got_tag, &ok);
-        break;
+        stream->WritesDone((void*)"writes done");
       }
       else
       {
         stream->Read(&reply, (void*)this);
       } 
-    }   
+    }  
   }
 }
 
