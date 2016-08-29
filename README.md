@@ -1,4 +1,4 @@
-etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-cpp-apiv3.git)
+etcd-cpp-api is a C++ API for [etcd]
 
 ## Requirements
 
@@ -9,7 +9,8 @@ etcd-cpp-api is a C++ API for [etcd](ssh://git@bud-git01.emea.nsn-net.net/etcd-c
    * grpc (https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md)
    
 ## Compatible etcd version
-Build master branch of etcd in github.
+Build master branch of etcd in github. As of writing, current releases of etcd does not yet support prev_value.
+Only the master branch supports it.
 https://github.com/coreos/etcd/blob/master/Documentation/dl_build.md (see: Build the latest version)
 
 ## Updates from etcdv2 cpp client to etcdv3 cpp client
@@ -25,6 +26,8 @@ Protofiles for etcdv3 can be found here:
 https://github.com/coreos/etcd/tree/master/auth/authpb
 https://github.com/coreos/etcd/tree/master/etcdserver/etcdserverpb
 https://github.com/coreos/etcd/tree/master/mvcc/mvccpb
+Note: Protofiles in the project is not sync to the protofiles in etcd master branch. If you
+want to update the protofiles in this project, you need to manually update it.
 
 ## generic notes
 
@@ -315,7 +318,7 @@ Also the ttl will that was granted by etcd server will be indicated in ttl().
 
 ### Watcher Class
 Users can watch a key indefinitely or until user cancels the watch. This can be done by instantiating a Watcher class.
-The supplied callback function in Watcher class will be called everytime there is an event for the specified key.
+The supplied callback function in Watcher class will be called every time there is an event for the specified key.
 Watch stream will be cancelled either by user implicitly calling Cancel() or when watcher class is destroyed.
 
 ```c++
@@ -326,4 +329,8 @@ Watch stream will be cancelled either by user implicitly calling Cancel() or whe
   etcd.set("/test/key", "43"); /* print response will NOT be called, since watch is already cancelled */
 }
 ```
+
+### TODO
+1. Cancellation of asynchronous calls(except for watch)
+2. LeaseKeepAlive
 
