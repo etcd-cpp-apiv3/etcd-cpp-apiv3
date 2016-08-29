@@ -303,11 +303,13 @@ case a small lambda function actually) will call ```watch_for_changes``` again f
 ### requesting for lease
 Users can request for lease which is governed by a time-to-live(TTL) value given by the user.
 Moreover, user can attached the lease to a key(s) by indicating the lease id in add(), set(), modify() and modify_if(). 
+Also the ttl will that was granted by etcd server will be indicated in ttl().
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  int64_t leasid = etcd.leasegrant(60).value().lease();
-  etcd.set("/test/key2", "bar", leaseid);
+  etcd::Response resp = etcd.leasegrant(60).get();
+  etcd.set("/test/key2", "bar", resp.value().lease());
+  std::cout <<"ttl" << resp.value().ttl();
 
 ```
 
