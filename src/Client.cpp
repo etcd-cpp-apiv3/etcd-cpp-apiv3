@@ -24,12 +24,12 @@ using grpc::Channel;
 
 etcd::Client::Client(std::string const & address)
 {
-  std::string stripped_address(address);
-  std::string substr("http://");
-  std::string::size_type i = stripped_address.find(substr);
+  std::string stripped_address;
+  std::string substr("://");
+  std::string::size_type i = address.find(substr);
   if(i != std::string::npos)
   {
-    stripped_address.erase(i,substr.length());
+    stripped_address = address.substr(i+substr.length());
   }
   std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
   stub_= KV::NewStub(channel);
