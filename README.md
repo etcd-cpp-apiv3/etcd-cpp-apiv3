@@ -1,12 +1,20 @@
 etcd-cpp-api is a C++ API for [etcd]
 
 ## Requirements
+1. Build Boost Library(http://www.boost.org/doc/libs/1_61_0/more/getting_started/unix-variants.html)
+    * You can use: ./bootstrap.sh --with-libraries=system,thread,locale,random,chrono,regex,filesystem 
+    * The above command will only compile those libraries indicated, thus it takes less time to build boost
 
-   * [C++ REST SDK](http://casablanca.codeplex.com/)
-   * Boost libraries
-   * [Catch](https://github.com/philsquared/Catch) for testing 
-   * protobuf (https://github.com/google/protobuf/blob/master/src/README.md)
-   * grpc (https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md)
+2. Build Casablanca:
+    * Instructions on how to build is here: https://github.com/Microsoft/cpprestsdk/wiki
+    * For Linux environment you can omit libboost-all-dev during apt-get install, if you already have boost library installed.
+
+3. Install Protobuf:
+    * https://github.com/google/protobuf/blob/master/src/README.md
+
+4. Install Protoc for C++:
+    * https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md
+
    
 ## Compatible etcd version
 Build master branch of etcd in github. As of writing, current releases of etcd does not yet support prev_value.
@@ -19,8 +27,8 @@ See "handling directory nodes" section
 ## compiling .proto
 Proto files are stored in /proto. The proto files defined the interface of etcdv3.
 You can compile it like this(if you are running this command inside /proto folder)
-$ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
-$ protoc -I . --cpp_out=. ./*.proto
+*$ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
+*$ protoc -I . --cpp_out=. ./*.proto
 
 Protofiles for etcdv3 can be found here:
 https://github.com/coreos/etcd/tree/master/auth/authpb
