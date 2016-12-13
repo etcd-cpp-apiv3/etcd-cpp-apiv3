@@ -1,3 +1,4 @@
+#include <grpc/support/log.h>
 #include "v3/include/Action.hpp"
 
 etcdv3::Action::Action(etcdv3::ActionParameters params)
