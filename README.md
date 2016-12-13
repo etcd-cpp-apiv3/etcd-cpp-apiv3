@@ -27,13 +27,13 @@ See "handling directory nodes" section
 ## compiling .proto
 Proto files are stored in /proto. The proto files defined the interface of etcdv3.
 You can compile it like this(if you are running this command inside /proto folder)
-*$ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
-*$ protoc -I . --cpp_out=. ./*.proto
+    * $ protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
+    * $ protoc -I . --cpp_out=. ./*.proto
 
 Protofiles for etcdv3 can be found here:
-https://github.com/coreos/etcd/tree/master/auth/authpb
-https://github.com/coreos/etcd/tree/master/etcdserver/etcdserverpb
-https://github.com/coreos/etcd/tree/master/mvcc/mvccpb
+    * https://github.com/coreos/etcd/tree/master/auth/authpb
+    * https://github.com/coreos/etcd/tree/master/etcdserver/etcdserverpb
+    * https://github.com/coreos/etcd/tree/master/mvcc/mvccpb
 Note: Protofiles in the project is not sync to the protofiles in etcd master branch. If you
 want to update the protofiles in this project, you need to manually update it.
 
