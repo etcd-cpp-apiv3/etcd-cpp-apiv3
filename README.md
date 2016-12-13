@@ -2,7 +2,11 @@ etcd-cpp-api is a C++ API for [etcd]
 
 ## Requirements
 1. Build Boost Library(http://www.boost.org/doc/libs/1_61_0/more/getting_started/unix-variants.html)
-    * You can use: ./bootstrap.sh --with-libraries=system,thread,locale,random,chrono,regex,filesystem 
+    * You can use: 
+    ```
+    ./bootstrap.sh --with-libraries=system,thread,locale,random,chrono,regex,filesystem
+    ./b2 install
+    ```
     * The above command will only compile those libraries indicated, thus it takes less time to build boost
 
 2. Build Casablanca:
