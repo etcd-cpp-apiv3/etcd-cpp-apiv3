@@ -1,4 +1,4 @@
-find_path(CATCH_INCLUDE_DIR NAMES catch.hpp)
+find_path(CATCH_INCLUDE_DIR NAMES catch.hpp HINTS ..)
 include_directories(${CATCH_INCLUDE_DIR})
 
 add_executable(etcd_test EtcdTest.cpp EtcdSyncTest.cpp WatcherTest.cpp)
