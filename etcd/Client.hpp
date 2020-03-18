@@ -29,9 +29,11 @@ namespace etcd
   public:
     /**
      * Constructs an etcd client object.
-     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001"
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
-    Client(std::string const & etcd_url);
+    Client(std::string const & etcd_url, std::string const & load_balancer = "round_robin");
 
     /**
      * Sends a get request to the etcd server

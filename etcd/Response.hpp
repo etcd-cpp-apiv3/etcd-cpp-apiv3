@@ -36,7 +36,9 @@ namespace etcd
 
         auto v3resp = call->ParseResponse();
           
-        resp = etcd::Response(v3resp);    
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - call->startTimepoint());
+        resp = etcd::Response(v3resp, duration);    
 
         return resp;
       });
@@ -109,8 +111,13 @@ namespace etcd
      */
     std::vector<mvccpb::Event> const & events() const;
 
+    /**
+     * Returns the duration of request execution in microseconds.
+     */
+    std::chrono::microseconds const & duration() const;
+
   protected:
-    Response(const etcdv3::V3Response& response);
+    Response(const etcdv3::V3Response& response, std::chrono::microseconds const& duration);
     Response(int error_code, char const * error_message);
 
     int         _error_code;
@@ -123,6 +130,7 @@ namespace etcd
     Keys        _keys;
     std::string _lock_key; // for lock
     std::vector<mvccpb::Event> _events; // for watch
+    std::chrono::microseconds _duration; // execute duration (in microseconds), during the action created and response parsed
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
     friend class Client;

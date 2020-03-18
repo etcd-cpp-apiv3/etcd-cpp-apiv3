@@ -1,11 +1,12 @@
-file(GLOB_RECURSE CPP_CLIENT_SRC RELATIVE "${CMAKE_SOURCE_DIR}/src"
-                  "${CMAKE_SOURCE_DIR}/proto/*.cc"
-                  "${CMAKE_SOURCE_DIR}/src/*.cpp"
-                  "${CMAKE_SOURCE_DIR}/v3/src/*.cpp")
+file(GLOB_RECURSE CPP_CLIENT_SRC
+                  RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/**/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/../proto/*.cc")
 
 add_library(etcd-cpp-api SHARED ${CPP_CLIENT_SRC})
 set_property(TARGET etcd-cpp-api PROPERTY CXX_STANDARD 11)
-target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_SOURCE_DIR}/proto)
+target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../proto)
 
 target_link_libraries(etcd-cpp-api PUBLIC
                       ${CPPREST_LIB}
@@ -28,11 +29,10 @@ install (FILES ../proto/auth.pb.h
                ../proto/v3lock.pb.h
                ../proto/v3lock.grpc.pb.h
                DESTINATION include/etcd/proto)
-install (FILES ../v3/include/Transaction.hpp
-               DESTINATION include/etcd/v3/include)
+install (FILES ../etcd/v3/Transaction.hpp
+               DESTINATION include/etcd/v3)
 install (FILES ../proto/gogoproto/gogo.pb.h
                DESTINATION include/etcd/proto/gogoproto)
 install (FILES ../proto/google/api/annotations.pb.h
                ../proto/google/api/http.pb.h
                DESTINATION include/etcd/proto/google/api)
-
