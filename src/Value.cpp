@@ -1,6 +1,6 @@
 #include <iomanip>
 #include "etcd/Value.hpp"
-#include "v3/include/KeyValue.hpp"
+#include "etcd/v3/KeyValue.hpp"
 
 etcd::Value::Value()
   : dir(false),

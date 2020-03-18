@@ -1,10 +1,10 @@
 #include "etcd/Response.hpp"
-#include "v3/include/V3Response.hpp"
+#include "etcd/v3/V3Response.hpp"
 
 #include <iostream>
 
 
-etcd::Response::Response(const etcdv3::V3Response& reply)
+etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseconds const& duration)
 {
   _index = reply.get_index();
   _action = reply.get_action();
@@ -28,6 +28,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply)
 
   _lock_key = reply.get_lock_key();
   _events = reply.get_events();
+
+  // duration
+  _duration = duration;
 }
 
 
@@ -105,4 +108,8 @@ std::string const & etcd::Response::lock_key() const {
 
 std::vector<mvccpb::Event> const & etcd::Response::events() const {
   return this->_events;
-};
+}
+
+std::chrono::microseconds const& etcd::Response::duration() const {
+  return this->_duration;
+}

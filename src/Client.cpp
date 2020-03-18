@@ -1,42 +1,85 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include <memory>
 #include "etcd/Client.hpp"
-#include "v3/include/action_constants.hpp"
-#include "v3/include/Action.hpp"
-#include "v3/include/AsyncTxnResponse.hpp"
-#include "v3/include/AsyncRangeResponse.hpp"
-#include "v3/include/AsyncWatchResponse.hpp"
-#include "v3/include/AsyncDeleteRangeResponse.hpp"
-#include "v3/include/AsyncLockResponse.hpp"
-#include "v3/include/Transaction.hpp"
+#include "etcd/v3/action_constants.hpp"
+#include "etcd/v3/Action.hpp"
+#include "etcd/v3/AsyncTxnResponse.hpp"
+#include "etcd/v3/AsyncRangeResponse.hpp"
+#include "etcd/v3/AsyncWatchResponse.hpp"
+#include "etcd/v3/AsyncDeleteRangeResponse.hpp"
+#include "etcd/v3/AsyncLockResponse.hpp"
+#include "etcd/v3/Transaction.hpp"
 #include <iostream>
 
-#include "v3/include/AsyncSetAction.hpp"
-#include "v3/include/AsyncCompareAndSwapAction.hpp"
-#include "v3/include/AsyncCompareAndDeleteAction.hpp"
-#include "v3/include/AsyncUpdateAction.hpp"
-#include "v3/include/AsyncGetAction.hpp"
-#include "v3/include/AsyncDeleteAction.hpp"
-#include "v3/include/AsyncWatchAction.hpp"
-#include "v3/include/AsyncLeaseGrantAction.hpp"
-#include "v3/include/AsyncLockAction.hpp"
-#include "v3/include/AsyncTxnAction.hpp"
+#include "etcd/v3/AsyncSetAction.hpp"
+#include "etcd/v3/AsyncCompareAndSwapAction.hpp"
+#include "etcd/v3/AsyncCompareAndDeleteAction.hpp"
+#include "etcd/v3/AsyncUpdateAction.hpp"
+#include "etcd/v3/AsyncGetAction.hpp"
+#include "etcd/v3/AsyncDeleteAction.hpp"
+#include "etcd/v3/AsyncWatchAction.hpp"
+#include "etcd/v3/AsyncLeaseGrantAction.hpp"
+#include "etcd/v3/AsyncLockAction.hpp"
+#include "etcd/v3/AsyncTxnAction.hpp"
 
+#include <boost/algorithm/string.hpp>
 
 using grpc::Channel;
 
 
+static bool dns_resolve(std::string const &target, std::vector<std::string> &endpoints) {
+  struct addrinfo hints = {}, *addrs;
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
 
-etcd::Client::Client(std::string const & address)
-{
-  std::string stripped_address;
-  std::string substr("://");
-  std::string::size_type i = address.find(substr);
-  if(i != std::string::npos)
-  {
-    stripped_address = address.substr(i+substr.length());
+  std::vector<std::string> target_parts;
+  boost::split(target_parts, target, boost::is_any_of(":"));
+  if (target_parts.size() != 2) {
+    std::cerr << "warn: invalid URL: " << target << std::endl;
+    return false;
   }
-  std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
-  std::cout << "channel is: " << channel << std::endl;
+  if (getaddrinfo(target_parts[0].c_str(), target_parts[1].c_str(), &hints, &addrs) != 0) {
+    std::cerr << "warn: getaddrinfo() failed for endpoint " << target << std::endl;
+    return false;
+  }
+
+  char host[16] = {'\0'};
+  for (struct addrinfo* addr = addrs; addr != nullptr; addr = addr->ai_next) {
+    memset(host, '\0', sizeof(host));
+    getnameinfo(addr->ai_addr, addr->ai_addrlen, host, sizeof(host), NULL, 0, NI_NUMERICHOST);
+    endpoints.emplace_back(std::string(host) + ":" + target_parts[1]);
+  }
+  freeaddrinfo(addrs);
+  return true;
+}
+
+etcd::Client::Client(std::string const & address, std::string const & load_balancer)
+{
+  std::vector<std::string> addresses;
+  boost::algorithm::split(addresses, address, boost::algorithm::is_any_of(",;"));
+  std::string stripped_address;
+  {
+    std::vector<std::string> stripped_addresses;
+    std::string substr("://");
+    for (auto const &addr: addresses) {
+      std::string::size_type idx = addr.find(substr);
+      std::string target = idx == std::string::npos ? addr : addr.substr(idx + substr.length());
+      dns_resolve(target, stripped_addresses);
+    }
+    stripped_address = boost::algorithm::join(stripped_addresses, ",");
+  }
+  grpc::ChannelArguments grpc_args;
+  grpc_args.SetLoadBalancingPolicyName(load_balancer);
+  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+      "ipv4:///" + stripped_address,
+      grpc::InsecureChannelCredentials(),
+      grpc_args);
   stub_= KV::NewStub(channel);
   watchServiceStub= Watch::NewStub(channel);
   leaseServiceStub= Lease::NewStub(channel);

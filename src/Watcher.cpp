@@ -1,5 +1,5 @@
 #include "etcd/Watcher.hpp"
-#include "v3/include/AsyncWatchAction.hpp"
+#include "etcd/v3/AsyncWatchAction.hpp"
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key, std::function<void(Response)> callback)
 {

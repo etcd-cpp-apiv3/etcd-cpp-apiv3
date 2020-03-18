@@ -13,23 +13,22 @@ find_package(Boost REQUIRED COMPONENTS system thread locale random)
 find_package(OpenSSL REQUIRED)
 find_package(Protobuf REQUIRED)
 
-set(GRPC_LIBRARY_PATH /usr/lib
-                      /usr/lib64
-                      /usr/local/lib
-                      /usr/local/lib64
-                      /usr/local/opt/grpc)
-find_library(GPR_LIBRARY NAMES gpr PATHS ${GRPC_LIBRARY_PATH})
-find_library(GRPC_LIBRARY NAMES grpc PATHS ${GRPC_LIBRARY_PATH})
-find_library(GRPC++_LIBRARY NAMES grpc++ PATHS ${GRPC_LIBRARY_PATH})
-set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC++_LIBRARY})
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
+set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 
-file(GLOB_RECURSE PROTO_SRC RELATIVE "${CMAKE_SOURCE_DIR}/proto" "proto/*.proto")
+file(GLOB_RECURSE PROTO_SRC RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/proto" "proto/*.proto")
 
-add_custom_target(proto-gen
-        COMMAND protoc -I . --cpp_out=. ${PROTO_SRC}
-        COMMAND protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto ./v3lock.proto
-        COMMENT "Generate protobuf stuffs"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/proto)
+# Generate protobuf definitions
+execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+                        -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
+                        --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/proto
+                        ${PROTO_SRC})
+execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+                        -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
+                        --grpc_out=${CMAKE_CURRENT_SOURCE_DIR}/proto
+                        --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
+                        ${CMAKE_CURRENT_SOURCE_DIR}/proto/rpc.proto
+                        ${CMAKE_CURRENT_SOURCE_DIR}/proto/v3lock.proto)
 
 enable_testing()
 include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}
@@ -40,4 +39,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare -std=c++11")
 
 add_subdirectory(src)
-add_subdirectory(tst)
+
+if (BUILD_TESTS)
+    add_subdirectory(tst)
+endif ()
