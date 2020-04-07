@@ -2,18 +2,21 @@
 #define __ETCD_CLIENT_HPP__
 
 #include "etcd/Response.hpp"
-#include "v3/include/Transaction.hpp"
-#include "v3/include/AsyncTxnResponse.hpp"
-#include "v3/include/Action.hpp"
 
 #include <string>
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
+#include "proto/v3lock.grpc.pb.h"
 
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using etcdserverpb::Lease;
+using v3lockpb::Lock;
+
+namespace etcdv3 {
+  class Transaction;
+}
 
 namespace etcd
 {
@@ -181,11 +184,29 @@ namespace etcd
      */
     pplx::task<Response> leasegrant(int ttl);
 
-  private:
+    /**
+     * Gains a lock at a key.
+     * @param key is the key to be used to request the lock.
+     */
+    pplx::task<Response> lock(std::string const &key);
 
+    /**
+     * Releases a lock at a key.
+     * @param key is the lock key to release.
+     */
+    pplx::task<Response> unlock(std::string const &key);
+
+     /**
+      * Execute a etcd transaction.
+      * @param txn is the transaction object to be executed.
+      */
+    pplx::task<Response> txn(etcdv3::Transaction const &txn);
+
+  private:
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
     std::unique_ptr<Lease::Stub> leaseServiceStub;
+    std::unique_ptr<Lock::Stub> lockServiceStub;
 };
 
 

@@ -4,7 +4,10 @@
 #include <cpprest/http_client.h>
 #include <string>
 #include <vector>
-#include "v3/include/KeyValue.hpp"
+
+namespace etcdv3 {
+  class KeyValue;
+}
 
 namespace etcd
 {

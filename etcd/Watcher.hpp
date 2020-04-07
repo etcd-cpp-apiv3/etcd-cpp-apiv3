@@ -3,9 +3,13 @@
 
 #include <string>
 #include "etcd/Response.hpp"
-#include "v3/include/AsyncWatchAction.hpp"
 
 #include <grpc++/grpc++.h>
+#include "proto/rpc.grpc.pb.h"
+
+namespace etcdv3 {
+  class AsyncWatchAction;
+}
 
 using etcdserverpb::KV;
 using etcdserverpb::Watch;

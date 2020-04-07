@@ -343,6 +343,21 @@ TEST_CASE("watch changes in the past")
   CHECK("45" == res.value().as_string());
 }
 
+TEST_CASE("watch multiple keys and use promise") {
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  int start_index = etcd.add("/test/key1", "value1").get().index();
+  etcd.add("/test/key2", "value2").get();
+
+  pplx::task<size_t> res = etcd.watch("/test", start_index, true)
+    .then([](pplx::task<etcd::Response> const &resp_task) -> size_t {
+      auto const &resp = resp_task.get();
+      return resp.events().size();
+    });
+  size_t event_size = res.get();
+  CHECK(2 == event_size);
+}
+
 TEST_CASE("lease grant")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
