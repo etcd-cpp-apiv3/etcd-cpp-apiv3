@@ -1,10 +1,12 @@
 #include <memory>
 #include "etcd/Client.hpp"
 #include "v3/include/action_constants.hpp"
+#include "v3/include/Action.hpp"
 #include "v3/include/AsyncTxnResponse.hpp"
 #include "v3/include/AsyncRangeResponse.hpp"
 #include "v3/include/AsyncWatchResponse.hpp"
 #include "v3/include/AsyncDeleteRangeResponse.hpp"
+#include "v3/include/AsyncLockResponse.hpp"
 #include "v3/include/Transaction.hpp"
 #include <iostream>
 
@@ -16,6 +18,8 @@
 #include "v3/include/AsyncDeleteAction.hpp"
 #include "v3/include/AsyncWatchAction.hpp"
 #include "v3/include/AsyncLeaseGrantAction.hpp"
+#include "v3/include/AsyncLockAction.hpp"
+#include "v3/include/AsyncTxnAction.hpp"
 
 
 using grpc::Channel;
@@ -32,9 +36,11 @@ etcd::Client::Client(std::string const & address)
     stripped_address = address.substr(i+substr.length());
   }
   std::shared_ptr<Channel> channel = grpc::CreateChannel(stripped_address, grpc::InsecureChannelCredentials());
+  std::cout << "channel is: " << channel << std::endl;
   stub_= KV::NewStub(channel);
   watchServiceStub= Watch::NewStub(channel);
   leaseServiceStub= Lease::NewStub(channel);
+  lockServiceStub = Lock::NewStub(channel);
 }
 
 
@@ -325,5 +331,25 @@ pplx::task<etcd::Response> etcd::Client::leasegrant(int ttl)
   return Response::create(call);
 }
 
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
+  etcdv3::ActionParameters params;
+  params.key = key;
+  params.lock_stub = lockServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncLockAction> call(new etcdv3::AsyncLockAction(params));
+  return Response::create(call);
+}
 
+pplx::task<etcd::Response> etcd::Client::unlock(std::string const &key) {
+  etcdv3::ActionParameters params;
+  params.key = key;
+  params.lock_stub = lockServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncUnlockAction> call(new etcdv3::AsyncUnlockAction(params));
+  return Response::create(call);
+}
 
+pplx::task<etcd::Response> etcd::Client::txn(etcdv3::Transaction const &txn) {
+  etcdv3::ActionParameters params;
+  params.kv_stub = stub_.get();
+  std::shared_ptr<etcdv3::AsyncTxnAction> call(new etcdv3::AsyncTxnAction(params, txn));
+  return Response::create(call);
+}

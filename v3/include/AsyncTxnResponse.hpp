@@ -12,7 +12,8 @@ namespace etcdv3
   {
     public:
       AsyncTxnResponse(){};
-      void ParseResponse(std::string const& key, bool prefix,TxnResponse& resp);
+      void ParseResponse(TxnResponse& resp);
+      void ParseResponse(std::string const& key, bool prefix, TxnResponse& resp);
   };
 }
 

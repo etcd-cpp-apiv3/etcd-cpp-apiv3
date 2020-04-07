@@ -3,6 +3,7 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
+#include "proto/v3lock.grpc.pb.h"
 
 using grpc::ClientContext;
 using grpc::CompletionQueue;
@@ -11,6 +12,7 @@ using grpc::Status;
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using etcdserverpb::Lease;
+using v3lockpb::Lock;
 
 namespace etcdv3
 {
@@ -34,6 +36,7 @@ namespace etcdv3
     KV::Stub* kv_stub;
     Watch::Stub* watch_stub;
     Lease::Stub* lease_stub;
+    Lock::Stub* lock_stub;
   };
 
   class Action

@@ -56,8 +56,8 @@ void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, st
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
 	put_request->set_value(value);
-        put_request->set_prev_kv(true);
-        put_request->set_lease(leaseid);
+    put_request->set_prev_kv(true);
+    put_request->set_lease(leaseid);
 	RequestOp* req_failure = txn_request.add_failure();
 	req_failure->set_allocated_request_put(put_request.release());
 
@@ -65,6 +65,58 @@ void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, st
 	get_request->set_key(key);
 	req_failure = txn_request.add_failure();
 	req_failure->set_allocated_request_range(get_request.release());
+}
+
+/**
+ * add key and then get new value of key
+ */
+void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, std::string const& value, int64_t leaseid) {
+	std::unique_ptr<PutRequest> put_request(new PutRequest());
+	put_request->set_key(key);
+	put_request->set_value(value);
+    put_request->set_prev_kv(true);
+    put_request->set_lease(leaseid);
+	RequestOp* req_success = txn_request.add_success();
+	req_success->set_allocated_request_put(put_request.release());
+
+    std::unique_ptr<RangeRequest> get_request(new RangeRequest());
+	get_request->set_key(key);
+	req_success = txn_request.add_success();
+	req_success->set_allocated_request_range(get_request.release());
+}
+
+/**
+ * get key value then modify and get new value
+ */
+void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& value, int64_t leaseid) {
+	std::unique_ptr<PutRequest> put_request(new PutRequest());
+	put_request->set_key(key);
+	put_request->set_value(value);
+    put_request->set_prev_kv(true);
+    put_request->set_lease(leaseid);
+	RequestOp* req_success = txn_request.add_success();
+	req_success->set_allocated_request_put(put_request.release());
+
+	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
+	get_request->set_key(key);
+	req_success = txn_request.add_success();
+	req_success->set_allocated_request_range(get_request.release());
+}
+
+/**
+ * get key, delete
+ */
+void etcdv3::Transaction::setup_delete_sequence(std::string const &key, std::string const &range_end, bool recursive) {
+	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
+	del_request->set_key(key);
+    del_request->set_prev_kv(true);
+	if(recursive)
+	{
+          del_request->set_range_end(range_end);
+	}
+
+	RequestOp* req_success = txn_request.add_success();
+	req_success->set_allocated_request_delete_range(del_request.release());
 }
 
 /**
@@ -95,62 +147,10 @@ void etcdv3::Transaction::setup_delete_failure_operation(std::string const &key,
 	req_failure->set_allocated_request_delete_range(del_request.release());
 }
 
-/**
- * add key and then get new value of key
- */
-void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, std::string const& value, int64_t leaseid) {
-	std::unique_ptr<PutRequest> put_request(new PutRequest());
-	put_request->set_key(key);
-	put_request->set_value(value);
-        put_request->set_prev_kv(true);
-        put_request->set_lease(leaseid);
-	RequestOp* req_success = txn_request.add_success();
-	req_success->set_allocated_request_put(put_request.release());
-
-        std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-	get_request->set_key(key);
-	req_success = txn_request.add_success();
-	req_success->set_allocated_request_range(get_request.release());
-}
-
-/**
- * get key value then modify and get new value
- */
-void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& value, int64_t leaseid) {
-	std::unique_ptr<PutRequest> put_request(new PutRequest());
-	put_request->set_key(key);
-	put_request->set_value(value);
-        put_request->set_prev_kv(true);
-        put_request->set_lease(leaseid);
-	RequestOp* req_success = txn_request.add_success();
-	req_success->set_allocated_request_put(put_request.release());
-
-	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-	get_request->set_key(key);
-	req_success = txn_request.add_success();
-	req_success->set_allocated_request_range(get_request.release());
-}
-
-/**
- * get key, delete
- */
-void etcdv3::Transaction::setup_delete_sequence(std::string const &key, std::string const &range_end, bool recursive) {
-	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-	del_request->set_key(key);
-        del_request->set_prev_kv(true);
-	if(recursive)
-	{
-          del_request->set_range_end(range_end);
-	}
-
-	RequestOp* req_success = txn_request.add_success();
-	req_success->set_allocated_request_delete_range(del_request.release());
-}
-
 void etcdv3::Transaction::setup_compare_and_delete_operation(std::string const& key) {
 	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
 	del_request->set_key(key);
-        del_request->set_prev_kv(true);
+    del_request->set_prev_kv(true);
 	RequestOp* req_success = txn_request.add_success();
 	req_success->set_allocated_request_delete_range(del_request.release());
 }
@@ -160,6 +160,23 @@ void etcdv3::Transaction::setup_lease_grant_operation(int ttl)
   leasegrant_request.set_ttl(ttl);
 }
 
+void etcdv3::Transaction::setup_put(std::string const &key, std::string const &value) {
+	std::unique_ptr<PutRequest> put_request(new PutRequest());
+	put_request->set_key(key);
+	put_request->set_value(value);
+    put_request->set_prev_kv(false);
+	RequestOp* req_success = txn_request.add_success();
+	req_success->set_allocated_request_put(put_request.release());
+}
+
+void etcdv3::Transaction::setup_delete(std::string const &key) {
+	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
+	del_request->set_key(key);
+    del_request->set_prev_kv(false);
+
+	RequestOp* req_success = txn_request.add_success();
+	req_success->set_allocated_request_delete_range(del_request.release());
+}
 
 etcdv3::Transaction::~Transaction() {
 }

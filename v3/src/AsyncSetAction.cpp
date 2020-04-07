@@ -10,7 +10,7 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool crea
   etcdv3::Transaction transaction(parameters.key);
   isCreate = create;
   transaction.init_compare(Compare::CompareResult::Compare_CompareResult_EQUAL,
-		  	  	  	  	  	  Compare::CompareTarget::Compare_CompareTarget_VERSION);
+                           Compare::CompareTarget::Compare_CompareTarget_VERSION);
 
   transaction.setup_basic_create_sequence(parameters.key, parameters.value, parameters.lease_id);
 

@@ -27,8 +27,22 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters param)
   }
 
   watch_req.mutable_create_request()->CopyFrom(watch_create_req);
-  stream->Write(watch_req, (void*)"write");
-  stream->Read(&reply, (void*)this);
+
+  // wait "create" success (the stream becomes ready)
+  void *got_tag;
+  bool ok = false;
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"create") {
+    stream->Write(watch_req, (void *)"write");
+  } else {
+    throw std::runtime_error("failed to create a watch connection");
+  }
+
+  // wait "write" success
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"write") {
+    stream->Read(&reply, (void*)this);
+  } else {
+    throw std::runtime_error("failed to read proper reply from server");
+  }
 }
 
 
@@ -39,8 +53,13 @@ void etcdv3::AsyncWatchAction::waitForResponse()
   
   while(cq_.Next(&got_tag, &ok))
   {
-    if(ok == false || (got_tag == (void*)"writes done"))
+    if(ok == false)
     {
+      break;
+    }
+    if(got_tag == (void*)"writes done") {
+      isCancelled = true;
+      cq_.Shutdown();
       break;
     }
     if(got_tag == (void*)this) // read tag
@@ -79,6 +98,8 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
     if(got_tag == (void*)"writes done")
     {
       isCancelled = true;
+      cq_.Shutdown();
+      break;
     }
     else if(got_tag == (void*)this) // read tag
     {

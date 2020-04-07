@@ -4,6 +4,11 @@
 void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply)
 {
   index = reply.header().revision();
+  for (auto const &e: reply.events()) {
+    events.emplace_back(e);
+  }
+  std::cout << "index = " << index << ", event size = " << reply.events().size()
+                                   << ", res event size = " << events.size() << std::endl;
   for(int cnt =0; cnt < reply.events_size(); cnt++)
   {
     auto event = reply.events(cnt);

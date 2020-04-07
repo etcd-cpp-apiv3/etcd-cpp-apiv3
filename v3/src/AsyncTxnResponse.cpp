@@ -5,6 +5,10 @@
 
 using etcdserverpb::ResponseOp;
 
+void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
+  index = reply.header().revision();
+}
+
 void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix, TxnResponse& reply)
 {
   index = reply.header().revision();

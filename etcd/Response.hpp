@@ -6,12 +6,13 @@
 
 #include "etcd/Value.hpp"
 #include <grpc++/grpc++.h>
-
-#include "v3/include/V3Response.hpp"
+#include "proto/kv.pb.h"
 
 #include <iostream>
+
 namespace etcdv3 {
   class AsyncWatchAction;
+  class V3Response;
 }
 
 namespace etcd
@@ -98,7 +99,17 @@ namespace etcd
      */
     std::string const & key(int index) const;
 
-  protected:  
+    /**
+     * Returns the lock key.
+     */
+    std::string const & lock_key() const;
+
+    /**
+     * Returns the watched events.
+     */
+    std::vector<mvccpb::Event> const & events() const;
+
+  protected:
     Response(const etcdv3::V3Response& response);
     Response(int error_code, char const * error_message);
 
@@ -110,6 +121,8 @@ namespace etcd
     Value       _prev_value;
     Values      _values;
     Keys        _keys;
+    std::string _lock_key; // for lock
+    std::vector<mvccpb::Event> _events; // for watch
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
     friend class Client;

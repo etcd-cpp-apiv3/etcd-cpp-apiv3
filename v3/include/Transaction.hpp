@@ -24,10 +24,14 @@ public:
 	void setup_delete_sequence(std::string const &key, std::string const &range_end, bool recursive);
 	void setup_delete_failure_operation(std::string const &key, std::string const &range_end, bool recursive);
 	void setup_compare_and_delete_operation(std::string const& key);
-        void setup_lease_grant_operation(int ttl);
+	void setup_lease_grant_operation(int ttl);
+
+	// update without `get` and no `prev_kv` returned
+	void setup_put(std::string const &key, std::string const &value);
+	void setup_delete(std::string const &key);
 
 	etcdserverpb::TxnRequest txn_request;
-        etcdserverpb::LeaseGrantRequest leasegrant_request;
+	etcdserverpb::LeaseGrantRequest leasegrant_request;
 
 private:
 	std::string key;
