@@ -10,25 +10,30 @@ find_library(CPPREST_LIB NAMES cpprest)
 find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
 
 find_package(Boost REQUIRED COMPONENTS system thread locale random)
+if (APPLE)
+    # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
+    if (NOT OpenSSL_DIR)
+        find_program(HOMEBREW brew)
+        if (HOMEBREW STREQUAL "HOMEBREW-NOTFOUND")
+            message(WARNING "Homebrew not found: not using Homebrew's OpenSSL")
+            if (NOT OPENSSL_ROOT_DIR)
+                message(WARNING "Use -DOPENSSL_ROOT_DIR for non-Apple OpenSSL")
+            endif()
+        else()
+            execute_process(COMMAND brew --prefix openssl
+                OUTPUT_VARIABLE OPENSSL_ROOT_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+    endif()
+endif()
 find_package(OpenSSL REQUIRED)
 find_package(Protobuf REQUIRED)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
 set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 
-file(GLOB_RECURSE PROTO_SRC RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/proto" "proto/*.proto")
-
-# Generate protobuf definitions
-execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE}
-                        -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
-                        --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/proto
-                        ${PROTO_SRC})
-execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE}
-                        -I ${CMAKE_CURRENT_SOURCE_DIR}/proto
-                        --grpc_out=${CMAKE_CURRENT_SOURCE_DIR}/proto
-                        --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
-                        ${CMAKE_CURRENT_SOURCE_DIR}/proto/rpc.proto
-                        ${CMAKE_CURRENT_SOURCE_DIR}/proto/v3lock.proto)
+# will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
 enable_testing()
 include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}

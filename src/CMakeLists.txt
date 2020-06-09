@@ -1,10 +1,11 @@
 file(GLOB_RECURSE CPP_CLIENT_SRC
                   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
                   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-                  "${CMAKE_CURRENT_SOURCE_DIR}/**/*.cpp"
-                  "${CMAKE_CURRENT_SOURCE_DIR}/../proto/*.cc")
+                  "${CMAKE_CURRENT_SOURCE_DIR}/**/*.cpp")
 
-add_library(etcd-cpp-api SHARED ${CPP_CLIENT_SRC})
+set_source_files_properties(${PROTOBUF_GENERATES} PROPERTIES GENERATED TRUE)
+add_library(etcd-cpp-api SHARED ${CPP_CLIENT_SRC} ${PROTOBUF_GENERATES})
+add_dependencies(etcd-cpp-api protobuf_generates)
 set_property(TARGET etcd-cpp-api PROPERTY CXX_STANDARD 11)
 target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../proto)
 
