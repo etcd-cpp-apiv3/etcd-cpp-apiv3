@@ -350,3 +350,8 @@ Watch stream will be cancelled either by user implicitly calling Cancel() or whe
 1. Cancellation of asynchronous calls(except for watch)
 2. LeaseKeepAlive
 
+
+
+## License
+
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/nokia/etcd-cpp-apiv3/blob/master/LICENSE.txt).
