@@ -98,6 +98,13 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
   void* got_tag;
   bool ok = false;    
 
+  // wait "write" (WatchCreateRequest) success, and start to read the first reply
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"write") {
+    stream->Read(&reply, (void*)this);
+  } else {
+    throw std::runtime_error("failed to write WatchCreateRequest to server");
+  }
+
   while(cq_.Next(&got_tag, &ok))
   {
     if(ok == false)
@@ -120,9 +127,10 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start_timepoint);
         callback(etcd::Response(resp, duration)); 
+        start_timepoint = std::chrono::high_resolution_clock::now();
       }
       stream->Read(&reply, (void*)this);
-    }     
+    }
   }
 }
 

@@ -20,6 +20,8 @@ namespace etcdv3 {
 
 namespace etcd
 {
+  class Watcher;
+
   /**
    * Client is responsible for maintaining a connection towards an etcd server.
    * Etcd operations can be reached via the methods of the client.
@@ -205,10 +207,13 @@ namespace etcd
     pplx::task<Response> txn(etcdv3::Transaction const &txn);
 
   private:
+    std::shared_ptr<grpc::Channel> channel;
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
     std::unique_ptr<Lease::Stub> leaseServiceStub;
     std::unique_ptr<Lock::Stub> lockServiceStub;
+
+    friend class Watcher;
 };
 
 

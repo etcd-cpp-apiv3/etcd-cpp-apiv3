@@ -26,7 +26,7 @@ TEST_CASE("create watcher with cancel")
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
-  etcd::Watcher watcher(etcd_uri, "/test", printResponse);
+  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
   sleep(1);
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
@@ -52,7 +52,7 @@ TEST_CASE("create watcher")
 
   watcher_called = 0;
   {
-    etcd::Watcher watcher(etcd_uri, "/test", printResponse);
+    etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
     sleep(1);
     etcd.set("/test/key", "42");
     etcd.set("/test/key", "43");

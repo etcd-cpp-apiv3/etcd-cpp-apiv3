@@ -76,14 +76,14 @@ etcd::Client::Client(std::string const & address, std::string const & load_balan
   }
   grpc::ChannelArguments grpc_args;
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
-  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+  this->channel = grpc::CreateCustomChannel(
       "ipv4:///" + stripped_address,
       grpc::InsecureChannelCredentials(),
       grpc_args);
-  stub_= KV::NewStub(channel);
-  watchServiceStub= Watch::NewStub(channel);
-  leaseServiceStub= Lease::NewStub(channel);
-  lockServiceStub = Lock::NewStub(channel);
+  stub_= KV::NewStub(this->channel);
+  watchServiceStub= Watch::NewStub(this->channel);
+  leaseServiceStub= Lease::NewStub(this->channel);
+  lockServiceStub = Lock::NewStub(this->channel);
 }
 
 
