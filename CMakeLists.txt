@@ -33,6 +33,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
 set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 
 # will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
 enable_testing()
