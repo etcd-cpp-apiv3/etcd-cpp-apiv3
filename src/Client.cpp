@@ -339,6 +339,18 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.withPrefix = true;
+  params.limit = 0;  // default no limit.
+  params.kv_stub = stub_.get();
+  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t const limit)
+{
+  etcdv3::ActionParameters params;
+  params.key.assign(key);
+  params.withPrefix = true;
+  params.limit = limit;
   params.kv_stub = stub_.get();
   std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
   return Response::create(call);

@@ -158,6 +158,15 @@ namespace etcd
 
 
     /**
+     * Gets a directory listing of the directory identified by the key.
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    pplx::task<Response> ls(std::string const & key, size_t const limit);
+
+
+    /**
      * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
      * @param key is the directory to be created to be listed
      * @param recursive if true then delete a whole subtree, otherwise deletes only an empty directory.

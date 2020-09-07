@@ -8,6 +8,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
 {
   RangeRequest get_request;
   get_request.set_key(parameters.key);
+  get_request.set_limit(param.limit);
   if(parameters.withPrefix)
   {
     std::string range_end(parameters.key); 
