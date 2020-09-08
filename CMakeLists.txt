@@ -49,3 +49,25 @@ add_subdirectory(src)
 if (BUILD_TESTS)
     add_subdirectory(tst)
 endif ()
+
+install (TARGETS etcd-cpp-api DESTINATION lib)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/SyncClient.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
+               DESTINATION include/etcd)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
+               DESTINATION include/etcd/v3)
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/auth.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/kv.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/rpc.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/rpc.grpc.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/v3lock.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/v3lock.grpc.pb.h
+               DESTINATION include/etcd/proto)
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/gogoproto/gogo.pb.h
+               DESTINATION include/etcd/proto/gogoproto)
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/google/api/annotations.pb.h
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/google/api/http.pb.h
+               DESTINATION include/etcd/proto/google/api)

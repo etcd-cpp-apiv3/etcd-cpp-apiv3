@@ -7,7 +7,6 @@ set_source_files_properties(${PROTOBUF_GENERATES} PROPERTIES GENERATED TRUE)
 add_library(etcd-cpp-api SHARED ${CPP_CLIENT_SRC} ${PROTOBUF_GENERATES})
 add_dependencies(etcd-cpp-api protobuf_generates)
 set_property(TARGET etcd-cpp-api PROPERTY CXX_STANDARD 11)
-target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../proto)
 
 target_link_libraries(etcd-cpp-api PUBLIC
                       ${CPPREST_LIB}
@@ -15,25 +14,5 @@ target_link_libraries(etcd-cpp-api PUBLIC
                       ${PROTOBUF_LIBRARIES}
                       ${OPENSSL_LIBRARIES}
                       ${GRPC_LIBRARIES})
-
-install (TARGETS etcd-cpp-api DESTINATION lib)
-install (FILES ../etcd/Client.hpp
-               ../etcd/SyncClient.hpp
-               ../etcd/Response.hpp
-               ../etcd/Value.hpp
-               ../etcd/Watcher.hpp
-               DESTINATION include/etcd)
-install (FILES ../proto/auth.pb.h
-               ../proto/kv.pb.h
-               ../proto/rpc.pb.h
-               ../proto/rpc.grpc.pb.h
-               ../proto/v3lock.pb.h
-               ../proto/v3lock.grpc.pb.h
-               DESTINATION include/etcd/proto)
-install (FILES ../etcd/v3/Transaction.hpp
-               DESTINATION include/etcd/v3)
-install (FILES ../proto/gogoproto/gogo.pb.h
-               DESTINATION include/etcd/proto/gogoproto)
-install (FILES ../proto/google/api/annotations.pb.h
-               ../proto/google/api/http.pb.h
-               DESTINATION include/etcd/proto/google/api)
+target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
+target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
