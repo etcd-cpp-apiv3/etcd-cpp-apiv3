@@ -93,6 +93,10 @@ void etcdv3::AsyncWatchAction::CancelWatch()
   }
 }
 
+bool etcdv3::AsyncWatchAction::Cancelled() const {
+  return isCancelled;
+}
+
 void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response)> callback) 
 {
   void* got_tag;
