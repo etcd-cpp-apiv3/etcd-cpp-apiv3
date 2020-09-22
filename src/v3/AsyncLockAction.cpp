@@ -20,7 +20,6 @@ etcdv3::AsyncLockResponse etcdv3::AsyncLockAction::ParseResponse()
   
   if(!status.ok())
   {
-    std::cout << "lock error message is: " << status.error_message() << std::endl;
     lock_resp.set_error_code(status.error_code());
     lock_resp.set_error_message(status.error_message());
   }
@@ -49,7 +48,6 @@ etcdv3::AsyncUnlockResponse etcdv3::AsyncUnlockAction::ParseResponse()
   
   if(!status.ok())
   {
-    std::cout << "unlock error message is: " << status.error_message() << std::endl;
     unlock_resp.set_error_code(status.error_code());
     unlock_resp.set_error_message(status.error_message());
   }

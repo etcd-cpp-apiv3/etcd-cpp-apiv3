@@ -30,7 +30,27 @@ namespace etcd
             std::function<void(Response)> callback, bool recursive=false);
     Watcher(std::string const & etcd_url, std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
+
+    /**
+     * Wait util the task has been stopped, actively or passively, e.g., the watcher
+     * get cancelled or the server closes the connection.
+     *
+     * Returns true if the watcher is been normally cancalled, otherwise false.
+     */
+    bool Wait();
+
+    /**
+     * An async wait, the callback will be called when the task has been stopped.
+     *
+     * The callback parameter would be true if the watch is been normally cancalled.
+     */
+    void Wait(std::function<void(bool)> callback);
+
+    /**
+     * Stop the watching action.
+     */
     void Cancel();
+
     ~Watcher();
 
   protected:

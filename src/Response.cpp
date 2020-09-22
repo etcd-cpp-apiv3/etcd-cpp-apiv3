@@ -72,6 +72,11 @@ bool etcd::Response::is_ok() const
   return error_code() == 0;
 }
 
+bool etcd::Response::is_network_unavailable() const
+{
+  return error_code() == ::grpc::StatusCode::UNAVAILABLE;
+}
+
 etcd::Value const & etcd::Response::value() const
 {
   return _value;

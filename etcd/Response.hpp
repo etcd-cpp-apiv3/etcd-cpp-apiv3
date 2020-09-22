@@ -52,6 +52,11 @@ namespace etcd
     bool is_ok() const;
 
     /**
+     * Returns true if the error is a network unavailable error.
+     */
+    bool is_network_unavailable() const;
+
+    /**
      * Returns the error code received from the etcd server. In case of success the error code is 0.
      */
     int error_code() const;

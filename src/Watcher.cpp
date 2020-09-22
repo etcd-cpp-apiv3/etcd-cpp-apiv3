@@ -43,10 +43,24 @@ etcd::Watcher::~Watcher()
   currentTask.wait();
 }
 
+bool etcd::Watcher::Wait()
+{
+  currentTask.wait();
+  return call->Cancelled();
+}
+
+void etcd::Watcher::Wait(std::function<void(bool)> callback)
+{
+  currentTask.then([this, callback](pplx::task<void> const & resp_task) {
+    resp_task.wait();
+    callback(this->call->Cancelled());
+  });
+}
+
 void etcd::Watcher::Cancel()
 {
   call->CancelWatch();
-  currentTask.wait();
+  this->Wait();
 }
 
 void etcd::Watcher::doWatch(std::string const & key, std::function<void(Response)> callback)
