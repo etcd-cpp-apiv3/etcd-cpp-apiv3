@@ -86,7 +86,7 @@ jobs:
         run: |
           cd build
           /usr/local/bin/etcd &
-          ./bin/etcd_test
+          CTEST_OUTPUT_ON_FAILURE=1 make test
 
           # note: no need to clean up on CI env
 

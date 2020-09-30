@@ -1,3 +1,4 @@
+#define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
 #include "etcd/Watcher.hpp"
@@ -10,8 +11,9 @@ void printResponse(etcd::Response const & resp)
 {
   ++watcher_called;
   std::cout << "print response called" << std::endl;
-  if (resp.error_code())
+  if (resp.error_code()) {
     std::cout << resp.error_code() << ": " << resp.error_message() << std::endl;
+  }
   else
   {
     std::cout << resp.action() << " " << resp.value().as_string() << std::endl;
@@ -46,7 +48,6 @@ TEST_CASE("create watcher with cancel")
 
 TEST_CASE("create watcher")
 {
-  
   etcd::SyncClient etcd(etcd_uri);
   etcd.rmdir("/test", true);
 
@@ -74,17 +75,13 @@ TEST_CASE("create watcher")
 
 //   sleep(1);
 //   REQUIRE(res.is_done());
-//   try
-//   {
+//   try {
 //     res.wait();
 //   }
-//   catch(pplx::task_canceled const & ex)
-//   {
+//   catch(pplx::task_canceled const & ex) {
 //     std::cout << "pplx::task_canceled: " << ex.what() << "\n";
 //   }
-//   catch(std::exception const & ex)
-//   {
+//   catch(std::exception const & ex) {
 //     std::cout << "std::exception: " << ex.what() << "\n";
 //   }
 // }
-

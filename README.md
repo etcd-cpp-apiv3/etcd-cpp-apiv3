@@ -1,51 +1,38 @@
-etcd-cpp-api is a C++ API for [etcd]
+etcd-cpp-apiv3
+==============
+
+The _etcd-cpp-apiv3_ is a C++ API for [etcd](https://etcd.io/)'s v3 client API,
+i.e., `ETCDCTL_API=3`.
 
 ## Requirements
-1. Build Boost Library(http://www.boost.org/doc/libs/1_61_0/more/getting_started/unix-variants.html)
-    * You can use: 
-    ```
-    ./bootstrap.sh --with-libraries=system,thread,locale,random,chrono,regex,filesystem
-    ./b2 install
-    ```
-    * The above command will only compile those libraries indicated, thus it takes less time to build boost
 
-2. Build Casablanca:
-    * Instructions on how to build is here: https://github.com/Microsoft/cpprestsdk/wiki
-    * For Linux environment you can omit libboost-all-dev during apt-get install, if you already have boost library installed.
+1. boost
+2. protobuf
+3. gRPC
+4. [cpprestsdk](https://github.com/microsoft/cpprestsdk), the latest version of master branch
+   on github should work, you can build and install this dependency using cmake with:
 
-3. Install Protobuf:
-    * https://github.com/google/protobuf/blob/master/src/README.md
+        git clone https://github.com/microsoft/cpprestsdk.git
+        cd cpprestsdk
+        mkdir build && cd build
+        cmake .. -DCPPREST_EXCLUDE_WEBSOCKETS=ON
+        make -j && make install
 
-4. Install Protoc for C++:
-    * https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md
+## Build and install
 
-   
+The _etcd-cpp-apiv3_ library could be easily built and installed using cmake, after all above
+dependencies have been successfully installed:
+
+    mkdir build && cd build
+    cmake ..
+    make -j
+
 ## Compatible etcd version
-Build master branch of etcd in github. As of writing, current releases of etcd does not yet support prev_value.
-Only the master branch supports it.
-https://github.com/coreos/etcd/blob/master/Documentation/dl_build.md (see: Build the latest version)
 
-## Updates from etcdv2 cpp client to etcdv3 cpp client
-See "handling directory nodes" section
+The _etcd-cpp-apiv3_ should work well with etcd > 3.0. Feel free to issue an issue to us on
+Github when you encounter problems when working with etcd 3.x releases.
 
-## compiling .proto
-Proto files are stored in /proto. The proto files defined the interface of etcdv3.
-
-You can compile it like this(if you are running this command inside /proto folder):
-```
-protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
-protoc -I . --cpp_out=. ./*.proto
-```
-
-Protofiles for etcdv3 can be found here:
-* https://github.com/coreos/etcd/tree/master/auth/authpb
-* https://github.com/coreos/etcd/tree/master/etcdserver/etcdserverpb
-* https://github.com/coreos/etcd/tree/master/mvcc/mvccpb
-
-Note: Protofiles in the project is not sync to the protofiles in etcd master branch. If you
-want to update the protofiles in this project, you need to manually update it.
-
-## generic notes
+## Usage
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
@@ -64,7 +51,7 @@ also returns the ```etcd::Response``` object.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  pplx::task<etcd::Response> response_task = etcd.get("/test/key1").get();
+  pplx::task<etcd::Response> response_task = etcd.get("/test/key1");
   // ... do something else
   etcd::Response response = response_task.get();
   std::cout << response.value().as_string();
@@ -113,7 +100,7 @@ this case since the respose has been already arrived (we are inside the callback
 
 ## etcd operations
 
-### reading a value
+### Reading a value
 
 You can read a value with the ```get``` method of the clinent instance. The only parameter is the
 key to be read. If the read operation is successful then the value of the key can be acquired with
@@ -149,7 +136,7 @@ the ```created_index()``` and the ```modofied_index()``` methods.
   }
 ```
 
-### modifying a value
+### Modifying a value
 
 Setting the value of a key can be done with the ```set()``` method of the client. You simply pass
 the key and the value as string parameters and you are done. The newly set value object can be asked
@@ -192,7 +179,7 @@ some specific conditions.
      the previous value equals with old_index. If the indices does not match returns with "Compare
      failed" error (code 101)
 
-### deleting a value
+### Deleting a value
 
 Values can be deleted with the ```rm``` method passing the key to be deleted as a parameter. The key
 should point to an existing value. There are conditional variations for deletion too.
@@ -204,57 +191,67 @@ should point to an existing value. There are conditional variations for deletion
      the previous value equals with old_index. If the indices does not match returns with "Compare
      failed" error (code 101)
 
-### handling directory nodes
-Directory nodes are not supported anymore in etcdv3.
+### Handling directory nodes
 
-However, ls and rmdir will list/delete keys defined by the prefix. mkdir method is removed since 
-etcdv3 treats everything as keys. 
+Directory nodes are not supported anymore in etcdv3. However, ls and rmdir will list/delete
+keys defined by the prefix. mkdir method is removed since etcdv3 treats everything as keys.
 
 1. Creating a directory:
-Creating a directory is not supported anymore in etcdv3 cpp client. Users should remove the 
-API from their code.
+
+   Creating a directory is not supported anymore in etcdv3 cpp client. Users should remove the
+   API from their code.
 
 2. Listing a directory:
-Listing directory in etcd3 cpp client will return all keys that matched the given prefix recursively.
 
-```c++
-  etcd.set("/test/key1", "value1").wait();
-  etcd.set("/test/key2", "value2").wait();
-  etcd.set("/test/key3", "value3").wait();
-  etcd.set("/test/subdir/foo", "foo").wait();
-  
-  etcd::Response resp = etcd.ls("/test/new_dir").get();
-```
-resp.key() will have the following values:
-/test/key1 
-/test/key2 
-/test/key3
-/test/subdir/foo
+  Listing directory in etcd3 cpp client will return all keys that matched the given prefix
+  recursively.
 
+  ```c++
+    etcd.set("/test/key1", "value1").wait();
+    etcd.set("/test/key2", "value2").wait();
+    etcd.set("/test/key3", "value3").wait();
+    etcd.set("/test/subdir/foo", "foo").wait();
 
-Note: Regarding the returned keys when listing a directory:
-In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is treated as keys in etcdv3.
-While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should be created first before you can set "key1".
+    etcd::Response resp = etcd.ls("/test/new_dir").get();
+  ```
 
-When you list a directory the response object's ```keys()``` and ```values()``` methods gives you a
-vector of key names and values. The ```value()``` method with an integer parameter also
-returns with the i-th element of the values vector, so ```response.values()[i] ==
-response.value(i)```. 
+  ```resp.key()``` will have the following values:
 
-```c++
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::Response resp = etcd.ls("/test/new_dir").get();
-  for (int i = 0; i < resp.keys().size(); ++i)
-  {
-    std::cout << resp.keys(i);
-    std::cout << " = " << resp.value(i).as_string() << std::endl;
-  }
-```
+  ```
+  /test/key1
+  /test/key2
+  /test/key3
+  /test/subdir/foo
+  ```
+
+  Note: Regarding the returned keys when listing a directory:
+
+  + In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is
+    treated as keys in etcdv3.
+  + While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should
+    be created first before you can set "key1".
+
+  When you list a directory the response object's ```keys()``` and ```values()``` methods gives
+  you a vector of key names and values. The ```value()``` method with an integer parameter also
+  returns with the i-th element of the values vector, so ```response.values()[i] ==
+  response.value(i)```.
+
+  ```c++
+    etcd::Client etcd("http://127.0.0.1:4001");
+    etcd::Response resp = etcd.ls("/test/new_dir").get();
+    for (int i = 0; i < resp.keys().size(); ++i)
+    {
+      std::cout << resp.keys(i);
+      std::cout << " = " << resp.value(i).as_string() << std::endl;
+    }
+  ```
 
 3. Removing directory:
-If you want the delete recursively then you have to pass a second ```true``` parameter 
-to rmdir and supply a key. This key will be treated as a prefix. All keys that match the prefix will
-be deleted. All deleted keys will be placed in response.values() and response.keys(). This parameter defaults to ```false```.
+
+If you want the delete recursively then you have to pass a second ```true``` parameter
+to rmdir and supply a key. This key will be treated as a prefix. All keys that match the
+prefix will be deleted. All deleted keys will be placed in ```response.values()``` and
+```response.keys()```. This parameter defaults to ```false```.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
@@ -266,13 +263,13 @@ be deleted. All deleted keys will be placed in response.values() and response.ke
   {
     std::cout << resp.keys(i);
     std::cout << " = " << resp.value(i).as_string() << std::endl;
-  }  
-
+  }
 ```
+
 However, if recursive parameter is false, functionality will be the same as just deleting a key.
 The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
 
-### watching for changes
+### Watching for changes
 
 Watching for a change is possible with the ```watch()``` operation of the client. The watch method
 simply does not deliver a response object until the watched value changes in any way (modified or
@@ -283,12 +280,15 @@ value and ```response.prev_value()``` will contain the previous value. In case o
 ```response.action()``` will return "delete", ```response.value()``` will be empty and should not be
 called at all and ```response.prev_value()``` will contain the deleted value.
 
-As mentioned in the section "handling directory nodes", directory nodes are not supported anymore in etcdv3.
-However it is still possible to watch a whole "directory subtree", or more specifically a set of keys that match the 
-prefix, for changes with passing ```true``` to the second ```recursive``` parameter of ```watch``` 
-(this parameter defaults to ```false``` if omitted). In this case the modified value object's ```key()``` method can be 
-handy to determine what key is actually changed. Since this can be a long lasting operation you have to be prepared that is
-terminated by an exception and you have to restart the watch operation.
+As mentioned in the section "handling directory nodes", directory nodes are not supported anymore
+in etcdv3.
+
+However it is still possible to watch a whole "directory subtree", or more specifically a set of
+keys that match the prefix, for changes with passing ```true``` to the second ```recursive```
+parameter of ```watch``` (this parameter defaults to ```false``` if omitted). In this case the
+modified value object's ```key()``` method can be handy to determine what key is actually changed.
+Since this can be a long lasting operation you have to be prepared that is terminated by an
+exception and you have to restart the watch operation.
 
 The watch also accepts an index parameter that specifies what is the first change we are interested
 about. Since etcd stores the last couple of modifications with this feature you can ensure that your
@@ -314,44 +314,48 @@ void watch_for_changes()
 ```
 
 At first glance it seems that ```watch_for_changes()``` calls itself on every value change but in
-fact it just sends the asynchron request, sets up a callback for the response and then returns.  The
+fact it just sends the asynchron request, sets up a callback for the response and then returns. The
 callback is executed by some thread from the pplx library's thread pool and the callback (in this
 case a small lambda function actually) will call ```watch_for_changes``` again from there.
 
 
-### requesting for lease
+### Requesting for lease
+
 Users can request for lease which is governed by a time-to-live(TTL) value given by the user.
-Moreover, user can attached the lease to a key(s) by indicating the lease id in add(), set(), modify() and modify_if(). 
-Also the ttl will that was granted by etcd server will be indicated in ttl().
+Moreover, user can attached the lease to a key(s) by indicating the lease id in ```add()```,
+```set()```, ```modify()``` and ```modify_if()```. Also the ttl will that was granted by etcd
+server will be indicated in ```ttl()```.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
   etcd::Response resp = etcd.leasegrant(60).get();
   etcd.set("/test/key2", "bar", resp.value().lease());
   std::cout <<"ttl" << resp.value().ttl();
-
 ```
 
 ### Watcher Class
-Users can watch a key indefinitely or until user cancels the watch. This can be done by instantiating a Watcher class.
-The supplied callback function in Watcher class will be called every time there is an event for the specified key.
-Watch stream will be cancelled either by user implicitly calling Cancel() or when watcher class is destroyed.
+
+Users can watch a key indefinitely or until user cancels the watch. This can be done by
+instantiating a Watcher class. The supplied callback function in Watcher class will be
+called every time there is an event for the specified key. Watch stream will be cancelled
+either by user implicitly calling ```Cancel()``` or when watcher class is destroyed.
 
 ```c++
   etcd::Watcher watcher("http://127.0.0.1:2379", "/test", printResponse);
   etcd.set("/test/key", "42"); /* print response will be called */
   etcd.set("/test/key", "43"); /* print response will be called */
   watcher.Cancel();
-  etcd.set("/test/key", "43"); /* print response will NOT be called, since watch is already cancelled */
+  etcd.set("/test/key", "43"); /* print response will NOT be called,
+                                  since watch is already cancelled */
 }
 ```
 
 ### TODO
+
 1. Cancellation of asynchronous calls(except for watch)
 2. LeaseKeepAlive
-
-
+3. Authentication
 
 ## License
 
-This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/nokia/etcd-cpp-apiv3/blob/master/LICENSE.txt).
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/LICENSE.txt).

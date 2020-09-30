@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+
 #include <iostream>
 
 #include "etcd/Client.hpp"
@@ -11,10 +12,8 @@ TEST_CASE("setup")
   etcd.rmdir("/test", true).wait();
 }
 
-
 TEST_CASE("add a new key")
 {
-  
   etcd::Client etcd("http://127.0.0.1:2379");
   etcd.rmdir("/test", true).wait();
   etcd::Response resp = etcd.add("/test/key1", "42").get();
@@ -32,7 +31,6 @@ TEST_CASE("add a new key")
   CHECK("Key already exists" == etcd.add("/test/key1", "42").get().error_message());
 }
 
-
 TEST_CASE("read a value from etcd")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
@@ -41,10 +39,8 @@ TEST_CASE("read a value from etcd")
   REQUIRE(resp.is_ok());
   REQUIRE(0 == resp.error_code());
   CHECK("42" == resp.value().as_string());
-
   CHECK("" == etcd.get("/test").get().value().as_string()); // key points to a directory
 }
-
 
 TEST_CASE("simplified read")
 {
@@ -53,8 +49,6 @@ TEST_CASE("simplified read")
   CHECK(100  == etcd.get("/test/key2").get().error_code()); // Key not found
   CHECK(""  == etcd.get("/test/key2").get().value().as_string()); // Key not found
 }
-
-
 
 TEST_CASE("modify a key")
 {
@@ -65,7 +59,6 @@ TEST_CASE("modify a key")
   CHECK(100 == etcd.modify("/test/key2", "43").get().error_code()); // Key not found
   CHECK("43" == etcd.modify("/test/key1", "42").get().prev_value().as_string());
 }
-
 
 TEST_CASE("set a key")
 {
@@ -110,9 +103,7 @@ TEST_CASE("atomic compare-and-swap")
   CHECK(!res.is_ok());
   CHECK(100 == res.error_code());
   CHECK("Key not found" == res.error_message());
-
 }
-
 
 TEST_CASE("delete a value")
 {
@@ -188,7 +179,6 @@ TEST_CASE("deep atomic compare-and-swap")
   CHECK(101 == res.error_code());
   CHECK("Compare failed" == res.error_message());
 
-
   // succes with the correct index
   res = etcd.modify_if("/test/key1", "44", index).get();
   REQUIRE(res.is_ok());
@@ -200,20 +190,7 @@ TEST_CASE("deep atomic compare-and-swap")
   CHECK(!res.is_ok());
   CHECK(101 == res.error_code());
   CHECK("Compare failed" == res.error_message());
-
 }
-
-
-//skip this test case
-/*
-TEST_CASE("create a directory")
-{
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::Response resp = etcd.mkdir("/test/new_dir").get();
-  CHECK("set" == resp.action());
-  CHECK(resp.value().is_dir());
-}
-*/
 
 TEST_CASE("list a directory")
 {
@@ -249,7 +226,7 @@ TEST_CASE("delete a directory")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
 
-  //CHECK(108 == etcd.rmdir("/test/new_dir").get().error_code()); // Directory not empty
+  CHECK(100 == etcd.rmdir("/test/new_dir").get().error_code()); // key not found
   etcd::Response resp = etcd.ls("/test/new_dir").get();
 
 

@@ -1,5 +1,7 @@
-#include <atomic>
+#define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+
+#include <atomic>
 #include <iostream>
 #include <thread>
 
@@ -22,7 +24,6 @@ TEST_CASE("lock and unlock")
   REQUIRE(resp2.is_ok());
   REQUIRE(0 == resp2.error_code());
 }
-
 
 TEST_CASE("double lock will fail")
 {
