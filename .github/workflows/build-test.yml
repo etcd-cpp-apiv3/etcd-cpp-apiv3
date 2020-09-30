@@ -1,0 +1,95 @@
+name: Build and Test
+
+on:
+  # Trigger the workflow on push or pull request, but only for the master branch
+  push:
+    branches:
+      - ci
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Cache for cccahe
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache
+          restore-keys: |
+            ${{ runner.os }}-ccache
+
+      - name: Install dependencies for Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update -y
+          sudo apt install -y ca-certificates \
+                              ccache \
+                              cmake \
+                              libboost-all-dev \
+                              libcurl4-openssl-dev \
+                              libgrpc-dev \
+                              libgrpc++-dev \
+                              libprotobuf-dev \
+                              libssl-dev \
+                              libz-dev \
+                              lsb-release \
+                              protobuf-compiler-grpc \
+                              screenfetch \
+                              wget
+
+          # install etcd
+          wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+          tar zxvf etcd-v3.4.13-linux-amd64.tar.gz
+          sudo mv etcd-v3.4.13-linux-amd64/etcd /usr/local/bin/
+          sudo mv etcd-v3.4.13-linux-amd64/etcdctl /usr/local/bin/
+
+          lsb_release -a
+          screenfetch
+
+      - name: Install cpprestsdk
+        run: |
+          mkdir -p build
+          cd build
+          git clone https://github.com/microsoft/cpprestsdk.git
+          mkdir -p cpprestsdk/build
+          cd cpprestsdk/build
+          cmake .. -DBUILD_TESTS=OFF \
+                   -DBUILD_SAMPLES=OFF \
+                   -DCPPREST_EXCLUDE_WEBSOCKETS=ON \
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          make -j2
+          sudo make install
+
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DBUILD_TESTS=ON \
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          make -j2
+          sudo make install
+
+      - name: Test
+        run: |
+          cd build
+          /usr/local/bin/etcd &
+          ./bin/etcd_test
+
+          # note: no need to clean up on CI env
+
+      - name: Check ccache
+        run: |
+          ccache --show-stats
