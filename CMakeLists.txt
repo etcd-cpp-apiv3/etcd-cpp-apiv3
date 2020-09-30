@@ -3,8 +3,10 @@ project (etcd-cpp-api)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set (etcd-cpp-api_VERSION_MAJOR 0)
-set (etcd-cpp-api_VERSION_MINOR 1)
+set(etcd-cpp-api_VERSION_MAJOR 0)
+set(etcd-cpp-api_VERSION_MINOR 1)
+
+option(BUILD_TESTS "Build test cases" OFF)
 
 find_library(CPPREST_LIB NAMES cpprest)
 find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
@@ -36,7 +38,6 @@ set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
-enable_testing()
 include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}
                            ${Boost_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
@@ -44,9 +45,14 @@ include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare -std=c++11")
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
 add_subdirectory(src)
 
 if (BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tst)
 endif ()
 

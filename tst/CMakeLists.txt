@@ -8,7 +8,8 @@ add_executable(etcd_test
     LockTest.cpp
 )
 set_property(TARGET etcd_test PROPERTY CXX_STANDARD 11)
-target_include_directories(etcd_test PRIVATE ${CMAKE_SOURCE_DIR}/proto)
+target_include_directories(etcd_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
+target_include_directories(etcd_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
 
 target_link_libraries(etcd_test etcd-cpp-api)
 
