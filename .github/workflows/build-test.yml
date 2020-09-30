@@ -24,7 +24,7 @@ jobs:
       - name: Cache for cccahe
         uses: actions/cache@v2
         with:
-          path: ~/.ccache
+          path: /home/runner/.ccache
           key: ${{ runner.os }}-ccache
           restore-keys: |
             ${{ runner.os }}-ccache
