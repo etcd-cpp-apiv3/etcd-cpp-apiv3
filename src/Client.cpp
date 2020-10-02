@@ -28,9 +28,12 @@
 #include "etcd/v3/AsyncTxnAction.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <grpc++/security/credentials.h>
 
 using grpc::Channel;
 
+namespace etcd {
+namespace detail {
 
 static bool dns_resolve(std::string const &target, std::vector<std::string> &endpoints) {
   struct addrinfo hints = {}, *addrs;
@@ -59,8 +62,7 @@ static bool dns_resolve(std::string const &target, std::vector<std::string> &end
   return true;
 }
 
-etcd::Client::Client(std::string const & address, std::string const & load_balancer)
-{
+const std::string strip_and_resolve_addresses(std::string const &address) {
   std::vector<std::string> addresses;
   boost::algorithm::split(addresses, address, boost::algorithm::is_any_of(",;"));
   std::string stripped_address;
@@ -70,22 +72,119 @@ etcd::Client::Client(std::string const & address, std::string const & load_balan
     for (auto const &addr: addresses) {
       std::string::size_type idx = addr.find(substr);
       std::string target = idx == std::string::npos ? addr : addr.substr(idx + substr.length());
-      dns_resolve(target, stripped_addresses);
+      etcd::detail::dns_resolve(target, stripped_addresses);
     }
     stripped_address = boost::algorithm::join(stripped_addresses, ",");
   }
+  return "ipv4:///" + stripped_address;
+}
+
+class AuthInterceptor: public grpc::experimental::Interceptor {
+ public:
+  AuthInterceptor(grpc::experimental::ClientRpcInfo *,
+                  std::string const &token): token_(token) {}
+
+  void Intercept(grpc::experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+        grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+      auto metadata = methods->GetSendInitialMetadata();
+      // use `authorization` as the key also works, see:
+      //
+      //  etcd/etcdserver/api/v3rpc/rpctypes/metadatafields.go
+      metadata->insert(std::make_pair("token", token_));
+    }
+    methods->Proceed();  // NB: important!
+  }
+
+ private:
+  grpc::string token_;
+};
+
+class AuthInterceptorFactory:
+    public grpc::experimental::ClientInterceptorFactoryInterface {
+ public:
+  AuthInterceptorFactory(std::string const &token): token_(token) {}
+
+  grpc::experimental::Interceptor* CreateClientInterceptor(
+      grpc::experimental::ClientRpcInfo* info) override {
+    return new AuthInterceptor(info, token_);
+  }
+
+ private:
+  grpc::string token_;
+};
+
+const bool authenticate(std::shared_ptr<grpc::Channel> const &channel,
+                        std::string const &username,
+                        std::string const &password,
+                        std::string &token_or_message) {
+  // run a round of auth
+  auto auth_stub = Auth::NewStub(channel);
+  ClientContext context;
+  etcdserverpb::AuthenticateRequest auth_request;
+  etcdserverpb::AuthenticateResponse auth_response;
+  auth_request.set_name(username);
+  auth_request.set_password(password);
+  auto status = auth_stub->Authenticate(&context, auth_request, &auth_response);
+  if (status.ok()) {
+    token_or_message = auth_response.token();
+    return true;
+  } else {
+    token_or_message = status.error_message();
+    return false;
+  }
+}
+
+}
+}
+
+etcd::Client::Client(std::string const & address,
+                     std::string const & load_balancer)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
   grpc::ChannelArguments grpc_args;
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
-  this->channel = grpc::CreateCustomChannel(
-      "ipv4:///" + stripped_address,
-      grpc::InsecureChannelCredentials(),
-      grpc_args);
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  // create stubs
   stub_= KV::NewStub(this->channel);
   watchServiceStub= Watch::NewStub(this->channel);
   leaseServiceStub= Lease::NewStub(this->channel);
   lockServiceStub = Lock::NewStub(this->channel);
 }
 
+etcd::Client::Client(std::string const & address,
+                     std::string const & username,
+                     std::string const & password,
+                     std::string const & load_balancer)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
+  grpc::ChannelArguments grpc_args;
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+  grpc_args.SetLoadBalancingPolicyName(load_balancer);
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  // auth
+  std::string token_or_message;
+  if (!etcd::detail::authenticate(this->channel, username, password, token_or_message)) {
+    throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
+  }
+  using interceptor_factory_t = grpc::experimental::ClientInterceptorFactoryInterface;
+  using interceptor_factory_ptr_t = std::unique_ptr<interceptor_factory_t>;
+  std::vector<interceptor_factory_ptr_t> interceptor_creators;
+  interceptor_creators.emplace_back(new etcd::detail::AuthInterceptorFactory(token_or_message));
+
+  // reset the channel with the authentication interceptor.
+  this->channel = grpc::experimental::CreateCustomChannelWithInterceptors(
+      addresses, creds, grpc_args, std::move(interceptor_creators));
+  stub_= KV::NewStub(this->channel);
+  watchServiceStub= Watch::NewStub(this->channel);
+  leaseServiceStub= Lease::NewStub(this->channel);
+  lockServiceStub = Lock::NewStub(this->channel);
+}
 
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
