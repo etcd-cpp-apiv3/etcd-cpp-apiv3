@@ -46,7 +46,6 @@ namespace etcdv3
   {
   public:
     Action(etcdv3::ActionParameters params);
-    Action(){};
     void waitForResponse();
     const std::chrono::high_resolution_clock::time_point startTimepoint();
   protected:

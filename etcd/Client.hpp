@@ -9,6 +9,7 @@
 #include "proto/rpc.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
 
+using etcdserverpb::Auth;
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using etcdserverpb::Lease;
@@ -31,11 +32,27 @@ namespace etcd
   public:
     /**
      * Constructs an etcd client object.
+     *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001",
      *                 or multiple url, seperated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
-    Client(std::string const & etcd_url, std::string const & load_balancer = "round_robin");
+    Client(std::string const & etcd_url,
+           std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param username username of etcd auth
+     * @param password password of etcd auth
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    Client(std::string const & etcd_url,
+           std::string const & username,
+           std::string const & password,
+           std::string const & load_balancer = "round_robin");
 
     /**
      * Sends a get request to the etcd server
@@ -217,6 +234,7 @@ namespace etcd
 
   private:
     std::shared_ptr<grpc::Channel> channel;
+    std::shared_ptr<grpc::CallCredentials> auth_creds;
     std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<Watch::Stub> watchServiceStub;
     std::unique_ptr<Lease::Stub> leaseServiceStub;

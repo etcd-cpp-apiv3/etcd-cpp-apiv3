@@ -86,9 +86,20 @@ jobs:
         run: |
           cd build
           /usr/local/bin/etcd &
-          CTEST_OUTPUT_ON_FAILURE=1 make test
 
-          # note: no need to clean up on CI env
+          # tests without auth
+          ./bin/EtcdSyncTest
+          ./bin/EtcdTest
+          ./bin/LockTest
+          ./bin/WatcherTest
+
+          # tests with auth
+          /usr/local/bin/etcdctl user add root --new-user-password="root" || true
+          /usr/local/bin/etcdctl auth enable || true
+
+          ./bin/AuthTest
+
+          /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
 
       - name: Check ccache
         run: |

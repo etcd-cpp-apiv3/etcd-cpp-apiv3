@@ -100,6 +100,31 @@ this case since the respose has been already arrived (we are inside the callback
 
 ## etcd operations
 
+### Multiple endpoints
+
+Connecting to multiple endpoints is supported:
+
+```c++
+  // multiple endpoints are separated by comma
+  etcd::Client etcd("http://a.com:2379,http://b.com:2379,http://c.com:2379");
+
+  // or, separated colon
+  etcd::Client etcd("http://a.com:2379,http://b.com:2379,http://c.com:2379");
+```
+
+Behind the screen, gRPC's load balancer is used and the round-robin strategy will
+be used by default.
+
+### Etcd authentication
+
+Etcd [v3's authentication](https://etcd.io/docs/v3.4.0/learning/design-auth-v3/) is currently
+supported. The `Client::Client` could accept a `username` and `password` as arguments and handle
+the authentication properly.
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:2379", "root", "root");
+```
+
 ### Reading a value
 
 You can read a value with the ```get``` method of the clinent instance. The only parameter is the

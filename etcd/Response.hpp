@@ -26,7 +26,8 @@ namespace etcd
   {
   public:
 
-    template<typename T>static pplx::task<etcd::Response> create(std::shared_ptr<T> call)
+    template <typename T>
+    static pplx::task<etcd::Response> create(std::shared_ptr<T> call)
     {
       return pplx::task<etcd::Response>([call]()
       {
