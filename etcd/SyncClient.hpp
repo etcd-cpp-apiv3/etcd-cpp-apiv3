@@ -18,9 +18,27 @@ namespace etcd
   public:
     /**
      * Constructs an etcd sync client object.
-     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001"
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
-    SyncClient(std::string const & etcd_url);
+    SyncClient(std::string const & etcd_url,
+               std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd sync client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param username username of etcd auth
+     * @param password password of etcd auth
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    SyncClient(std::string const & etcd_url,
+               std::string const & username,
+               std::string const & password,
+               std::string const & load_balancer = "round_robin");
 
     Response get(std::string const & key);
     Response set(std::string const & key, std::string const & value, int ttl = 0);
@@ -49,7 +67,7 @@ namespace etcd
      * @param key is the value or directory to be watched
      * @param recursive if true watch a whole subtree
      */
-    // Response watch(std::string const & key, bool recursive = false);
+    Response watch(std::string const & key, bool recursive = false);
 
     /**
      * Watches for changes of a key or a subtree from a specific index. The index value can be in the "past".
@@ -57,8 +75,7 @@ namespace etcd
      * @param fromIndex the first index we are interested in
      * @param recursive if true watch a whole subtree
      */
-    // Response watch(std::string const & key, int fromIndex, bool recursive = false);
-
+    Response watch(std::string const & key, int fromIndex, bool recursive = false);
 
   protected:
     Client client;

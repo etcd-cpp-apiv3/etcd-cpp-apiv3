@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+#include <thread>
 
 #include "etcd/SyncClient.hpp"
 
@@ -109,68 +110,72 @@ TEST_CASE("sync operations")
 
 TEST_CASE("wait for a value change")
 {
-  etcd::Client etcd(etcd_uri);
-  etcd.set("/test/key1", "42").wait();
+  etcd::SyncClient etcd(etcd_uri);
+  etcd.set("/test/key1", "42");
 
-  pplx::task<etcd::Response> res = etcd.watch("/test/key1");
-  CHECK(!res.is_done());
+  std::thread watch_thrd([&]() {
+    etcd::Response res = etcd.watch("/test/key1");
+    REQUIRE("set" == res.action());
+    CHECK("43" == res.value().as_string());
+  });
 
-  etcd.set("/test/key1", "43").get();
   sleep(1);
+  etcd.set("/test/key1", "43");
+  watch_thrd.join();
 
-  REQUIRE(res.is_done());
-  REQUIRE("set" == res.get().action());
-  CHECK("43" == res.get().value().as_string());
-
-  REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
+  REQUIRE(0 == etcd.rmdir("/test", true).error_code());
 }
 
 TEST_CASE("wait for a directory change")
 {
-  etcd::Client etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_uri);
 
-  pplx::task<etcd::Response> res = etcd.watch("/test", true);
+  std::thread watch_thrd1([&]() {
+    etcd::Response res = etcd.watch("/test", true);
+    CHECK("create" == res.action());
+    CHECK("44" == res.value().as_string());
+  });
 
-  etcd.add("/test/key4", "44").wait();
   sleep(1);
-  REQUIRE(res.is_done());
-  CHECK("create" == res.get().action());
-  CHECK("44" == res.get().value().as_string());
+  etcd.add("/test/key4", "44");
+  watch_thrd1.join();
 
-  pplx::task<etcd::Response> res2 = etcd.watch("/test", true);
+  std::thread watch_thrd2([&]() {
+    etcd::Response res2 = etcd.watch("/test", true);
+    CHECK("set" == res2.action());
+    CHECK("45" == res2.value().as_string());
+  });
 
-  etcd.set("/test/key4", "45").wait();
   sleep(1);
-  REQUIRE(res2.is_done());
-  CHECK("set" == res2.get().action());
-  CHECK("45" == res2.get().value().as_string());
+  etcd.set("/test/key4", "45");
+  watch_thrd2.join();
 
-  REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
+  REQUIRE(0 == etcd.rmdir("/test", true).error_code());
 }
 
 TEST_CASE("watch changes in the past")
 {
-  etcd::Client etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_uri);
 
-  int index = etcd.set("/test/key1", "42").get().index();
+  int index = etcd.set("/test/key1", "42").index();
 
-  etcd.set("/test/key1", "43").wait();
-  etcd.set("/test/key1", "44").wait();
-  etcd.set("/test/key1", "45").wait();
+  etcd.set("/test/key1", "43");
+  etcd.set("/test/key1", "44");
+  etcd.set("/test/key1", "45");
 
-  etcd::Response res = etcd.watch("/test/key1", ++index).get();
+  etcd::Response res = etcd.watch("/test/key1", ++index);
   CHECK("set" == res.action());
   CHECK("43" == res.value().as_string());
 
-  res = etcd.watch("/test/key1", ++index).get();
+  res = etcd.watch("/test/key1", ++index);
   CHECK("set" == res.action());
   CHECK("44" == res.value().as_string());
 
-  res = etcd.watch("/test", ++index, true).get();
+  res = etcd.watch("/test", ++index, true);
   CHECK("set" == res.action());
   CHECK("45" == res.value().as_string());
 
-  REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
+  REQUIRE(0 == etcd.rmdir("/test", true).error_code());
 }
 
 // TEST_CASE("request cancellation")
