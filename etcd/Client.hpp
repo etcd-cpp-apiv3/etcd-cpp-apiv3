@@ -33,7 +33,7 @@ namespace etcd
     /**
      * Constructs an etcd client object.
      *
-     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001",
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
      *                 or multiple url, seperated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
@@ -43,7 +43,7 @@ namespace etcd
     /**
      * Constructs an etcd client object.
      *
-     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:4001",
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
      *                 or multiple url, seperated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth

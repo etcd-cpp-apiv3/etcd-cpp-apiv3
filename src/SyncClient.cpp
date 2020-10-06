@@ -10,8 +10,16 @@
     return etcd::Response(500, ex.what());      \
   }
 
-etcd::SyncClient::SyncClient(std::string const & address)
-  : client(address)
+etcd::SyncClient::SyncClient(std::string const & address, std::string const & load_balancer)
+  : client(address, load_balancer)
+{
+}
+
+etcd::SyncClient::SyncClient(std::string const & address,
+                             std::string const & username,
+                             std::string const & password,
+                             std::string const & load_balancer)
+  : client(address, username, password, load_balancer)
 {
 }
 
@@ -101,21 +109,12 @@ etcd::Response etcd::SyncClient::leasegrant(int ttl)
   CHECK_EXCEPTIONS(client.leasegrant(ttl).get());
 }
 
-// etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
-// {
-//   web::http::uri_builder uri("/v2/keys" + key);
-//   uri.append_query("wait=true");
-//   if (recursive)
-//     uri.append_query("recursive=true");
-//   return send_get_request(uri);
-// }
+etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
+{
+  CHECK_EXCEPTIONS(client.watch(key, recursive).get());
+}
 
-// etcd::Response etcd::SyncClient::watch(std::string const & key, int fromIndex, bool recursive)
-// {
-//   web::http::uri_builder uri("/v2/keys" + key);
-//   uri.append_query("wait=true");
-//   uri.append_query("waitIndex", fromIndex);
-//   if (recursive)
-//     uri.append_query("recursive=true");
-//   return send_get_request(uri);
-// }
+etcd::Response etcd::SyncClient::watch(std::string const & key, int fromIndex, bool recursive)
+{
+  CHECK_EXCEPTIONS(client.watch(key, fromIndex, recursive).get());
+}
