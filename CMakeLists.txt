@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 1)
 
-option(BUILD_TESTS "Build test cases" OFF)
+option(BUILD_ETCD_TESTS "Build test cases" OFF)
 
 find_library(CPPREST_LIB NAMES cpprest)
 find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
@@ -51,7 +51,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 add_subdirectory(src)
 
-if (BUILD_TESTS)
+if (BUILD_ETCD_TESTS)
     enable_testing()
     add_subdirectory(tst)
 endif ()

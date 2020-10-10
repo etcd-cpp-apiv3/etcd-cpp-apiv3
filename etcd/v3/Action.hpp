@@ -36,6 +36,7 @@ namespace etcdv3
     std::string key;
     std::string value;
     std::string old_value;
+    std::string auth_token;
     KV::Stub* kv_stub;
     Watch::Stub* watch_stub;
     Lease::Stub* lease_stub;

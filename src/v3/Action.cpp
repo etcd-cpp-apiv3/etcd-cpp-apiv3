@@ -4,6 +4,12 @@
 etcdv3::Action::Action(etcdv3::ActionParameters params)
 {
   parameters = params;
+  if (!parameters.auth_token.empty()) {
+    // use `authorization` as the key also works, see:
+    //
+    //  etcd/etcdserver/api/v3rpc/rpctypes/metadatafields.go
+    context.AddMetadata("authorization", parameters.auth_token);
+  }
   start_timepoint = std::chrono::high_resolution_clock::now();
 }
 

@@ -22,13 +22,21 @@ namespace etcd
   class Watcher
   {
   public:
-    Watcher(Client &client, std::string const & key,
+    Watcher(Client const &client, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
-    Watcher(Client &client, std::string const & key, int fromIndex,
+    Watcher(Client const &client, std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
-    Watcher(std::string const & etcd_url, std::string const & key,
+    Watcher(std::string const & address, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
-    Watcher(std::string const & etcd_url, std::string const & key, int fromIndex,
+    Watcher(std::string const & address, std::string const & key, int fromIndex,
+            std::function<void(Response)> callback, bool recursive=false);
+    Watcher(std::string const & address,
+            std::string const & username, std::string const & password,
+            std::string const & key,
+            std::function<void(Response)> callback, bool recursive=false);
+    Watcher(std::string const & address,
+            std::string const & username, std::string const & password,
+            std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
 
     /**
@@ -54,13 +62,14 @@ namespace etcd
     ~Watcher();
 
   protected:
-    void doWatch(std::string const & key, std::function<void(Response)> callback);
+    void doWatch(std::string const & key,
+                 std::string const & auth_token,
+                 std::function<void(Response)> callback);
 
     int index;
     std::function<void(Response)> callback;
     pplx::task<void> currentTask;
     std::unique_ptr<Watch::Stub> watchServiceStub;
-    std::unique_ptr<KV::Stub> stub_;
     std::unique_ptr<etcdv3::AsyncWatchAction> call;
 
   private:

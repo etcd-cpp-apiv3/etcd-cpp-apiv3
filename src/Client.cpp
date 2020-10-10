@@ -79,41 +79,6 @@ const std::string strip_and_resolve_addresses(std::string const &address) {
   return "ipv4:///" + stripped_address;
 }
 
-class AuthInterceptor: public grpc::experimental::Interceptor {
- public:
-  AuthInterceptor(grpc::experimental::ClientRpcInfo *,
-                  std::string const &token): token_(token) {}
-
-  void Intercept(grpc::experimental::InterceptorBatchMethods* methods) override {
-    if (methods->QueryInterceptionHookPoint(
-        grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      auto metadata = methods->GetSendInitialMetadata();
-      // use `authorization` as the key also works, see:
-      //
-      //  etcd/etcdserver/api/v3rpc/rpctypes/metadatafields.go
-      metadata->insert(std::make_pair("token", token_));
-    }
-    methods->Proceed();  // NB: important!
-  }
-
- private:
-  grpc::string token_;
-};
-
-class AuthInterceptorFactory:
-    public grpc::experimental::ClientInterceptorFactoryInterface {
- public:
-  AuthInterceptorFactory(std::string const &token): token_(token) {}
-
-  grpc::experimental::Interceptor* CreateClientInterceptor(
-      grpc::experimental::ClientRpcInfo* info) override {
-    return new AuthInterceptor(info, token_);
-  }
-
- private:
-  grpc::string token_;
-};
-
 const bool authenticate(std::shared_ptr<grpc::Channel> const &channel,
                         std::string const &username,
                         std::string const &password,
@@ -149,7 +114,7 @@ etcd::Client::Client(std::string const & address,
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
 
   // create stubs
-  stub_= KV::NewStub(this->channel);
+  kvServiceStub = KV::NewStub(this->channel);
   watchServiceStub= Watch::NewStub(this->channel);
   leaseServiceStub= Lease::NewStub(this->channel);
   lockServiceStub = Lock::NewStub(this->channel);
@@ -172,15 +137,16 @@ etcd::Client::Client(std::string const & address,
   if (!etcd::detail::authenticate(this->channel, username, password, token_or_message)) {
     throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
   }
-  using interceptor_factory_t = grpc::experimental::ClientInterceptorFactoryInterface;
-  using interceptor_factory_ptr_t = std::unique_ptr<interceptor_factory_t>;
-  std::vector<interceptor_factory_ptr_t> interceptor_creators;
-  interceptor_creators.emplace_back(new etcd::detail::AuthInterceptorFactory(token_or_message));
+  this->auth_token = token_or_message;
+  // using interceptor_factory_t = grpc::experimental::ClientInterceptorFactoryInterface;
+  // using interceptor_factory_ptr_t = std::unique_ptr<interceptor_factory_t>;
+  // std::vector<interceptor_factory_ptr_t> interceptor_creators;
+  // interceptor_creators.emplace_back(new etcd::detail::AuthInterceptorFactory(token_or_message));
 
   // reset the channel with the authentication interceptor.
-  this->channel = grpc::experimental::CreateCustomChannelWithInterceptors(
-      addresses, creds, grpc_args, std::move(interceptor_creators));
-  stub_= KV::NewStub(this->channel);
+  // this->channel = grpc::experimental::CreateCustomChannelWithInterceptors(
+  //     addresses, creds, grpc_args, std::move(interceptor_creators));
+  kvServiceStub = KV::NewStub(this->channel);
   watchServiceStub= Watch::NewStub(this->channel);
   leaseServiceStub= Lease::NewStub(this->channel);
   lockServiceStub = Lock::NewStub(this->channel);
@@ -189,9 +155,10 @@ etcd::Client::Client(std::string const & address,
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = false;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
   return Response::create(call);
 }
@@ -199,9 +166,10 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
 
   if(ttl > 0)
   {
@@ -226,10 +194,11 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncSetAction> call(new etcdv3::AsyncSetAction(params));
   return Response::create(call);
 }
@@ -238,9 +207,10 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
 
   if(ttl > 0)
   {
@@ -264,10 +234,11 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncSetAction> call(new etcdv3::AsyncSetAction(params,true));
   return Response::create(call);
 }
@@ -276,9 +247,10 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
 
   if(ttl > 0)
   {
@@ -302,10 +274,11 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::st
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncUpdateAction> call(new etcdv3::AsyncUpdateAction(params));
   return Response::create(call);
 }
@@ -314,10 +287,11 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::st
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.old_value.assign(old_value);
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
 
   if(ttl > 0)
   {
@@ -341,24 +315,24 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.old_value.assign(old_value);
   params.lease_id = leaseid;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_VALUE));
   return Response::create(call);
 }
 
-
-
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index, int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.old_revision = old_index;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   if(ttl > 0)
   {
     auto res = leasegrant(ttl).get();
@@ -381,11 +355,12 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
   params.old_revision = old_index;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_INDEX));
   return Response::create(call);
 }
@@ -394,9 +369,10 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = false;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(params));
   return Response::create(call);
 }
@@ -405,9 +381,10 @@ pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::string const & old_value)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.old_value.assign(old_value);
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(new etcdv3::AsyncCompareAndDeleteAction(params,etcdv3::Atomicity_Type::PREV_VALUE));
   return Response::create(call);
 }
@@ -415,9 +392,10 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.old_revision = old_index;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(new etcdv3::AsyncCompareAndDeleteAction(params, etcdv3::Atomicity_Type::PREV_INDEX));;
   return Response::create(call);
 
@@ -426,9 +404,10 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = recursive;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(params));
   return Response::create(call);
 }
@@ -436,10 +415,11 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool rec
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = true;
   params.limit = 0;  // default no limit.
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
   return Response::create(call);
 }
@@ -447,10 +427,11 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t const limit)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = true;
   params.limit = limit;
-  params.kv_stub = stub_.get();
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
   return Response::create(call);
 }
@@ -458,6 +439,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t cons
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = recursive;
   params.watch_stub = watchServiceStub.get();
@@ -468,6 +450,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool rec
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int fromIndex, bool recursive)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = recursive;
   params.revision = fromIndex;
@@ -479,6 +462,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
 pplx::task<etcd::Response> etcd::Client::leasegrant(int ttl)
 {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.ttl = ttl;
   params.lease_stub = leaseServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLeaseGrantAction> call(new etcdv3::AsyncLeaseGrantAction(params));
@@ -487,6 +471,7 @@ pplx::task<etcd::Response> etcd::Client::leasegrant(int ttl)
 
 pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key = key;
   params.lock_stub = lockServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLockAction> call(new etcdv3::AsyncLockAction(params));
@@ -495,6 +480,7 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
 
 pplx::task<etcd::Response> etcd::Client::unlock(std::string const &key) {
   etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
   params.key = key;
   params.lock_stub = lockServiceStub.get();
   std::shared_ptr<etcdv3::AsyncUnlockAction> call(new etcdv3::AsyncUnlockAction(params));
@@ -503,7 +489,8 @@ pplx::task<etcd::Response> etcd::Client::unlock(std::string const &key) {
 
 pplx::task<etcd::Response> etcd::Client::txn(etcdv3::Transaction const &txn) {
   etcdv3::ActionParameters params;
-  params.kv_stub = stub_.get();
+  params.auth_token.assign(this->auth_token);
+  params.kv_stub = kvServiceStub .get();
   std::shared_ptr<etcdv3::AsyncTxnAction> call(new etcdv3::AsyncTxnAction(params, txn));
   return Response::create(call);
 }
