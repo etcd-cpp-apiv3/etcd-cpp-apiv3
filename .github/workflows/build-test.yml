@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DBUILD_TESTS=ON \
+          cmake .. -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           make -j2

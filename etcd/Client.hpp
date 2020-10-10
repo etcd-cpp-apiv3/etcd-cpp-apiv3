@@ -234,8 +234,8 @@ namespace etcd
 
   private:
     std::shared_ptr<grpc::Channel> channel;
-    std::shared_ptr<grpc::CallCredentials> auth_creds;
-    std::unique_ptr<KV::Stub> stub_;
+    std::string auth_token;
+    std::unique_ptr<KV::Stub> kvServiceStub;
     std::unique_ptr<Watch::Stub> watchServiceStub;
     std::unique_ptr<Lease::Stub> leaseServiceStub;
     std::unique_ptr<Lock::Stub> lockServiceStub;
