@@ -28,7 +28,6 @@
 #include "etcd/v3/AsyncTxnAction.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <grpc++/security/credentials.h>
 
 using grpc::Channel;
 
@@ -138,14 +137,8 @@ etcd::Client::Client(std::string const & address,
     throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
   }
   this->auth_token = token_or_message;
-  // using interceptor_factory_t = grpc::experimental::ClientInterceptorFactoryInterface;
-  // using interceptor_factory_ptr_t = std::unique_ptr<interceptor_factory_t>;
-  // std::vector<interceptor_factory_ptr_t> interceptor_creators;
-  // interceptor_creators.emplace_back(new etcd::detail::AuthInterceptorFactory(token_or_message));
 
-  // reset the channel with the authentication interceptor.
-  // this->channel = grpc::experimental::CreateCustomChannelWithInterceptors(
-  //     addresses, creds, grpc_args, std::move(interceptor_creators));
+  // setup stubs
   kvServiceStub = KV::NewStub(this->channel);
   watchServiceStub= Watch::NewStub(this->channel);
   leaseServiceStub= Lease::NewStub(this->channel);
