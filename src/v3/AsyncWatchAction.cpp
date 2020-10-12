@@ -36,12 +36,6 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters param)
   } else {
     throw std::runtime_error("failed to create a watch connection");
   }
-}
-
-void etcdv3::AsyncWatchAction::waitForResponse() 
-{
-  void* got_tag;
-  bool ok = false;    
 
   // wait "write" (WatchCreateRequest) success, and start to read the first reply
   if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"write") {
@@ -49,6 +43,12 @@ void etcdv3::AsyncWatchAction::waitForResponse()
   } else {
     throw std::runtime_error("failed to write WatchCreateRequest to server");
   }
+}
+
+void etcdv3::AsyncWatchAction::waitForResponse() 
+{
+  void* got_tag;
+  bool ok = false;
 
   while(cq_.Next(&got_tag, &ok))
   {
@@ -101,13 +101,6 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
 {
   void* got_tag;
   bool ok = false;    
-
-  // wait "write" (WatchCreateRequest) success, and start to read the first reply
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"write") {
-    stream->Read(&reply, (void*)this);
-  } else {
-    throw std::runtime_error("failed to write WatchCreateRequest to server");
-  }
 
   while(cq_.Next(&got_tag, &ok))
   {

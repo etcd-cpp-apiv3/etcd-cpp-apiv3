@@ -63,6 +63,13 @@ TEST_CASE("create watcher")
   etcd.rmdir("/test", true).error_code();
 }
 
+TEST_CASE("watch should exit normally")
+{
+  // cancal immediately after start watch.
+  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+  watcher.Cancel();
+}
+
 // TEST_CASE("request cancellation")
 // {
 //   etcd::Client etcd(etcd_uri);
