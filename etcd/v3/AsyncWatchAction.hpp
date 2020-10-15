@@ -1,17 +1,17 @@
 #ifndef __ASYNC_WATCHACTION_HPP__
 #define __ASYNC_WATCHACTION_HPP__
 
+#include <mutex>
+
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "etcd/v3/Action.hpp"
 #include "etcd/v3/AsyncWatchResponse.hpp"
 #include "etcd/Response.hpp"
 
-
 using grpc::ClientAsyncReaderWriter;
 using etcdserverpb::WatchRequest;
 using etcdserverpb::WatchResponse;
-
 
 namespace etcdv3
 {
@@ -29,6 +29,7 @@ namespace etcdv3
       WatchResponse reply;
       std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;   
       bool isCancelled;
+      std::mutex protect_is_cancalled;
   };
 }
 

@@ -1,6 +1,8 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+#include <thread>
+
 #include "etcd/Watcher.hpp"
 #include "etcd/SyncClient.hpp"
 
@@ -68,6 +70,21 @@ TEST_CASE("watch should exit normally")
   // cancal immediately after start watch.
   etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
   watcher.Cancel();
+}
+
+TEST_CASE("watch should can be cancelled repeatedly")
+{
+  // cancal immediately after start watch.
+  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+  std::vector<std::thread> threads(10);
+  for (size_t i = 0; i < 10; ++i) {
+    threads[i] = std::thread([&]() {
+      watcher.Cancel();
+    });
+  }
+  for (size_t i = 0; i < 10; ++i) {
+    threads[i].join();
+  }
 }
 
 // TEST_CASE("request cancellation")

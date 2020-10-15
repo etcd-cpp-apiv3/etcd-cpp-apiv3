@@ -87,10 +87,12 @@ void etcdv3::AsyncWatchAction::waitForResponse()
 
 void etcdv3::AsyncWatchAction::CancelWatch()
 {
+  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if(isCancelled == false)
   {
     stream->WritesDone((void*)"writes done");
   }
+  isCancelled = true;
 }
 
 bool etcdv3::AsyncWatchAction::Cancelled() const {
