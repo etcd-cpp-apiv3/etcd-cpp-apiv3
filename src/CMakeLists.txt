@@ -18,11 +18,3 @@ target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../p
 target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
 
 install (TARGETS etcd-cpp-api DESTINATION lib)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/SyncClient.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
-               DESTINATION include/etcd)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
-               DESTINATION include/etcd/v3)
