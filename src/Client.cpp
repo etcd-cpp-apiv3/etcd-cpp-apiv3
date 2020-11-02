@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <limits>
 #include <memory>
 #include "etcd/Client.hpp"
 #include "etcd/v3/action_constants.hpp"
@@ -108,6 +109,8 @@ etcd::Client::Client(std::string const & address,
   // create channels
   std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
   grpc::ChannelArguments grpc_args;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
@@ -127,6 +130,8 @@ etcd::Client::Client(std::string const & address,
   // create channels
   std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
   grpc::ChannelArguments grpc_args;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
