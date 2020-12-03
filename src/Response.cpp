@@ -31,6 +31,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
 
   // duration
   _duration = duration;
+
+  _leases = reply.get_leases();
+  _leaseinfo = reply.get_leaseinfo();
 }
 
 
@@ -118,3 +121,7 @@ std::vector<mvccpb::Event> const & etcd::Response::events() const {
 std::chrono::microseconds const& etcd::Response::duration() const {
   return this->_duration;
 }
+
+std::vector<int64_t> const& etcd::Response::leases() const { return _leases; }
+
+etcdv3::LeaseInfo const& etcd::Response::leaseinfo() const { return _leaseinfo; }

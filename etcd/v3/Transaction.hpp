@@ -25,6 +25,10 @@ public:
 	void setup_delete_failure_operation(std::string const &key, std::string const &range_end, bool recursive);
 	void setup_compare_and_delete_operation(std::string const& key);
 	void setup_lease_grant_operation(int ttl);
+	void setup_lease_leases_operation();
+  	void setup_lease_keepalive_operation(int64_t lease_id);
+  	void setup_lease_revoke_operation(int64_t lease_id);
+  	void setup_lease_timetolive_operation(int64_t lease_id, bool keys);
 
 	// update without `get` and no `prev_kv` returned
 	void setup_put(std::string const &key, std::string const &value);
@@ -32,6 +36,10 @@ public:
 
 	etcdserverpb::TxnRequest txn_request;
 	etcdserverpb::LeaseGrantRequest leasegrant_request;
+	etcdserverpb::LeaseLeasesRequest leaseleases_request;
+  	etcdserverpb::LeaseKeepAliveRequest leasekeepalive_request;
+  	etcdserverpb::LeaseRevokeRequest leaserevoke_request;
+  	etcdserverpb::LeaseTimeToLiveRequest leasetimetolive_request;
 
 private:
 	std::string key;

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "etcd/Value.hpp"
+#include "etcd/v3/LeaseInfo.hpp"
 #include <grpc++/grpc++.h>
 #include "proto/kv.pb.h"
 
@@ -12,6 +13,7 @@
 
 namespace etcdv3 {
   class AsyncWatchAction;
+  class AsyncLeaseKeepAliveAction;
   class V3Response;
 }
 
@@ -122,6 +124,16 @@ namespace etcd
      */
     std::chrono::microseconds const & duration() const;
 
+    /**
+     * Returns the list of leases
+     */
+    std::vector<int64_t> const& leases() const;
+
+    /**
+     * Returns detailed info for the lease
+     */
+    etcdv3::LeaseInfo const& leaseinfo() const;
+
   protected:
     Response(const etcdv3::V3Response& response, std::chrono::microseconds const& duration);
     Response(int error_code, char const * error_message);
@@ -133,12 +145,15 @@ namespace etcd
     Value       _value;
     Value       _prev_value;
     Values      _values;
+    std::vector<int64_t> _leases;
+    etcdv3::LeaseInfo _leaseinfo;
     Keys        _keys;
     std::string _lock_key; // for lock
     std::vector<mvccpb::Event> _events; // for watch
     std::chrono::microseconds _duration; // execute duration (in microseconds), during the action created and response parsed
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
+    friend class etcdv3::AsyncLeaseKeepAliveAction;
     friend class Client;
   };
 }

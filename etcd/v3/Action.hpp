@@ -31,6 +31,7 @@ namespace etcdv3
     int revision;
     int old_revision;
     int64_t lease_id;
+    bool keys;
     int ttl;
     int limit;
     std::string key;

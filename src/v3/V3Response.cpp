@@ -46,6 +46,10 @@ std::vector<etcdv3::KeyValue> const & etcdv3::V3Response::get_prev_values() cons
   return prev_values;
 }
 
+std::vector<int64_t> const& etcdv3::V3Response::get_leases() const {
+  return leases;
+}
+
 etcdv3::KeyValue const & etcdv3::V3Response::get_value() const
 {
   return value;
@@ -56,9 +60,17 @@ etcdv3::KeyValue const & etcdv3::V3Response::get_prev_value() const
   return prev_value;
 }
 
+etcdv3::LeaseInfo const& etcdv3::V3Response::get_leaseinfo() const {
+  return leaseinfo;
+}
+
 bool etcdv3::V3Response::has_values() const
 {
   return values.size() > 0;
+}
+
+bool etcdv3::V3Response::has_leases() const {
+  return leases.size() > 0;
 }
 
 void etcdv3::V3Response::set_lock_key(std::string const &key) {

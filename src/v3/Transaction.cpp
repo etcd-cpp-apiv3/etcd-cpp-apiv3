@@ -160,6 +160,24 @@ void etcdv3::Transaction::setup_lease_grant_operation(int ttl)
   leasegrant_request.set_ttl(ttl);
 }
 
+void etcdv3::Transaction::setup_lease_leases_operation() {
+  // leaseleases_request.set_id(lease_id);
+}
+
+void etcdv3::Transaction::setup_lease_keepalive_operation(int64_t lease_id) {
+  leasekeepalive_request.set_id(lease_id);
+}
+
+void etcdv3::Transaction::setup_lease_revoke_operation(int64_t lease_id) {
+  leaserevoke_request.set_id(lease_id);
+}
+
+void etcdv3::Transaction::setup_lease_timetolive_operation(int64_t lease_id,
+                                                           bool keys) {
+  leasetimetolive_request.set_id(lease_id);
+  leasetimetolive_request.set_keys(keys);
+}
+
 void etcdv3::Transaction::setup_put(std::string const &key, std::string const &value) {
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);

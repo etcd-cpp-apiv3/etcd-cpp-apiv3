@@ -48,6 +48,9 @@ namespace etcd
      */
     int ttl() const;
   
+    /**
+     * Returns the id of the lease
+     */
     int64_t lease() const;
 
   protected:
