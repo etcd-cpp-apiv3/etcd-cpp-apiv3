@@ -20,7 +20,7 @@ pplx::task<void> etcd::KeepAlive::start(int refresh_in_ms) {
   // Define the callback that is going to be repeatedly called to create a queue of lease id's
   // that need to be refreshed
   auto queueKeepAlivesCallback = new pplx::call<int>([this](int) {
-    std::cout << " ** Queueing keepalives: " << std::endl;
+    // std::cout << " ** Queueing keepalives: " << std::endl;
 
     // Copy the lease id's to a queue for processing
     pplx::concurrent_unordered_map<int64_t, int>::iterator itr;
@@ -47,9 +47,9 @@ pplx::task<void> etcd::KeepAlive::start(int refresh_in_ms) {
       // "cq". The return value of Next should always be checked. This
       // return value tells us whether there is any kind of event or the cq_
       // is shutting down.
-      std::cout << "Waiting for next event..." << std::endl;
+      // std::cout << "Waiting for next event..." << std::endl;
       if (!cq_.Next(&got_tag, &ok)) {
-        std::cerr << "Client stream closed. Quitting" << std::endl;
+        // std::cerr << "Client stream closed. Quitting" << std::endl;
         break;
       }
 
@@ -59,34 +59,34 @@ pplx::task<void> etcd::KeepAlive::start(int refresh_in_ms) {
       // to a void*, so we don't have extra memory management to take care
       // of.
       if (ok) {
-        std::cout << std::endl << "**** Processing completion queue tag " << got_tag << std::endl;
+        // std::cout << std::endl << "**** Processing completion queue tag " << got_tag << std::endl;
 
         switch (static_cast<Type>(reinterpret_cast<int64_t>(got_tag))) {
           case Type::READ:
-            std::cout << "Read a new message, sending next." << std::endl;
+            // std::cout << "Read a new message, sending next." << std::endl;
             sendNextKeepAlive();
             break;
           case Type::WRITE:
-            std::cout << "Sent message (async), attempting to read response." << std::endl;
+            // std::cout << "Sent message (async), attempting to read response." << std::endl;
             readNextMessage();
             break;
           case Type::CONNECT:
-            std::cout << "Server connected." << std::endl;
+            // std::cout << "Server connected." << std::endl;
             tce.set();
             timer_->link_target(queueKeepAlivesCallback);
             timer_->start();
             break;
           case Type::WRITES_DONE:
-            std::cout << "Server disconnecting." << std::endl;
+            // std::cout << "Server disconnecting." << std::endl;
             timer_->stop();
             break;
           case Type::FINISH:
-            std::cout << "Client finish; status = " << (finish_status_.ok() ? "ok" : "cancelled") << std::endl;
+            // std::cout << "Client finish; status = " << (finish_status_.ok() ? "ok" : "cancelled") << std::endl;
             context_.TryCancel();
             cq_.Shutdown();
             break;
           default:
-            std::cerr << "Unexpected tag " << got_tag << std::endl;
+            // std::cerr << "Unexpected tag " << got_tag << std::endl;
         }
       }
     }
@@ -110,17 +110,17 @@ void etcd::KeepAlive::remove(int64_t leaseid, bool revoke) {
 void etcd::KeepAlive::sendNextKeepAlive() {
   std::pair<int64_t, int> lease;
   if (leaseQueue_.try_pop(lease)) {
-    std::cout << "sending keepalive for " << lease.first << std::endl;
+    // std::cout << "sending keepalive for " << lease.first << std::endl;
     LeaseKeepAliveRequest request;
     request.set_id(lease.first);
     stream_->Write(request, reinterpret_cast<void*>(Type::WRITE));
   } else {
-    std::cout << "no keepalives left" << std::endl;
+    // std::cout << "no keepalives left" << std::endl;
   }
 }
 
 void etcd::KeepAlive::readNextMessage() {
-  std::cout << " ** Got response: " << response_.ttl() << std::endl;
+  // std::cout << " ** Got response: " << response_.ttl() << std::endl;
   stream_->Read(&response_, reinterpret_cast<void*>(Type::READ));
 }
 
