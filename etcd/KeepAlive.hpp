@@ -55,8 +55,8 @@ public:
   void stop() { timer_.cancel(); }
 
 private:
-  boost::asio::steady_timer timer_;
   boost::asio::chrono::milliseconds interval_;
+  boost::asio::steady_timer timer_;  
   handler_function handler_;
 };
 
