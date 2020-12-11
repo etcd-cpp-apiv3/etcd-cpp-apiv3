@@ -16,6 +16,7 @@ using grpc::ClientAsyncResponseReader;
 
 namespace etcdv3 {
 class AsyncLeaseKeepAliveAction : public etcdv3::Action {
+  enum class Type { READ = 1, WRITE = 2, CONNECT = 3, WRITES_DONE = 4, FINISH = 5 };
  public:
   AsyncLeaseKeepAliveAction(etcdv3::ActionParameters param);
   AsyncLeaseKeepAliveResponse ParseResponse();
@@ -24,8 +25,6 @@ class AsyncLeaseKeepAliveAction : public etcdv3::Action {
  private:
   LeaseKeepAliveResponse reply;
   std::unique_ptr<ClientAsyncReaderWriter<LeaseKeepAliveRequest, LeaseKeepAliveResponse>> stream;
-
-  char* doneTag = "writes done";
 };
 }  // namespace etcdv3
 
