@@ -5,7 +5,7 @@
 
 #include "etcd/Response.hpp"
 #include "etcd/v3/Action.hpp"
-#include "etcd/v3/AsyncleaseKeepAliveResponse.hpp"
+#include "etcd/v3/AsyncLeaseKeepAliveResponse.hpp"
 #include "proto/rpc.grpc.pb.h"
 
 using etcd::Response;

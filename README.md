@@ -423,27 +423,34 @@ send a periodic refresh to the server. This can be done using a one time command
 called `leasekeepalive(lease_id)`. However, that is inefficient since it creates and
 destroys a bidirectional stream on each call. Instead, it is recommend to use the 
 `etcd::KeepAlive` service, which is a long running task that will periodically 
-refresh the leases that you specify. You can create multiple `etcd::KeepAlive` instances
-if you need to have different refresh intervals for different leases.
+refresh the leases that you specify. You can add multiple leases with different
+refresh intervals to the KeepAlive service, and it will start up timers for each.
+You should set the refresh interval to something less than your lease TTL, so that
+any small delays in processing do not cause your lease to expire. The first refresh
+request is sent immediately after adding the lease to the service, and then at 
+each `refresh_interval` thereafter.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::KeepAlive keepalive{etcd}; // Creates the KeepAlive service, but does not start it
-  keepalive.start(2000); // Starts the service with a 2s refresh interval.
+  {
+    etcd::KeepAlive keepalive{etcd}; // Creates the KeepAlive service
 
-  etcd::Response resp = etcd.leasegrant(5).get(); // create a lease
-  int64_t lease_id = resp.value().lease();
-  etcd.set("/test/key2", "bar", lease_id); // attach lease to the key
-  std::cout << "ttl" << resp.value().ttl() << std::endl;
-  
-  // Tell the KeepAlive service to refresh this lease every 2 seconds
-  keepalive.add(resp.value().lease()); 
-  
-  // ...
+    etcd::Response resp = etcd.leasegrant(5).get(); // create a lease
+    int64_t lease_id = resp.value().lease();
+    etcd.set("/test/key2", "bar", lease_id); // attach lease to the key
+    std::cout << "ttl" << resp.value().ttl() << std::endl;
+    
+    // Tell the KeepAlive service to refresh this lease every 1.5 seconds
+    keepalive.add(resp.value().lease(), std::chrono::milliseconds(1500)); 
+    
+    // ...
 
-  // Remove the lease from the KeepAlive, and also immediately revoke it
-  keepalive.remove(lease_id, true);
-  // '/test/key2' is now deleted
+    // Remove the lease from the KeepAlive, and also immediately revoke it
+    keepalive.remove(lease_id, true);
+    // '/test/key2' is now deleted
+  }
+  // When the KeepAlive service object goes out of scope and is deleted, 
+  // all leases are removed but are not immediately revoked.
 ```
 
 ### TODO
