@@ -33,10 +33,12 @@ find_package(cpprestsdk REQUIRED)
 find_package(gRPC)
 if(gRPC_FOUND)
     set(GRPC_LIBRARIES gRPC::gpr gRPC::grpc gRPC::grpc++)
+    get_target_property(GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin LOCATION)
 else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobufGRPC.cmake)
 
 # will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
