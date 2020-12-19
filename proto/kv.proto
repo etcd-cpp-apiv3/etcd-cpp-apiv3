@@ -31,7 +31,7 @@ message KeyValue {
 message Event {
   enum EventType {
     PUT = 0;
-    DELETE = 1;
+    DELETE_ = 1;
   }
   // type is the kind of event. If type is a PUT, it indicates
   // new data has been stored to the key. If type is a DELETE,

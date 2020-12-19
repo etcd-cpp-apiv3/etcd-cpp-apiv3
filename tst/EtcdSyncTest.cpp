@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
+#include <chrono>
 #include <thread>
 
 #include "etcd/SyncClient.hpp"
@@ -10,6 +11,7 @@ TEST_CASE("sync operations")
 {
   etcd::SyncClient etcd(etcd_uri);
   etcd.rmdir("/test", true);
+
 
   // add
   CHECK(0 == etcd.add("/test/key1", "42").error_code());
@@ -119,7 +121,7 @@ TEST_CASE("wait for a value change")
     CHECK("43" == res.value().as_string());
   });
 
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   etcd.set("/test/key1", "43");
   watch_thrd.join();
 
@@ -136,7 +138,7 @@ TEST_CASE("wait for a directory change")
     CHECK("44" == res.value().as_string());
   });
 
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   etcd.add("/test/key4", "44");
   watch_thrd1.join();
 
@@ -146,7 +148,7 @@ TEST_CASE("wait for a directory change")
     CHECK("45" == res2.value().as_string());
   });
 
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   etcd.set("/test/key4", "45");
   watch_thrd2.join();
 
@@ -188,7 +190,7 @@ TEST_CASE("watch changes in the past")
 
 //   etcd.cancel_operations();
 
-//   sleep(1);
+//   std::this_thread::sleep_for(std::chrono::seconds(1));
 //   REQUIRE(res.is_done());
 //   try {
 //     res.wait();

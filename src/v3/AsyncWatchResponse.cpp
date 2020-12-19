@@ -23,7 +23,7 @@ void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply)
       value.kvs = event.kv();       
 
     }
-    else if(mvccpb::Event::EventType::Event_EventType_DELETE == event.type())
+    else if(mvccpb::Event::EventType::Event_EventType_DELETE_ == event.type())
     {
       action = etcdv3::DELETE_ACTION;
       value.kvs = event.kv();
