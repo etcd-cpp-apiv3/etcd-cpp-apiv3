@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
+#include <sys/socket.h>
+#endif
 
 #include <limits>
 #include <memory>
@@ -47,8 +53,26 @@ static bool dns_resolve(std::string const &target, std::vector<std::string> &end
     std::cerr << "warn: invalid URL: " << target << std::endl;
     return false;
   }
-  if (getaddrinfo(target_parts[0].c_str(), target_parts[1].c_str(), &hints, &addrs) != 0) {
-    std::cerr << "warn: getaddrinfo() failed for endpoint " << target << std::endl;
+
+#if defined(_WIN32)
+  {
+    // Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h.
+    WORD wVersionRequested = MAKEWORD(2, 2);
+    WSADATA wsaData;
+
+    int err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0) {
+      // Tell the user that we could not find a usable Winsock DLL.                                  */
+      std::cerr << "WSAStartup failed with error: %d" << err << std::endl;
+      return false;
+    }
+  }
+#endif
+
+  int r = getaddrinfo(target_parts[0].c_str(), target_parts[1].c_str(), &hints, &addrs);
+  if (r != 0) {
+    std::cerr << "warn: getaddrinfo() failed for endpoint " << target
+              << " with error: " << r << std::endl;
     return false;
   }
 

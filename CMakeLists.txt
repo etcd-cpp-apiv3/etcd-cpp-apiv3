@@ -8,9 +8,6 @@ set(etcd-cpp-api_VERSION_MINOR 1)
 
 option(BUILD_ETCD_TESTS "Build test cases" OFF)
 
-find_library(CPPREST_LIB NAMES cpprest)
-find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
-
 find_package(Boost REQUIRED COMPONENTS system thread locale random)
 if (APPLE)
     # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
@@ -28,22 +25,31 @@ if (APPLE)
         endif()
     endif()
 endif()
+
 find_package(OpenSSL REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(cpprestsdk REQUIRED)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
-set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
+find_package(gRPC)
+if(gRPC_FOUND)
+    set(GRPC_LIBRARIES gRPC::gpr gRPC::grpc gRPC::grpc++)
+else()
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
+    set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
+endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobufGRPC.cmake)
 
 # will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
-include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}
-                           ${Boost_INCLUDE_DIR}
+include_directories(SYSTEM ${Boost_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
                            ${OPENSSL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare -std=c++11")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare -std=c++11")
+endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)

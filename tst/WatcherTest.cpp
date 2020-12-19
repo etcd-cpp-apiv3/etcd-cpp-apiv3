@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+#include <chrono>
 #include <thread>
 
 #include "etcd/Watcher.hpp"
@@ -31,17 +32,17 @@ TEST_CASE("create watcher with cancel")
 
   watcher_called = 0;
   etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
   etcd.rm("/test/key");
   etcd.set("/test/key", "44");
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   CHECK(4 == watcher_called);
   watcher.Cancel();
   etcd.set("/test/key", "50");
   etcd.set("/test/key", "51");
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   CHECK(4 == watcher_called);
 
   etcd.rmdir("/test", true);
@@ -56,7 +57,7 @@ TEST_CASE("create watcher")
   watcher_called = 0;
   {
     etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     etcd.set("/test/key", "42");
     etcd.set("/test/key", "43");
   }
@@ -97,7 +98,7 @@ TEST_CASE("watch should can be cancelled repeatedly")
 
 //   etcd.cancel_operations();
 
-//   sleep(1);
+//   std::this_thread::sleep_for(std::chrono::seconds(1));
 //   REQUIRE(res.is_done());
 //   try {
 //     res.wait();

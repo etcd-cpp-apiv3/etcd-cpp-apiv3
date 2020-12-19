@@ -9,7 +9,7 @@ add_dependencies(etcd-cpp-api protobuf_generates)
 set_property(TARGET etcd-cpp-api PROPERTY CXX_STANDARD 11)
 
 target_link_libraries(etcd-cpp-api PUBLIC
-                      ${CPPREST_LIB}
+                      cpprestsdk::cpprest
                       ${Boost_LIBRARIES}
                       ${PROTOBUF_LIBRARIES}
                       ${OPENSSL_LIBRARIES}

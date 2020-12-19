@@ -2,6 +2,7 @@
 #include <catch.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <iostream>
 #include <thread>
 
