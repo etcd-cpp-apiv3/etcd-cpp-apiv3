@@ -7,6 +7,7 @@ set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 1)
 
 option(BUILD_ETCD_TESTS "Build test cases" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 find_package(Boost REQUIRED COMPONENTS system thread locale random)
 if (APPLE)

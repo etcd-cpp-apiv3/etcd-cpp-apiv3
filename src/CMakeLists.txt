@@ -17,4 +17,8 @@ target_link_libraries(etcd-cpp-api PUBLIC
 target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
 target_include_directories(etcd-cpp-api PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
 
-install (TARGETS etcd-cpp-api DESTINATION lib)
+if (WIN32 AND BUILD_SHARED_LIBS)
+    install (TARGETS etcd-cpp-api RUNTIME DESTINATION bin)
+else()
+    install (TARGETS etcd-cpp-api LIBRARY DESTINATION lib)
+endif()
