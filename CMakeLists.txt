@@ -29,7 +29,13 @@ endif()
 
 find_package(OpenSSL REQUIRED)
 find_package(Protobuf REQUIRED)
-find_package(cpprestsdk REQUIRED)
+find_package(cpprestsdk)
+if(cpprestsdk_FOUND)
+    set(CPPREST_INCLUDE_DIR)
+else()
+    find_library(CPPREST_LIB NAMES cpprest)
+    find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
+endif()
 
 find_package(gRPC)
 if(gRPC_FOUND)
@@ -47,6 +53,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIR}
+                           ${CPPREST_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
                            ${OPENSSL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
