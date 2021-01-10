@@ -39,6 +39,9 @@ namespace etcd
             std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
 
+    Watcher(Watcher const &) = delete;
+    Watcher(Watcher &&) = delete;
+
     /**
      * Wait util the task has been stopped, actively or passively, e.g., the watcher
      * get cancelled or the server closes the connection.

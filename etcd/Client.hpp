@@ -3,6 +3,7 @@
 
 #include "etcd/Response.hpp"
 
+#include <map>
 #include <string>
 
 #include <grpc++/grpc++.h>
@@ -21,6 +22,7 @@ namespace etcdv3 {
 
 namespace etcd
 {
+  class KeepAlive;
   class Watcher;
 
   /**
@@ -215,16 +217,36 @@ namespace etcd
     pplx::task<Response> leasegrant(int ttl);
 
     /**
-     * Gains a lock at a key.
+     * Revoke a lease.
+     * @param lease_id is the id the lease
+     */
+    pplx::task<Response> leaserevoke(int64_t lease_id);
+
+    /**
+     * Get time-to-live of a lease.
+     * @param lease_id is the id the lease
+     */
+    pplx::task<Response> leasetimetolive(int64_t lease_id);
+
+    /**
+     * Gains a lock at a key, using a default created lease, using the default lease (60 seconds), with
+     * keeping alive has already been taken care of by the library.
      * @param key is the key to be used to request the lock.
      */
     pplx::task<Response> lock(std::string const &key);
 
     /**
+     * Gains a lock at a key, using a user-provided lease, the lifetime of the lease won't be taken care
+     * of by the library.
+     * @param key is the key to be used to request the lock.
+     */
+    pplx::task<Response> lock(std::string const &key, int64_t lease_id);
+
+    /**
      * Releases a lock at a key.
      * @param key is the lock key to release.
      */
-    pplx::task<Response> unlock(std::string const &key);
+    pplx::task<Response> unlock(std::string const &lock_key);
 
      /**
       * Execute a etcd transaction.
@@ -240,6 +262,10 @@ namespace etcd
     std::unique_ptr<Lease::Stub> leaseServiceStub;
     std::unique_ptr<Lock::Stub> lockServiceStub;
 
+    std::map<std::string, int64_t> leases_for_locks;
+    std::map<int64_t, std::shared_ptr<KeepAlive>> keep_alive_for_locks;
+
+    friend class KeepAlive;
     friend class Watcher;
 };
 

@@ -109,6 +109,16 @@ etcd::Response etcd::SyncClient::leasegrant(int ttl)
   CHECK_EXCEPTIONS(client.leasegrant(ttl).get());
 }
 
+etcd::Response etcd::SyncClient::leaserevoke(int64_t lease_id)
+{
+  CHECK_EXCEPTIONS(client.leaserevoke(lease_id).get());
+}
+
+etcd::Response etcd::SyncClient::leasetimetolive(int64_t lease_id)
+{
+  CHECK_EXCEPTIONS(client.leasetimetolive(lease_id).get());
+}
+
 etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
 {
   CHECK_EXCEPTIONS(client.watch(key, recursive).get());

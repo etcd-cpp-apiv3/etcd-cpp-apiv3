@@ -155,11 +155,6 @@ void etcdv3::Transaction::setup_compare_and_delete_operation(std::string const& 
 	req_success->set_allocated_request_delete_range(del_request.release());
 }
 
-void etcdv3::Transaction::setup_lease_grant_operation(int ttl)
-{
-  leasegrant_request.set_ttl(ttl);
-}
-
 void etcdv3::Transaction::setup_put(std::string const &key, std::string const &value) {
 	std::unique_ptr<PutRequest> put_request(new PutRequest());
 	put_request->set_key(key);
