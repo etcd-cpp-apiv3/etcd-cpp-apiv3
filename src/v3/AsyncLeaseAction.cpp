@@ -1,0 +1,172 @@
+#include "etcd/v3/AsyncLeaseAction.hpp"
+#include "etcd/v3/action_constants.hpp"
+#include "etcd/v3/Transaction.hpp"
+
+using etcdserverpb::LeaseGrantRequest;
+using etcdserverpb::LeaseRevokeRequest;
+using etcdserverpb::LeaseCheckpointRequest;
+using etcdserverpb::LeaseKeepAliveRequest;
+using etcdserverpb::LeaseTimeToLiveRequest;
+using etcdserverpb::LeaseLeasesRequest;
+
+etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(etcdv3::ActionParameters param)
+  : etcdv3::Action(param)
+{
+	LeaseGrantRequest leasegrant_request;
+  leasegrant_request.set_ttl(parameters.ttl);
+  // If ID is set to 0, etcd will choose an ID.
+  leasegrant_request.set_id(parameters.lease_id);
+
+  response_reader = parameters.lease_stub->AsyncLeaseGrant(&context, leasegrant_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*)this);
+}
+
+etcdv3::AsyncLeaseGrantResponse etcdv3::AsyncLeaseGrantAction::ParseResponse()
+{
+  AsyncLeaseGrantResponse lease_resp;
+  if (!status.ok()) {
+    lease_resp.set_error_code(status.error_code());
+    lease_resp.set_error_message(status.error_message());
+  } else { 
+    lease_resp.ParseResponse(reply);
+  }
+  return lease_resp;
+}
+
+etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(etcdv3::ActionParameters param)
+  : etcdv3::Action(param)
+{
+	LeaseRevokeRequest leaserevoke_request;
+  leaserevoke_request.set_id(parameters.lease_id);
+
+  response_reader = parameters.lease_stub->AsyncLeaseRevoke(&context, leaserevoke_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*)this);
+}
+
+etcdv3::AsyncLeaseRevokeResponse etcdv3::AsyncLeaseRevokeAction::ParseResponse()
+{
+  AsyncLeaseRevokeResponse lease_resp;
+  if (!status.ok()) {
+    lease_resp.set_error_code(status.error_code());
+    lease_resp.set_error_message(status.error_message());
+  } else { 
+    lease_resp.ParseResponse(reply);
+  }
+  return lease_resp;
+}
+
+etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(etcdv3::ActionParameters param)
+  : etcdv3::Action(param)
+{
+  isCancelled = false;
+  stream = parameters.lease_stub->AsyncLeaseKeepAlive(&context, &cq_, (void*)"keepalive create");
+
+  void *got_tag = nullptr;
+  bool ok = false;
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive create") {
+    // ok
+  } else {
+    throw std::runtime_error("Failed to create a lease keep-alive connection");
+  }
+}
+
+etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::ParseResponse()
+{
+  AsyncLeaseKeepAliveResponse lease_resp;
+  if (!status.ok()) {
+    lease_resp.set_error_code(status.error_code());
+    lease_resp.set_error_message(status.error_message());
+  } else { 
+    lease_resp.ParseResponse(reply);
+  }
+  return lease_resp;
+}
+
+etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::Refresh()
+{
+  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
+
+  if (isCancelled) {
+    return ParseResponse();
+  }
+
+  LeaseKeepAliveRequest leasekeepalive_request;
+  leasekeepalive_request.set_id(parameters.lease_id);
+
+  void *got_tag = nullptr;
+  bool ok = false;
+
+  stream->Write(leasekeepalive_request, (void *)"keepalive write");
+  // wait write finish
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive write") {
+    stream->Read(&reply, (void*)"keepalive read");
+    // wait read finish
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive read") {
+      return ParseResponse();
+    }
+  }
+  throw std::runtime_error("Failed to create a lease keep-alive connection");
+}
+
+void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
+{
+  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
+  if(isCancelled == false)
+  {
+    isCancelled = true;
+    stream->WritesDone((void*)"keepalive done");
+    grpc::Status status;
+    stream->Finish(&status, (void *)this);
+    cq_.Shutdown();
+  }
+}
+
+bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const
+{
+  return isCancelled;
+}
+
+etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters param)
+  : etcdv3::Action(param)
+{
+	LeaseTimeToLiveRequest leasetimetolive_request;
+  leasetimetolive_request.set_id(parameters.lease_id);
+  // FIXME: unsupported parameters: "keys"
+  // leasetimetolive_request.set_keys(parameters.keys);
+
+  response_reader = parameters.lease_stub->AsyncLeaseTimeToLive(&context, leasetimetolive_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*)this);
+}
+
+etcdv3::AsyncLeaseTimeToLiveResponse etcdv3::AsyncLeaseTimeToLiveAction::ParseResponse()
+{
+  AsyncLeaseTimeToLiveResponse lease_resp;
+  if (!status.ok()) {
+    lease_resp.set_error_code(status.error_code());
+    lease_resp.set_error_message(status.error_message());
+  } else { 
+    lease_resp.ParseResponse(reply);
+  }
+  return lease_resp;
+}
+
+etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(etcdv3::ActionParameters param)
+  : etcdv3::Action(param)
+{
+	LeaseLeasesRequest leaseleases_request;
+
+  response_reader = parameters.lease_stub->AsyncLeaseLeases(&context, leaseleases_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*)this);
+}
+
+etcdv3::AsyncLeaseLeasesResponse etcdv3::AsyncLeaseLeasesAction::ParseResponse()
+{
+  AsyncLeaseLeasesResponse lease_resp;
+  if (!status.ok()) {
+    lease_resp.set_error_code(status.error_code());
+    lease_resp.set_error_message(status.error_message());
+  } else { 
+    lease_resp.ParseResponse(reply);
+  }
+  return lease_resp;
+}

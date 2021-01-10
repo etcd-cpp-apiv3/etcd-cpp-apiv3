@@ -294,6 +294,25 @@ prefix will be deleted. All deleted keys will be placed in ```response.values()`
 However, if recursive parameter is false, functionality will be the same as just deleting a key.
 The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
 
+### Lock
+
+Etcd lock has been supported as follows:
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd.lock("/test/lock");
+```
+
+It will create a lease and a keep-alive job behind the screen, the lease will be revoked until
+the lock is unlocked.
+
+Users can also feed their own lease directory for lock:
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd.lock("/test/lock", lease_id);
+```
+
 ### Watching for changes
 
 Watching for a change is possible with the ```watch()``` operation of the client. The watch method
@@ -343,22 +362,7 @@ fact it just sends the asynchron request, sets up a callback for the response an
 callback is executed by some thread from the pplx library's thread pool and the callback (in this
 case a small lambda function actually) will call ```watch_for_changes``` again from there.
 
-
-### Requesting for lease
-
-Users can request for lease which is governed by a time-to-live(TTL) value given by the user.
-Moreover, user can attached the lease to a key(s) by indicating the lease id in ```add()```,
-```set()```, ```modify()``` and ```modify_if()```. Also the ttl will that was granted by etcd
-server will be indicated in ```ttl()```.
-
-```c++
-  etcd::Client etcd("http://127.0.0.1:4001");
-  etcd::Response resp = etcd.leasegrant(60).get();
-  etcd.set("/test/key2", "bar", resp.value().lease());
-  std::cout <<"ttl" << resp.value().ttl();
-```
-
-### Watcher Class
+#### Watcher Class
 
 Users can watch a key indefinitely or until user cancels the watch. This can be done by
 instantiating a Watcher class. The supplied callback function in Watcher class will be
@@ -375,11 +379,46 @@ either by user implicitly calling ```Cancel()``` or when watcher class is destro
 }
 ```
 
+### Requesting for lease
+
+Users can request for lease which is governed by a time-to-live(TTL) value given by the user.
+Moreover, user can attached the lease to a key(s) by indicating the lease id in ```add()```,
+```set()```, ```modify()``` and ```modify_if()```. Also the ttl will that was granted by etcd
+server will be indicated in ```ttl()```.
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:4001");
+  etcd::Response resp = etcd.leasegrant(60).get();
+  etcd.set("/test/key2", "bar", resp.value().lease());
+  std::cout << "ttl" << resp.value().ttl();
+```
+
+The lease can be revoked by
+
+```c++
+  etcd.leaserevoke(resp.value().lease());
+```
+
+The remaining time-to-live of a lease can be inspected by
+
+```c++
+  etcd::Response resp2 = etcd.leasetimetolive(resp.value().lease()).get();
+  std::cout << "ttl" << resp.value().ttl();
+```
+
+#### Keep alive
+
+Keep alive for leases is implemented using a seperate class `KeepAlive`, which can be used as:
+
+```c++
+  etcd::KeepAlive keepalive(etcd, lease_id, ttl);
+```
+
+It will perform a periodly keep-alive action before it is cancelled explicitly, or destructed implicitly.
+
 ### TODO
 
 1. Cancellation of asynchronous calls(except for watch)
-2. LeaseKeepAlive
-3. Authentication
 
 ## License
 

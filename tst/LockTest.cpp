@@ -60,7 +60,8 @@ TEST_CASE("double lock will fail")
 
     // create a duration
     first_lock_release = true;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // using a duration longer than default lease TTL for lock (see: DEFAULT_LEASE_TTL_FOR_LOCK)
+    std::this_thread::sleep_for(std::chrono::seconds(15));
 
     // unlock the first lock
     etcd::Response resp4 = etcd.unlock(lock_key).get();

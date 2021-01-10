@@ -69,7 +69,11 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         //
         // 1. watch for a future revision, return immediately with empty events set
         // 2. receive any effective events.
+        isCancelled = true;
         stream->WritesDone((void*)"writes done");
+        grpc::Status status;
+        stream->Finish(&status, (void *)this);
+        cq_.Shutdown();
 
         // leave a warning if the response is too large and been fragmented
         if (reply.fragment()) {
@@ -90,9 +94,12 @@ void etcdv3::AsyncWatchAction::CancelWatch()
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if(isCancelled == false)
   {
+    isCancelled = true;
     stream->WritesDone((void*)"writes done");
+    grpc::Status status;
+    stream->Finish(&status, (void *)this);
+    cq_.Shutdown();
   }
-  isCancelled = true;
 }
 
 bool etcdv3::AsyncWatchAction::Cancelled() const {

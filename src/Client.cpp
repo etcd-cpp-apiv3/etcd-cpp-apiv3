@@ -13,6 +13,7 @@
 #include <limits>
 #include <memory>
 #include "etcd/Client.hpp"
+#include "etcd/KeepAlive.hpp"
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Action.hpp"
 #include "etcd/v3/AsyncTxnResponse.hpp"
@@ -30,7 +31,7 @@
 #include "etcd/v3/AsyncGetAction.hpp"
 #include "etcd/v3/AsyncDeleteAction.hpp"
 #include "etcd/v3/AsyncWatchAction.hpp"
-#include "etcd/v3/AsyncLeaseGrantAction.hpp"
+#include "etcd/v3/AsyncLeaseAction.hpp"
 #include "etcd/v3/AsyncLockAction.hpp"
 #include "etcd/v3/AsyncTxnAction.hpp"
 
@@ -354,7 +355,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   params.key.assign(key);
   params.value.assign(value);
   params.old_revision = old_index;
-  params.kv_stub = kvServiceStub .get();
+  params.kv_stub = kvServiceStub.get();
   if(ttl > 0)
   {
     auto res = leasegrant(ttl).get();
@@ -491,19 +492,85 @@ pplx::task<etcd::Response> etcd::Client::leasegrant(int ttl)
   return Response::create(call);
 }
 
+pplx::task<etcd::Response> etcd::Client::leaserevoke(int64_t lease_id)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.lease_id = lease_id;
+  params.lease_stub = leaseServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> call(new etcdv3::AsyncLeaseRevokeAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::leasetimetolive(int64_t lease_id)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.lease_id = lease_id;
+  params.lease_stub = leaseServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> call(new etcdv3::AsyncLeaseTimeToLiveAction(params));
+  return Response::create(call);
+}
+
 pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
+
+  static const int DEFAULT_LEASE_TTL_FOR_LOCK = 10;
+
+  // routines in lock usually will be fast, less than 10 seconds.
+  //
+  // (base on our experiences in vineyard and GraphScope).
+  auto resp = this->leasegrant(DEFAULT_LEASE_TTL_FOR_LOCK).get();
+  int64_t lease_id = resp.value().lease();
+  this->keep_alive_for_locks[lease_id].reset(new KeepAlive(*this, DEFAULT_LEASE_TTL_FOR_LOCK, lease_id));
   params.key = key;
+  params.lease_id = lease_id;
+  params.lock_stub = lockServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncLockAction> call(new etcdv3::AsyncLockAction(params));
+  return Response::create(call).then(
+    [this, lease_id](pplx::task<etcd::Response> const &resp_task) -> etcd::Response {
+      auto const& resp = resp_task.get();
+      if (resp.is_ok()) {
+        this->leases_for_locks[resp.lock_key()] = lease_id;
+      } else {
+        this->keep_alive_for_locks.erase(lease_id);
+      }
+      return resp;
+    }
+  );
+}
+
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key,
+                                              int64_t lease_id) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key = key;
+  params.lease_id = lease_id;
   params.lock_stub = lockServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLockAction> call(new etcdv3::AsyncLockAction(params));
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::unlock(std::string const &key) {
+pplx::task<etcd::Response> etcd::Client::unlock(std::string const &lock_key) {
+  std::cout << "begin unlock" << std::endl;
+  // cancel the KeepAlive first, it exists
+  auto p_leases = this->leases_for_locks.find(lock_key);
+  if (p_leases != this->leases_for_locks.end()) {
+    std::cout << "Unlock for " << lock_key << " and revoke lease " << std::hex << p_leases->second << std::dec << std::endl;
+    auto p_keeps_alive = this->keep_alive_for_locks.find(p_leases->second);
+    if (p_keeps_alive != this->keep_alive_for_locks.end()) {
+      this->keep_alive_for_locks.erase(p_keeps_alive);
+    }
+    this->leases_for_locks.erase(p_leases);
+  } else {
+    std::cout << "Unable to find lease_id for " << lock_key;
+  }
+
+  // issue a "unlock" request
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
-  params.key = key;
+  params.key = lock_key;
   params.lock_stub = lockServiceStub.get();
   std::shared_ptr<etcdv3::AsyncUnlockAction> call(new etcdv3::AsyncUnlockAction(params));
   return Response::create(call);

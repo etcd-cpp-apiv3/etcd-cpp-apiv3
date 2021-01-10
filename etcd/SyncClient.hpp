@@ -58,6 +58,8 @@ namespace etcd
     Response mkdir(std::string const & key, int ttl = 0);
     Response rmdir(std::string const & key, bool recursive = false);
     Response leasegrant(int ttl);
+    Response leaserevoke(int64_t lease_id);
+    Response leasetimetolive(int64_t lease_id);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and

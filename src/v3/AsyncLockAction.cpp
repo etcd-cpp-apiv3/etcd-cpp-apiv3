@@ -9,6 +9,7 @@ etcdv3::AsyncLockAction::AsyncLockAction(ActionParameters param)
 {
   LockRequest lock_request;
   lock_request.set_name(parameters.key);
+  lock_request.set_lease(parameters.lease_id);
 
   response_reader = parameters.lock_stub->AsyncLock(&context, lock_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
