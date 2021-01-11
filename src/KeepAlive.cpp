@@ -36,6 +36,10 @@ etcd::KeepAlive::~KeepAlive()
 
 void etcd::KeepAlive::Cancel()
 {
+  if (!continue_next) {
+    return;
+  }
+  continue_next = false;
 #ifndef NDEBUG
   {
     std::ios::fmtflags os_flags (std::cout.flags());
@@ -52,6 +56,9 @@ void etcd::KeepAlive::Cancel()
 
 void etcd::KeepAlive::refresh()
 {
+  if (!continue_next) {
+    return;
+  }
   // minimal resolution: 1 second
   int keepalive_ttl = std::max(ttl - 1, 1);
 #ifndef NDEBUG
