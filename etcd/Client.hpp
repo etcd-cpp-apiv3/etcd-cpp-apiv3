@@ -4,6 +4,7 @@
 #include "etcd/Response.hpp"
 
 #include <map>
+#include <mutex>
 #include <string>
 
 #include <grpc++/grpc++.h>
@@ -262,6 +263,7 @@ namespace etcd
     std::unique_ptr<Lease::Stub> leaseServiceStub;
     std::unique_ptr<Lock::Stub> lockServiceStub;
 
+    std::mutex mutex_for_keepalives;
     std::map<std::string, int64_t> leases_for_locks;
     std::map<int64_t, std::shared_ptr<KeepAlive>> keep_alive_for_locks;
 
