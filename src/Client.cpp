@@ -560,13 +560,11 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key,
 }
 
 pplx::task<etcd::Response> etcd::Client::unlock(std::string const &lock_key) {
-  std::cout << "begin unlock" << std::endl;
   // cancel the KeepAlive first, it exists
   {
     std::lock_guard<std::mutex> lexical_scope_lock(mutex_for_keepalives);
     auto p_leases = this->leases_for_locks.find(lock_key);
     if (p_leases != this->leases_for_locks.end()) {
-      std::cout << "Unlock for " << lock_key << " and revoke lease " << std::hex << p_leases->second << std::dec << std::endl;
       auto p_keeps_alive = this->keep_alive_for_locks.find(p_leases->second);
       if (p_keeps_alive != this->keep_alive_for_locks.end()) {
         this->keep_alive_for_locks.erase(p_keeps_alive);
