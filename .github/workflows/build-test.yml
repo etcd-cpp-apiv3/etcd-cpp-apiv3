@@ -21,13 +21,17 @@ jobs:
         with:
           submodules: true
 
+      - name: Get time
+        run: |
+          date +'%Y-%m' > snapshot.txt
+
       - name: Cache for cccahe
         uses: actions/cache@v2
         with:
           path: /home/runner/.ccache
-          key: ${{ runner.os }}-ccache
+          key: ${{ runner.os }}-ccache-${{ hashFiles('**/snapshot.txt') }}
           restore-keys: |
-            ${{ runner.os }}-ccache
+            ${{ runner.os }}-ccache-
 
       - name: Install dependencies for Linux
         if: runner.os == 'Linux'
