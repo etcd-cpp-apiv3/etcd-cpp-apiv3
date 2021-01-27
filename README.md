@@ -411,7 +411,7 @@ The remaining time-to-live of a lease can be inspected by
 Keep alive for leases is implemented using a seperate class `KeepAlive`, which can be used as:
 
 ```c++
-  etcd::KeepAlive keepalive(etcd, lease_id, ttl);
+  etcd::KeepAlive keepalive(etcd, ttl, lease_id);
 ```
 
 It will perform a periodly keep-alive action before it is cancelled explicitly, or destructed implicitly.
