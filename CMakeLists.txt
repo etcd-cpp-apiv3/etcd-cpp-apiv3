@@ -73,6 +73,7 @@ if (BUILD_ETCD_TESTS)
 endif ()
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/KeepAlive.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/SyncClient.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
