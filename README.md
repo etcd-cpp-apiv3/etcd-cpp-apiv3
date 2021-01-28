@@ -4,6 +4,25 @@ etcd-cpp-apiv3
 The _etcd-cpp-apiv3_ is a C++ API for [etcd](https://etcd.io/)'s v3 client API,
 i.e., `ETCDCTL_API=3`.
 
+[![Build and Test](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/workflows/Build%20and%20Test/badge.svg)](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/actions?workflow=Build+and+Test)
+
+### Supported OS environments
+
++ **Linux**
+  - Ubuntu 18.04, requires upgrade boost and grpc libraries.
+  - Ubuntu 20.04
++ **MacOS**
+  - MacOS 10.15
+  - MacOS 11.0
++ **Windows**
+  - Windows 10, with [vcpkg](https://github.com/microsoft/vcpkg)
+
+### Supported etcd versions:
+
++ etcd 3.2, tested with [v3.2.26](https://github.com/etcd-io/etcd/releases/v3.2.26)
++ etcd 3.3, tested with [v3.3.11](https://github.com/etcd-io/etcd/releases/v3.3.11)
++ etcd 3.4, tested with [v3.4.13](https://github.com/etcd-io/etcd/releases/v3.4.13)
+
 ## Requirements
 
 1. boost
@@ -123,6 +142,27 @@ the authentication properly.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:2379", "root", "root");
+```
+
+Enabling v3 authentication requires a bit more work for older versions etcd (etcd 3.2.x and etcd 3.3.x).
+First you need to set the `ETCDCTL_API=3`, then
+
++ add a user, and type the password:
+
+```bash
+printf 'root\nroot\n' | /usr/local/bin/etcdctl user add root
+```
+
++ enabling authentication:
+
+```bash
+/usr/local/bin/etcdctl auth enable
+```
+
++ disable authentication:
+
+```bash
+/usr/local/bin/etcdctl --user="root:root" auth disable
 ```
 
 ### Reading a value

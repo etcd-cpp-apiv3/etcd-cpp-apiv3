@@ -1,21 +1,14 @@
 name: Build and Test
 
-on:
-  # Trigger the workflow on push or pull request, but only for the master branch
-  push:
-    branches:
-      - ci
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-20.04, macos-10.15, macos-11.0]
+        etcd: [v3.2.26, v3.3.11, v3.4.13]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -39,27 +32,81 @@ jobs:
           sudo apt update -y
           sudo apt install -y ca-certificates \
                               ccache \
-                              cmake \
                               libboost-all-dev \
                               libcurl4-openssl-dev \
-                              libgrpc-dev \
-                              libgrpc++-dev \
-                              libprotobuf-dev \
                               libssl-dev \
                               libz-dev \
                               lsb-release \
-                              protobuf-compiler-grpc \
                               screenfetch \
                               wget
 
-          # install etcd
-          wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
-          tar zxvf etcd-v3.4.13-linux-amd64.tar.gz
-          sudo mv etcd-v3.4.13-linux-amd64/etcd /usr/local/bin/
-          sudo mv etcd-v3.4.13-linux-amd64/etcdctl /usr/local/bin/
+          # install cmake
+          wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3-Linux-x86_64.sh
+          sudo bash cmake-3.19.3-Linux-x86_64.sh --prefix /usr --skip-license
 
-          lsb_release -a
+      - name: Install grpc v1.27.x for Ubuntu 18.04
+        if: matrix.os == 'ubuntu-18.04'
+        run: |
+          # from grpc/grpc#18948 and grpc/grpc#21989, on Ubuntu-18.04 the apt-get installed grpc doesn't
+          # work for any program that uses grpc.
+          #
+          git clone https://github.com/grpc/grpc.git --depth 1 --branch v1.27.x
+          cd grpc/
+          git submodule update --init
+          mkdir cmake-build
+          cd cmake-build/
+          cmake .. -DBUILD_SHARED_LIBS=ON \
+            -DgRPC_INSTALL=ON \
+            -DgRPC_BUILD_TESTS=OFF \
+            -DgRPC_BUILD_CSHARP_EXT=OFF \
+            -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
+            -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
+            -DgRPC_ZLIB_PROVIDER=package \
+            -DgRPC_SSL_PROVIDER=package
+          make -j`nproc`
+          sudo make install
+
+      - name: Install grpc for Ubuntu 20.04
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          sudo apt install -y libcurl4-openssl-dev \
+                              libprotobuf-dev \
+                              libprotoc-dev \
+                              libgrpc-dev \
+                              libgrpc++-dev \
+                              protobuf-compiler-grpc
+
+      - name: Install dependencies for Mac
+        if: runner.os == 'macOS'
+        run: |
+          brew install ccache cmake boost curl grpc protobuf openssl zlib unzip wget screenfetch
+
+      - name: Screen fetch
+        run: |
           screenfetch
+
+      - name: Install etcd for Linux
+        if: runner.os == 'Linux'
+        run: |
+          # install etcd
+          wget https://github.com/etcd-io/etcd/releases/download/${{ matrix.etcd }}/etcd-${{ matrix.etcd }}-linux-amd64.tar.gz
+          tar zxvf etcd-${{ matrix.etcd }}-linux-amd64.tar.gz
+          sudo mv etcd-${{ matrix.etcd }}-linux-amd64/etcd /usr/local/bin/
+          sudo mv etcd-${{ matrix.etcd }}-linux-amd64/etcdctl /usr/local/bin/
+
+      - name: Install etcd for Mac
+        if: runner.os == 'macOS'
+        run: |
+          # install etcd
+          wget https://github.com/etcd-io/etcd/releases/download/${{ matrix.etcd }}/etcd-${{ matrix.etcd }}-darwin-amd64.zip
+          unzip etcd-${{ matrix.etcd }}-darwin-amd64.zip
+          sudo mv etcd-${{ matrix.etcd }}-darwin-amd64/etcd /usr/local/bin/
+          sudo mv etcd-${{ matrix.etcd }}-darwin-amd64/etcdctl /usr/local/bin/
 
       - name: Install cpprestsdk
         run: |
@@ -68,26 +115,39 @@ jobs:
           git clone https://github.com/microsoft/cpprestsdk.git
           mkdir -p cpprestsdk/build
           cd cpprestsdk/build
-          cmake .. -DBUILD_TESTS=OFF \
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DBUILD_TESTS=OFF \
                    -DBUILD_SAMPLES=OFF \
                    -DCPPREST_EXCLUDE_WEBSOCKETS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          make -j2
+          make -j`nproc`
           sudo make install
 
       - name: Build
         run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
           mkdir -p build
           cd build
-          cmake .. -DBUILD_ETCD_TESTS=ON \
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           make -j2
           sudo make install
 
+      - name: Setup tmate session
+        if: false
+        uses: mxschmitt/action-tmate@v2
+
       - name: Test
         run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+
           cd build
           /usr/local/bin/etcd &
 
@@ -98,13 +158,34 @@ jobs:
           ./bin/WatcherTest
 
           # tests with auth
-          /usr/local/bin/etcdctl user add root --new-user-password="root" || true
+
+          # for etcd v3.2, v3.3
+          if [[ "${{ matrix.etcd }}" == v3.2* ]] || [[ "${{ matrix.etcd }}" == v3.3* ]];
+          then
+              printf 'root\nroot\n' | /usr/local/bin/etcdctl user add root || true
+          fi
+          # for etcd v3.4
+          if [[ "${{ matrix.etcd }}" == v3.4* ]];
+          then
+              /usr/local/bin/etcdctl user add root --new-user-password="root" || true
+          fi
+
           /usr/local/bin/etcdctl auth enable || true
 
           ./bin/AuthTest
 
-          /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
+          # for etcd v3.2
+          if [[ "${{ matrix.etcd }}" == v3.2* ]] || [[ "${{ matrix.etcd }}" == v3.3* ]];
+          then
+              /usr/local/bin/etcdctl --user="root:root" auth disable || true
+          fi
+          # for etcd v3.4
+          if [[ "${{ matrix.etcd }}" == v3.4* ]];
+          then
+              /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
+          fi
 
       - name: Check ccache
         run: |
           ccache --show-stats
+
