@@ -39,7 +39,7 @@ void etcdv3::Action::waitForResponse()
   }
   else
   {
-    GRP_ASSERT(got_tag == (void*)this);
+    GPR_ASSERT(got_tag == (void*)this);
   }
   
 }
