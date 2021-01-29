@@ -1,6 +1,8 @@
 #ifndef __ETCD_SYNC_CLIENT_HPP__
 #define __ETCD_SYNC_CLIENT_HPP__
 
+#include <limits>
+
 #include "etcd/Client.hpp"
 
 namespace etcd
