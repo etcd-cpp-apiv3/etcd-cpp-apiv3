@@ -23,7 +23,7 @@ etcdv3::ActionParameters::ActionParameters()
   kv_stub = NULL;
   watch_stub = NULL;
   lease_stub = NULL;
-  timeout = std::numeric_limits<unsigned int>::max();
+  timeout = std::numeric_limits<long>::max();
 }
 
 void etcdv3::Action::waitForResponse() 

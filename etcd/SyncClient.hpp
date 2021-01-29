@@ -27,7 +27,7 @@ namespace etcd
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     SyncClient(std::string const & etcd_url,
-               const unsigned int& timeout = std::numeric_limits<unsigned int>::max(),
+               const long& timeout = std::numeric_limits<long>::max(),
                std::string const & load_balancer = "round_robin");
 
     /**
@@ -43,7 +43,7 @@ namespace etcd
     SyncClient(std::string const & etcd_url,
                std::string const & username,
                std::string const & password,
-               const unsigned int& timeout = std::numeric_limits<unsigned int>::max(),
+               const long& timeout = std::numeric_limits<long>::max(),
                std::string const & load_balancer = "round_robin");
 
     Response get(std::string const & key);

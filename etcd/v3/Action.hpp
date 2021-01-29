@@ -42,7 +42,7 @@ namespace etcdv3
     Watch::Stub* watch_stub;
     Lease::Stub* lease_stub;
     Lock::Stub* lock_stub;
-    unsigned int timeout;
+    long timeout;
   };
 
   class Action

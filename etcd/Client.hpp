@@ -129,7 +129,7 @@ const bool authenticate(std::shared_ptr<grpc::Channel> const &channel,
 }
 
 etcd::Client::Client(std::string const & address,
-                     const unsigned int& timeout, 
+                     const long& timeout, 
                      std::string const & load_balancer)
 {
   // create channels
@@ -152,7 +152,7 @@ etcd::Client::Client(std::string const & address,
 etcd::Client::Client(std::string const & address,
                      std::string const & username,
                      std::string const & password,
-                     const unsigned int& timeout,
+                     const long& timeout,
                      std::string const & load_balancer)
 {
   // create channels

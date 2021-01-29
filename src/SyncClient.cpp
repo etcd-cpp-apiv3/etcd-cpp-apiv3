@@ -10,7 +10,7 @@
     return etcd::Response(500, ex.what());      \
   }
 
-etcd::SyncClient::SyncClient(std::string const & address, const unsigned int& timeout,  std::string const & load_balancer)
+etcd::SyncClient::SyncClient(std::string const & address, const long& timeout,  std::string const & load_balancer)
   : client(address, timeout, load_balancer)
 {
 }
@@ -18,7 +18,7 @@ etcd::SyncClient::SyncClient(std::string const & address, const unsigned int& ti
 etcd::SyncClient::SyncClient(std::string const & address,
                              std::string const & username,
                              std::string const & password,
-                             const unsigned int& timeout, 
+                             const long& timeout, 
                              std::string const & load_balancer)
   : client(address, username, password, timeout, load_balancer)
 {
