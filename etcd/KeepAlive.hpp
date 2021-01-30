@@ -6,7 +6,12 @@
 #include "etcd/Client.hpp"
 #include "etcd/Response.hpp"
 
+#include <boost/config.hpp>
+#if BOOST_VERSION >= 106600
 #include <boost/asio/io_context.hpp>
+#else
+#include <boost/asio/io_service.hpp>
+#endif
 #include <boost/asio/steady_timer.hpp>
 
 #include <grpc++/grpc++.h>
@@ -55,7 +60,11 @@ namespace etcd
     int ttl;
     int64_t lease_id;
     bool continue_next;
+#if BOOST_VERSION >= 106600
     boost::asio::io_context context;
+#else
+    boost::asio::io_service context;
+#endif
     std::unique_ptr<boost::asio::steady_timer> keepalive_timer_;
   };
 }

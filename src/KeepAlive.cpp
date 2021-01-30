@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include "etcd/KeepAlive.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
 
@@ -70,7 +72,7 @@ void etcd::KeepAlive::refresh()
   }
 #endif
   keepalive_timer_.reset(new boost::asio::steady_timer(
-      context, boost::asio::chrono::seconds(keepalive_ttl)));
+      context, std::chrono::seconds(keepalive_ttl)));
   keepalive_timer_->async_wait([this](const boost::system::error_code& error) {
     if (error) {
 #ifndef NDEBUG
