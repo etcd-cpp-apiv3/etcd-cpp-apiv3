@@ -32,17 +32,17 @@ TEST_CASE("create watcher with cancel")
 
   watcher_called = 0;
   etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::seconds(3));
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
   etcd.rm("/test/key");
   etcd.set("/test/key", "44");
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::seconds(3));
   CHECK(4 == watcher_called);
   watcher.Cancel();
   etcd.set("/test/key", "50");
   etcd.set("/test/key", "51");
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::seconds(3));
   CHECK(4 == watcher_called);
 
   etcd.rmdir("/test", true);
@@ -57,11 +57,11 @@ TEST_CASE("create watcher")
   watcher_called = 0;
   {
     etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     etcd.set("/test/key", "42");
     etcd.set("/test/key", "43");
+    std::this_thread::sleep_for(std::chrono::seconds(3));
   }
-  
   CHECK(2 == watcher_called);
   etcd.rmdir("/test", true).error_code();
 }
