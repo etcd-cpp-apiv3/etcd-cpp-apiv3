@@ -26,8 +26,22 @@ i.e., `ETCDCTL_API=3`.
 ## Requirements
 
 1. boost
+
+On Ubuntu, above requirement could be installed as:
+
+        apt-get install libboost-all-dev
+        
 2. protobuf
 3. gRPC
+
+On Ubuntu, above requirements related to protobuf and gRPC can be installed as:
+
+        apt-get install libgrpc-dev \
+                libgrpc++-dev \
+                libprotobuf-dev \
+                protobuf-compiler-grpc
+        
+
 4. [cpprestsdk](https://github.com/microsoft/cpprestsdk), the latest version of master branch
    on github should work, you can build and install this dependency using cmake with:
 
