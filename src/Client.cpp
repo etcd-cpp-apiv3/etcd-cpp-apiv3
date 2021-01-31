@@ -63,7 +63,7 @@ static bool dns_resolve(std::string const &target, std::vector<std::string> &end
 
     int err = WSAStartup(wVersionRequested, &wsaData);
     if (err != 0) {
-      // Tell the user that we could not find a usable Winsock DLL.                                  */
+      // Tell the user that we could not find a usable Winsock DLL.
       std::cerr << "WSAStartup failed with error: %d" << err << std::endl;
       return false;
     }

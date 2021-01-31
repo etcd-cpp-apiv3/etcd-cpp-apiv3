@@ -27,20 +27,29 @@ i.e., `ETCDCTL_API=3`.
 
 1. boost
 
-On Ubuntu, above requirement could be installed as:
+   + On Ubuntu, above requirement could be installed as:
 
-        apt-get install libboost-all-dev
-        
+         apt-get install libboost-all-dev
+
+   + On MacOS, above requirement could be installed as:
+
+         brew install boost
+
 2. protobuf
 3. gRPC
 
-On Ubuntu, above requirements related to protobuf and gRPC can be installed as:
+   + On Ubuntu, above requirements related to protobuf and gRPC can be installed as:
 
-        apt-get install libgrpc-dev \
-                libgrpc++-dev \
-                libprotobuf-dev \
-                protobuf-compiler-grpc
+         apt-get install libgrpc-dev \
+                 libgrpc++-dev \
+                 libprotobuf-dev \
+                 protobuf-compiler-grpc
         
+   + On MacOS, above requirements related to protobuf and gRPC can be installed as:
+
+
+         brew install grpc protobuf
+
 
 4. [cpprestsdk](https://github.com/microsoft/cpprestsdk), the latest version of master branch
    on github should work, you can build and install this dependency using cmake with:
@@ -141,8 +150,8 @@ Connecting to multiple endpoints is supported:
   // multiple endpoints are separated by comma
   etcd::Client etcd("http://a.com:2379,http://b.com:2379,http://c.com:2379");
 
-  // or, separated colon
-  etcd::Client etcd("http://a.com:2379,http://b.com:2379,http://c.com:2379");
+  // or, separated semicolon
+  etcd::Client etcd("http://a.com:2379;http://b.com:2379;http://c.com:2379");
 ```
 
 Behind the screen, gRPC's load balancer is used and the round-robin strategy will
