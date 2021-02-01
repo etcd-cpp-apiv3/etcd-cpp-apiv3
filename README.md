@@ -65,9 +65,10 @@ i.e., `ETCDCTL_API=3`.
 The _etcd-cpp-apiv3_ library could be easily built and installed using cmake, after all above
 dependencies have been successfully installed:
 
+    git clone https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3.git
     mkdir build && cd build
     cmake ..
-    make -j
+    make -j && make install
 
 ## Compatible etcd version
 
