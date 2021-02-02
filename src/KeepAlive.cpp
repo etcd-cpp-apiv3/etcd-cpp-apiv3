@@ -9,7 +9,7 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.auth_token);
-  params.lease_id = lease_id;
+  params.lease_id = this->lease_id;
   params.lease_stub = leaseServiceStub.get();
 
   call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
