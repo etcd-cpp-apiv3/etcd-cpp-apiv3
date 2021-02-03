@@ -9,7 +9,7 @@ set(etcd-cpp-api_VERSION_MINOR 1)
 option(BUILD_ETCD_TESTS "Build test cases" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
-find_package(Boost REQUIRED COMPONENTS system thread locale random)
+find_package(Boost REQUIRED COMPONENTS system thread random)
 if (APPLE)
     # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
     if (NOT OpenSSL_DIR)
