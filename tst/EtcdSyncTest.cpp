@@ -12,7 +12,6 @@ TEST_CASE("sync operations")
   etcd::SyncClient etcd(etcd_uri);
   etcd.rmdir("/test", true);
 
-
   // add
   CHECK(0 == etcd.add("/test/key1", "42").error_code());
   CHECK(105 == etcd.add("/test/key1", "42").error_code()); // Key already exists

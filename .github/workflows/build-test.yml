@@ -39,6 +39,7 @@ jobs:
                               libssl-dev \
                               libz-dev \
                               lsb-release \
+                              openssl \
                               screenfetch \
                               wget
 
@@ -136,7 +137,7 @@ jobs:
                    -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          make -j2
+          make -j`nproc`
           sudo make install
 
       - name: Setup tmate session
@@ -150,16 +151,31 @@ jobs:
           # use etcd v3 api
           export ETCDCTL_API="3"
 
-          cd build
+          rm -rf default.etcd
           /usr/local/bin/etcd &
 
-          # tests without auth
-          ./bin/EtcdSyncTest
-          ./bin/EtcdTest
-          ./bin/LockTest
-          ./bin/WatcherTest
+          sleep 5
 
-          # tests with auth
+          # tests without auth
+          ./build/bin/EtcdSyncTest
+          ./build/bin/EtcdTest
+          ./build/bin/LockTest
+          ./build/bin/WatcherTest
+
+          killall -TERM etcd
+          sleep 5
+
+      - name: Authentication Test
+        run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+
+          rm -rf default.etcd
+          /usr/local/bin/etcd &
+
+          sleep 5
 
           # for etcd v3.2, v3.3
           if [[ "${{ matrix.etcd }}" == v3.2* ]] || [[ "${{ matrix.etcd }}" == v3.3* ]];
@@ -174,7 +190,7 @@ jobs:
 
           /usr/local/bin/etcdctl auth enable || true
 
-          ./bin/AuthTest
+          ./build/bin/AuthTest
 
           # for etcd v3.2
           if [[ "${{ matrix.etcd }}" == v3.2* ]] || [[ "${{ matrix.etcd }}" == v3.3* ]];
@@ -186,6 +202,36 @@ jobs:
           then
               /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
           fi
+
+          killall -TERM etcd
+          sleep 5
+
+      - name: Transport Security and Authentication Test
+        run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+
+          # generate CA certificates
+          ./security-config/reset-ca.sh
+          ./security-config/setup-ca.sh
+
+          rm -rf default.etcd
+          /usr/local/bin/etcd \
+            --cert-file security-config/certs/etcd0.example.com.crt \
+            --key-file security-config/private/etcd0.example.com.key \
+            --client-cert-auth \
+            --trusted-ca-file security-config/certs/ca.crt \
+            --advertise-client-urls=https://127.0.0.1:2379 \
+            --listen-client-urls=https://127.0.0.1:2379 &
+
+          sleep 5
+
+          ./build/bin/SecurityChannelTest
+
+          killall -TERM etcd
+          sleep 5
 
       - name: Check ccache
         run: |
