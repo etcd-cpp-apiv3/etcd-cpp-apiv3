@@ -11,12 +11,14 @@
 #endif
 
 #include <iostream>
+#include <fstream>
 #include <limits>
 #include <memory>
 
 #include <boost/algorithm/string.hpp>
 
 #include <grpc++/grpc++.h>
+#include <grpc++/security/credentials.h>
 #include "proto/rpc.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
 
@@ -130,6 +132,27 @@ const bool authenticate(std::shared_ptr<grpc::Channel> const &channel,
   }
 }
 
+static std::string read_from_file(std::string const &filename) {
+  std::ifstream file(filename.c_str(), std::ios::in);
+  if (file.is_open()) {
+    std::stringstream ss;
+		ss << file.rdbuf ();
+		file.close ();
+		return ss.str ();
+  }
+  return std::string{};
+}
+
+static grpc::SslCredentialsOptions make_ssl_credentials(std::string const &ca,
+                                                      std::string const &cert,
+                                                      std::string const &key) {
+  grpc::SslCredentialsOptions options;
+  options.pem_root_certs = read_from_file(ca);
+  options.pem_cert_chain = read_from_file(cert);
+  options.pem_private_key = read_from_file(key);
+  return options;
+}
+
 }
 }
 
@@ -193,6 +216,47 @@ etcd::Client::Client(std::string const & address,
   stubs->watchServiceStub= Watch::NewStub(this->channel);
   stubs->leaseServiceStub= Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
+}
+
+etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
+           std::string const & username,
+           std::string const & password,
+           std::string const & load_balancer) {
+  return new etcd::Client(etcd_url, username, password, load_balancer);
+}
+
+etcd::Client::Client(std::string const & address,
+                     std::string const & ca,
+                     std::string const & cert,
+                     std::string const & key,
+                     std::string const & load_balancer)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
+  grpc::ChannelArguments grpc_args;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(
+      etcd::detail::make_ssl_credentials(ca, cert, key));
+  grpc_args.SetLoadBalancingPolicyName(load_balancer);
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  std::cout << "this->channel : " << this->channel;
+
+  // setup stubs
+  stubs.reset(new EtcdServerStubs{});
+  stubs->kvServiceStub = KV::NewStub(this->channel);
+  stubs->watchServiceStub= Watch::NewStub(this->channel);
+  stubs->leaseServiceStub= Lease::NewStub(this->channel);
+  stubs->lockServiceStub = Lock::NewStub(this->channel);
+}
+
+etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
+           std::string const & ca,
+           std::string const & cert,
+           std::string const & key,
+           std::string const & load_balancer) {
+  return new etcd::Client(etcd_url, ca, cert, key, load_balancer);
 }
 
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)

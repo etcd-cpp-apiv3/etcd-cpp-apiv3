@@ -160,12 +160,21 @@ be used by default.
 
 ### Etcd authentication
 
-Etcd [v3's authentication](https://etcd.io/docs/v3.4.0/learning/design-auth-v3/) is currently
+#### v3 authentication
+
+Etcd [v3 authentication](https://etcd.io/docs/v3.4.0/learning/design-auth-v3/) has been
 supported. The `Client::Client` could accept a `username` and `password` as arguments and handle
 the authentication properly.
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:2379", "root", "root");
+```
+
+Or the etcd client can be constructed explictly:
+
+```c++
+  etcd::Client *etcd = etcd::Client::WithUser(
+                    "http://127.0.0.1:2379", "root", "root");
 ```
 
 Enabling v3 authentication requires a bit more work for older versions etcd (etcd 3.2.x and etcd 3.3.x).
@@ -188,6 +197,43 @@ printf 'root\nroot\n' | /usr/local/bin/etcdctl user add root
 ```bash
 /usr/local/bin/etcdctl --user="root:root" auth disable
 ```
+
+#### transport security
+
+Etcd [transport security](https://etcd.io/docs/v3.4.0/op-guide/security/) and certificate based
+authentication have been supported as well. The `Client::Client` could accept arguments `ca` ,
+`cert` and `key` for CA cert, cert and private key files for the SSL/TLS transport and authentication.
+Note that the later arguments `cert` and `key` could be empty strings or omitted if you just need
+secure transport and don't enable certificate-based client authentication (using the `--client-cert-auth`
+arguments when launching etcd server).
+
+```c++
+  etcd::Client etcd("https://127.0.0.1:2379",
+                    "example.rootca.cert", "example.cert", "example.key",
+                    "round_robin");
+```
+
+Or the etcd client can be constructed explictly:
+
+```c++
+  etcd::Client *etcd = etcd::Client::WithUser(
+                    "https://127.0.0.1:2379",
+                    "example.rootca.cert", "example.cert", "example.key");
+```
+
+Using secure transport but not certificated-based client authentication:
+
+```c++
+  etcd::Client *etcd = etcd::Client::WithUser(
+                    "https://127.0.0.1:2379", "example.rootca.cert");
+```
+
+For more details about setup about security communication between etcd server and client, please
+refer to [transport security](https://etcd.io/docs/v3.4.0/op-guide/security/) in etcd documentation
+and [an example](https://github.com/kelseyhightower/etcd-production-setup) about setup etcd with
+transport security using openssl.
+
+We also provide a tool [`setup-ca.sh`](./security-config/setup-ca.sh) as a helper for development and testing.
 
 ### Reading a value
 

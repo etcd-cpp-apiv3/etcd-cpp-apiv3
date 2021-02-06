@@ -51,6 +51,52 @@ namespace etcd
            std::string const & load_balancer = "round_robin");
 
     /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param username username of etcd auth
+     * @param password password of etcd auth
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    static etcd::Client *WithUser(std::string const & etcd_url,
+           std::string const & username,
+           std::string const & password,
+           std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param ca   root CA file for SSL/TLS connection.
+     * @param cert cert chain file for SSL/TLS authentication, could be empty string.
+     * @param key  private key file for SSL/TLS authentication, could be empty string.
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    Client(std::string const & etcd_url,
+           std::string const & ca,
+           std::string const & cert,
+           std::string const & key,
+           std::string const & load_balancer);
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param ca   root CA file for SSL/TLS connection.
+     * @param cert cert chain file for SSL/TLS authentication, could be empty string.
+     * @param key  private key file for SSL/TLS authentication, could be empty string.
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    static etcd::Client *WithSSL(std::string const & etcd_url,
+           std::string const & ca,
+           std::string const & cert = "",
+           std::string const & key = "",
+           std::string const & load_balancer = "round_robin");
+
+    /**
      * Sends a get request to the etcd server
      * @param key is the key to be read
      */
