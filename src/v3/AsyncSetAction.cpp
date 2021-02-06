@@ -22,7 +22,7 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters param, bool crea
   {
     transaction.setup_set_failure_operation(parameters.key, parameters.value, parameters.lease_id);
   }
-  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 

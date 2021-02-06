@@ -3,16 +3,35 @@
 #include "etcd/KeepAlive.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
 
+#include <grpc++/grpc++.h>
+#include "proto/rpc.grpc.pb.h"
+
+namespace etcdv3 {
+  class AsyncLeaseKeepAliveAction;
+}
+
+struct etcd::KeepAlive::EtcdServerStubs {
+  std::unique_ptr<etcdserverpb::Lease::Stub> leaseServiceStub;
+  std::unique_ptr<etcdv3::AsyncLeaseKeepAliveAction> call;
+};
+
+void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(etcd::KeepAlive::EtcdServerStubs *stubs) {
+  if (stubs) {
+    delete stubs;
+  }
+}
+
 etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
     ttl(ttl), lease_id(lease_id), continue_next(true) {
-  leaseServiceStub= Lease::NewStub(client.channel);
+  stubs.reset(new EtcdServerStubs{});
+  stubs->leaseServiceStub = Lease::NewStub(client.channel);
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.auth_token);
   params.lease_id = this->lease_id;
-  params.lease_stub = leaseServiceStub.get();
+  params.lease_stub = stubs->leaseServiceStub.get();
 
-  call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
   currentTask = pplx::task<void>([this]() {
     // start refresh
     this->refresh();
@@ -49,7 +68,7 @@ void etcd::KeepAlive::Cancel()
     std::cout.flags(os_flags);
   }
 #endif
-  call->CancelKeepAlive();
+  stubs->call->CancelKeepAlive();
   if (keepalive_timer_) {
     keepalive_timer_->cancel();
   }
@@ -79,7 +98,7 @@ void etcd::KeepAlive::refresh()
       std::cerr << "keepalive timer error: " << error << ", " << error.message() << std::endl;
 #endif
     } else {
-      this->call->Refresh();
+      this->stubs->call->Refresh();
       // trigger the next round;
       this->refresh();
     }

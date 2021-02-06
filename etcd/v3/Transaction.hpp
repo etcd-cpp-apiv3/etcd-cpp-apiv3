@@ -1,10 +1,13 @@
 #ifndef V3_SRC_TRANSACTION_HPP_
 #define V3_SRC_TRANSACTION_HPP_
 
-#include <grpc++/grpc++.h>
-#include "proto/rpc.grpc.pb.h"
-
 #include <string>
+
+#include "txn.pb.h"
+
+namespace etcdserverpb {
+	class TxnRequest;
+}
 
 namespace etcdv3 {
 
@@ -29,7 +32,7 @@ public:
 	void setup_put(std::string const &key, std::string const &value);
 	void setup_delete(std::string const &key);
 
-	etcdserverpb::TxnRequest txn_request;
+	std::unique_ptr<etcdserverpb::TxnRequest> txn_request;
 private:
 	std::string key;
 };

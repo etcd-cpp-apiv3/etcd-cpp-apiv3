@@ -1,5 +1,7 @@
 #include "etcd/v3/Transaction.hpp"
 
+#include "proto/rpc.grpc.pb.h"
+
 using etcdserverpb::Compare;
 using etcdserverpb::RangeRequest;
 using etcdserverpb::PutRequest;
@@ -7,13 +9,15 @@ using etcdserverpb::RequestOp;
 using etcdserverpb::DeleteRangeRequest;
 
 etcdv3::Transaction::Transaction() {
+	txn_request.reset(new etcdserverpb::TxnRequest{});
 }
 
 etcdv3::Transaction::Transaction(const std::string& key) : key(key) {
+	txn_request.reset(new etcdserverpb::TxnRequest{});
 }
 
 void etcdv3::Transaction::init_compare(Compare::CompareResult result, Compare::CompareTarget target){
-	Compare* compare = txn_request.add_compare();
+	Compare* compare = txn_request->add_compare();
 	compare->set_result(result);
 	compare->set_target(target);
 	compare->set_key(key);
@@ -22,7 +26,7 @@ void etcdv3::Transaction::init_compare(Compare::CompareResult result, Compare::C
 }
 
 void etcdv3::Transaction::init_compare(std::string const& old_value, Compare::CompareResult result, Compare::CompareTarget target){
-	Compare* compare = txn_request.add_compare();
+	Compare* compare = txn_request->add_compare();
 	compare->set_result(result);
 	compare->set_target(target);
 	compare->set_key(key);
@@ -31,7 +35,7 @@ void etcdv3::Transaction::init_compare(std::string const& old_value, Compare::Co
 }
 
 void etcdv3::Transaction::init_compare(int old_index, Compare::CompareResult result, Compare::CompareTarget target){
-	Compare* compare = txn_request.add_compare();
+	Compare* compare = txn_request->add_compare();
 	compare->set_result(result);
 	compare->set_target(target);
 	compare->set_key(key);
@@ -45,7 +49,7 @@ void etcdv3::Transaction::init_compare(int old_index, Compare::CompareResult res
 void etcdv3::Transaction::setup_basic_failure_operation(std::string const& key) {
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
-	RequestOp* req_failure = txn_request.add_failure();
+	RequestOp* req_failure = txn_request->add_failure();
 	req_failure->set_allocated_request_range(get_request.release());
 }
 
@@ -58,12 +62,12 @@ void etcdv3::Transaction::setup_set_failure_operation(std::string const &key, st
 	put_request->set_value(value);
     put_request->set_prev_kv(true);
     put_request->set_lease(leaseid);
-	RequestOp* req_failure = txn_request.add_failure();
+	RequestOp* req_failure = txn_request->add_failure();
 	req_failure->set_allocated_request_put(put_request.release());
 
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
-	req_failure = txn_request.add_failure();
+	req_failure = txn_request->add_failure();
 	req_failure->set_allocated_request_range(get_request.release());
 }
 
@@ -76,12 +80,12 @@ void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key, st
 	put_request->set_value(value);
     put_request->set_prev_kv(true);
     put_request->set_lease(leaseid);
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_put(put_request.release());
 
     std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
-	req_success = txn_request.add_success();
+	req_success = txn_request->add_success();
 	req_success->set_allocated_request_range(get_request.release());
 }
 
@@ -94,12 +98,12 @@ void etcdv3::Transaction::setup_compare_and_swap_sequence(std::string const& val
 	put_request->set_value(value);
     put_request->set_prev_kv(true);
     put_request->set_lease(leaseid);
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_put(put_request.release());
 
 	std::unique_ptr<RangeRequest> get_request(new RangeRequest());
 	get_request->set_key(key);
-	req_success = txn_request.add_success();
+	req_success = txn_request->add_success();
 	req_success->set_allocated_request_range(get_request.release());
 }
 
@@ -115,7 +119,7 @@ void etcdv3::Transaction::setup_delete_sequence(std::string const &key, std::str
           del_request->set_range_end(range_end);
 	}
 
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_delete_range(del_request.release());
 }
 
@@ -133,7 +137,7 @@ void etcdv3::Transaction::setup_delete_failure_operation(std::string const &key,
 		get_request->set_sort_target(RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
 		get_request->set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
 	}
-	RequestOp* req_failure = txn_request.add_failure();
+	RequestOp* req_failure = txn_request->add_failure();
 	req_failure->set_allocated_request_range(get_request.release());
 
 	del_request.reset(new DeleteRangeRequest());
@@ -143,7 +147,7 @@ void etcdv3::Transaction::setup_delete_failure_operation(std::string const &key,
 		del_request->set_range_end(range_end);
 	}
 
-	req_failure = txn_request.add_failure();
+	req_failure = txn_request->add_failure();
 	req_failure->set_allocated_request_delete_range(del_request.release());
 }
 
@@ -151,7 +155,7 @@ void etcdv3::Transaction::setup_compare_and_delete_operation(std::string const& 
 	std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
 	del_request->set_key(key);
     del_request->set_prev_kv(true);
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_delete_range(del_request.release());
 }
 
@@ -160,7 +164,7 @@ void etcdv3::Transaction::setup_put(std::string const &key, std::string const &v
 	put_request->set_key(key);
 	put_request->set_value(value);
     put_request->set_prev_kv(false);
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_put(put_request.release());
 }
 
@@ -169,7 +173,7 @@ void etcdv3::Transaction::setup_delete(std::string const &key) {
 	del_request->set_key(key);
     del_request->set_prev_kv(false);
 
-	RequestOp* req_success = txn_request.add_success();
+	RequestOp* req_success = txn_request->add_success();
 	req_success->set_allocated_request_delete_range(del_request.release());
 }
 

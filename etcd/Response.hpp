@@ -1,14 +1,14 @@
 #ifndef __ETCD_RESPONSE_HPP__
 #define __ETCD_RESPONSE_HPP__
 
+#include <iostream>
 #include <string>
 #include <vector>
 
-#include "etcd/Value.hpp"
-#include <grpc++/grpc++.h>
-#include "proto/kv.pb.h"
+#include "pplx/pplxtasks.h"
 
-#include <iostream>
+#include "etcd/Value.hpp"
+#include "kv.pb.h"
 
 namespace etcdv3 {
   class AsyncWatchAction;

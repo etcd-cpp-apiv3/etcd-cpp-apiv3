@@ -14,17 +14,6 @@
 #endif
 #include <boost/asio/steady_timer.hpp>
 
-#include <grpc++/grpc++.h>
-#include "proto/rpc.grpc.pb.h"
-
-namespace etcdv3 {
-  class AsyncLeaseKeepAliveAction;
-}
-
-using etcdserverpb::KV;
-using etcdserverpb::Lease;
-using grpc::Channel;
-
 namespace etcd
 {
   /**
@@ -53,8 +42,11 @@ namespace etcd
     void refresh();
 
     pplx::task<void> currentTask;
-    std::unique_ptr<Lease::Stub> leaseServiceStub;
-    std::unique_ptr<etcdv3::AsyncLeaseKeepAliveAction> call;
+    struct EtcdServerStubs;
+    struct EtcdServerStubsDeleter {
+      void operator()(EtcdServerStubs *stubs);
+    };
+    std::unique_ptr<EtcdServerStubs, EtcdServerStubsDeleter> stubs;
 
   private:
     int ttl;

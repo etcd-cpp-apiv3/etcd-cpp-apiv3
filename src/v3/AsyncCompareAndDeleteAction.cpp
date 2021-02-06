@@ -27,7 +27,7 @@ etcdv3::AsyncCompareAndDeleteAction::AsyncCompareAndDeleteAction(etcdv3::ActionP
   transaction.setup_compare_and_delete_operation(parameters.key);
   transaction.setup_basic_failure_operation(parameters.key);
 
-  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 

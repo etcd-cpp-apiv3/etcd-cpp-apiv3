@@ -1,21 +1,14 @@
 #ifndef __ETCD_CLIENT_HPP__
 #define __ETCD_CLIENT_HPP__
 
-#include "etcd/Response.hpp"
-
 #include <map>
 #include <mutex>
 #include <string>
 
 #include <grpc++/grpc++.h>
-#include "proto/rpc.grpc.pb.h"
-#include "proto/v3lock.grpc.pb.h"
+#include "pplx/pplxtasks.h"
 
-using etcdserverpb::Auth;
-using etcdserverpb::KV;
-using etcdserverpb::Watch;
-using etcdserverpb::Lease;
-using v3lockpb::Lock;
+#include "etcd/Response.hpp"
 
 namespace etcdv3 {
   class Transaction;
@@ -258,10 +251,12 @@ namespace etcd
   private:
     std::shared_ptr<grpc::Channel> channel;
     std::string auth_token;
-    std::unique_ptr<KV::Stub> kvServiceStub;
-    std::unique_ptr<Watch::Stub> watchServiceStub;
-    std::unique_ptr<Lease::Stub> leaseServiceStub;
-    std::unique_ptr<Lock::Stub> lockServiceStub;
+
+    struct EtcdServerStubs;
+    struct EtcdServerStubsDeleter {
+      void operator()(EtcdServerStubs *stubs);
+    };
+    std::unique_ptr<EtcdServerStubs, EtcdServerStubsDeleter> stubs;
 
     std::mutex mutex_for_keepalives;
     std::map<std::string, int64_t> leases_for_locks;
