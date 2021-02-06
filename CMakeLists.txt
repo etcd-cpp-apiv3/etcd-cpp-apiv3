@@ -5,9 +5,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 1)
+set(etcd-cpp-api_VERSION ${etcd-cpp-api_MAJOR_VERSION}.${etcd-cpp-api_MINOR_VERSION})
+
+include(CheckCXXCompilerFlag)
+include(CheckLibraryExists)
+include(GNUInstallDirs)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_ETCD_TESTS "Build test cases" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+# reference: https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling#always-full-rpath
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib:${CMAKE_INSTALL_PREFIX}/lib64")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 find_package(Boost REQUIRED COMPONENTS system thread random)
 if (APPLE)
@@ -32,6 +43,7 @@ find_package(Protobuf REQUIRED)
 find_package(cpprestsdk QUIET)
 if(cpprestsdk_FOUND)
     set(CPPREST_INCLUDE_DIR)
+    set(CPPREST_LIB cpprestsdk::cpprest)
 else()
     find_library(CPPREST_LIB NAMES cpprest)
     find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
@@ -76,18 +88,23 @@ install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/kv.pb.h
                DESTINATION include/etcd)
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
+               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/txn.pb.h
                DESTINATION include/etcd/v3)
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/auth.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/kv.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/rpc.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/rpc.grpc.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/v3lock.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/v3lock.grpc.pb.h
-               DESTINATION include/etcd/proto)
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/gogoproto/gogo.pb.h
-               DESTINATION include/etcd/proto/gogoproto)
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/google/api/annotations.pb.h
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/google/api/http.pb.h
-               DESTINATION include/etcd/proto/google/api)
+
+configure_file(etcd-cpp-api-config.in.cmake
+               "${PROJECT_BINARY_DIR}/etcd-cpp-api-config.cmake" @ONLY
+)
+configure_file(etcd-cpp-api-config-version.in.cmake
+               "${PROJECT_BINARY_DIR}/etcd-cpp-api-config-version.cmake" @ONLY
+)
+install(FILES "${PROJECT_BINARY_DIR}/etcd-cpp-api-config.cmake"
+              "${PROJECT_BINARY_DIR}/etcd-cpp-api-config-version.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etcd-cpp-api
+)
+install(EXPORT etcd-targets
+        FILE etcd-targets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etcd-cpp-api
+)

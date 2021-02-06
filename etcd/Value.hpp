@@ -1,9 +1,14 @@
 #ifndef __ETCD_VECTOR_HPP__
 #define __ETCD_VECTOR_HPP__
 
-#include <cpprest/http_client.h>
 #include <string>
 #include <vector>
+
+namespace web {
+  namespace json {
+    class value;
+  }
+}
 
 namespace etcdv3 {
   class KeyValue;

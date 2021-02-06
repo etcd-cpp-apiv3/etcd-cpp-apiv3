@@ -27,7 +27,7 @@ etcdv3::AsyncCompareAndSwapAction::AsyncCompareAndSwapAction(etcdv3::ActionParam
   transaction.setup_basic_failure_operation(parameters.key);
   transaction.setup_compare_and_swap_sequence(parameters.value, parameters.lease_id);
 
-  response_reader = parameters.kv_stub->AsyncTxn(&context, transaction.txn_request, &cq_);
+  response_reader = parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }
 

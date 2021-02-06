@@ -7,7 +7,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-10.15, macos-11.0]
+        # disabled: macos-11.0
+        # why: https://github.com/actions/virtual-environments/issues/2486
+        os: [ubuntu-18.04, ubuntu-20.04, macos-10.15]
         etcd: [v3.2.26, v3.3.11, v3.4.13]
     steps:
       - uses: actions/checkout@v2
