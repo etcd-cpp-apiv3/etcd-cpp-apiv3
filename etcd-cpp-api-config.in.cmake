@@ -9,7 +9,11 @@
 # find dependencies
 include(CMakeFindDependencyMacro)
 find_dependency(Protobuf)
-find_dependency(gRPC)
+find_package(gRPC QUIET)
+if(NOT gRPC_FOUND)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+    find_dependency(GRPC)
+endif()
 find_dependency(cpprestsdk)
 if(cpprestsdk_FOUND)
     set(CPPREST_LIB cpprestsdk::cpprest)
