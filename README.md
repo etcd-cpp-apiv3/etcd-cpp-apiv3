@@ -216,7 +216,7 @@ arguments when launching etcd server).
 Or the etcd client can be constructed explictly:
 
 ```c++
-  etcd::Client *etcd = etcd::Client::WithUser(
+  etcd::Client *etcd = etcd::Client::WithSSL(
                     "https://127.0.0.1:2379",
                     "example.rootca.cert", "example.cert", "example.key");
 ```
@@ -224,7 +224,7 @@ Or the etcd client can be constructed explictly:
 Using secure transport but not certificated-based client authentication:
 
 ```c++
-  etcd::Client *etcd = etcd::Client::WithUser(
+  etcd::Client *etcd = etcd::Client::WithSSL(
                     "https://127.0.0.1:2379", "example.rootca.cert");
 ```
 
