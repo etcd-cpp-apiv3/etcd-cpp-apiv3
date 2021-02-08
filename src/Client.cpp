@@ -598,20 +598,23 @@ pplx::task<etcd::Response> etcd::Client::leasetimetolive(int64_t lease_id)
 }
 
 pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
-  etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
-
-  static const int DEFAULT_LEASE_TTL_FOR_LOCK = 10;
-
   // routines in lock usually will be fast, less than 10 seconds.
   //
   // (base on our experiences in vineyard and GraphScope).
-  auto resp = this->leasegrant(DEFAULT_LEASE_TTL_FOR_LOCK).get();
+  static const int DEFAULT_LEASE_TTL_FOR_LOCK = 10;
+  return this->lock(key, DEFAULT_LEASE_TTL_FOR_LOCK);
+}
+
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key, int lease_ttl) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+
+  auto resp = this->leasegrant(lease_ttl).get();
   int64_t lease_id = resp.value().lease();
   {
     std::lock_guard<std::mutex> lexical_scope_lock(mutex_for_keepalives);
     this->keep_alive_for_locks[lease_id].reset(
-      new KeepAlive(*this, DEFAULT_LEASE_TTL_FOR_LOCK, lease_id));
+      new KeepAlive(*this, lease_ttl, lease_id));
   }
   params.key = key;
   params.lease_id = lease_id;

@@ -269,11 +269,19 @@ namespace etcd
     pplx::task<Response> leasetimetolive(int64_t lease_id);
 
     /**
-     * Gains a lock at a key, using a default created lease, using the default lease (60 seconds), with
+     * Gains a lock at a key, using a default created lease, using the default lease (10 seconds), with
      * keeping alive has already been taken care of by the library.
      * @param key is the key to be used to request the lock.
      */
     pplx::task<Response> lock(std::string const &key);
+
+    /**
+     * Gains a lock at a key, using a default created lease, using the specified lease TTL (in seconds), with
+     * keeping alive has already been taken care of by the library.
+     * @param key is the key to be used to request the lock.
+     * @param lease_ttl is the TTL used to create a lease for the key.
+     */
+    pplx::task<Response> lock(std::string const &key, int lease_ttl);
 
     /**
      * Gains a lock at a key, using a user-provided lease, the lifetime of the lease won't be taken care
