@@ -63,7 +63,11 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     }
     if(got_tag == (void*)this) // read tag
     {
-      if ((reply.created() && reply.header().revision() < parameters.revision) ||
+      if (reply.canceled()) {
+        isCancelled = true;
+        cq_.Shutdown();
+      }
+      else if ((reply.created() && reply.header().revision() < parameters.revision) ||
           reply.events_size() > 0) {
         // we stop watch under two conditions:
         //
@@ -125,6 +129,15 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
     }
     else if(got_tag == (void*)this) // read tag
     {
+      if (reply.canceled()) {
+        isCancelled = true;
+        cq_.Shutdown();
+        if (reply.compact_revision() != 0) {
+          callback(etcd::Response(grpc::StatusCode::OUT_OF_RANGE /* error code */,
+                                  "required revision has been compacted"));
+        }
+        break;
+      }
       if(reply.events_size())
       {
         // for the callback case, we don't stop immediately if watching for a future revison,
