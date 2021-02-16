@@ -66,6 +66,7 @@ The _etcd-cpp-apiv3_ library could be easily built and installed using cmake, af
 dependencies have been successfully installed:
 
     git clone https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3.git
+    cd etcd-cpp-apiv3
     mkdir build && cd build
     cmake ..
     make -j && make install
