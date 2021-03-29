@@ -1,7 +1,5 @@
 #include <iomanip>
 
-#include <cpprest/http_client.h>
-
 #include "etcd/Value.hpp"
 #include "etcd/v3/KeyValue.hpp"
 

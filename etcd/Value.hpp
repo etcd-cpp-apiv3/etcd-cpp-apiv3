@@ -4,12 +4,6 @@
 #include <string>
 #include <vector>
 
-namespace web {
-  namespace json {
-    class value;
-  }
-}
-
 namespace etcdv3 {
   class KeyValue;
 }
@@ -61,7 +55,6 @@ namespace etcd
     friend class DeleteRpcResponse;
     friend class AsyncDeleteResponse;
     Value();
-    Value(web::json::value const & json_value);
     Value(etcdv3::KeyValue const & kvs);
     std::string _key;
     bool        dir;
