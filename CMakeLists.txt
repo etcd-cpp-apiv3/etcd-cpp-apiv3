@@ -5,7 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 1)
-set(etcd-cpp-api_VERSION_PATCH 1)
+set(etcd-cpp-api_VERSION_PATCH 2)
 set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MINOR}.${etcd-cpp-api_VERSION_PATCH})
 set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
 
@@ -146,26 +146,34 @@ include(CPack)
 # generate deb for ppa
 #
 # requires: apt-get install devscripts
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcpprest-dev, libprotobuf-dev, libgrpc-dev, libgrpc++-dev, libssl-dev")
-set(CPACK_DEBIAN_BUILD_DEPENDS "ca-certificates,
-                                gcc,
-                                g++,
-                                libboost-all-dev,
-                                libcurl4-openssl-dev,
-                                libgrpc-dev,
-                                libgrpc++-dev,
-                                libprotobuf-dev,
-                                libprotoc-dev,
-                                libssl-dev,
-                                libz-dev,
-                                lsb-release,
-                                openssl,
-                                protobuf-compiler-grpc")
+set(CPACK_DEBIAN_BUILD_DEPENDS   "ca-certificates,
+                                  gcc,
+                                  g++,
+                                  libboost-all-dev,
+                                  libcpprest-dev,
+                                  libcurl4-openssl-dev,
+                                  libgrpc-dev,
+                                  libgrpc++-dev,
+                                  libprotobuf-dev,
+                                  libprotoc-dev,
+                                  libssl-dev,
+                                  libz-dev,
+                                  lsb-release,
+                                  openssl,
+                                  protobuf-compiler-grpc")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcpprest-dev,
+                                  libprotobuf-dev,
+                                  libgrpc-dev,
+                                  libgrpc++-dev,
+                                  libssl-dev")
 
 set(CPACK_DEBIAN_PACKAGE_UPSTREAM_COPYRIGHT_YEAR 2016-2021)
 set(CPACK_DEBIAN_PACKAGE_LICENSE bsd)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Tao He <sighingnow@gmail.com>")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/")
+
+set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER_PREFIX "")
+set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER 0)
 
 set(CPACK_DEBIAN_PACKAGE_DISTRIBUTION "focal")
 set(DPUT_HOST "ppa:graphscope/etcd-cpp-api")
