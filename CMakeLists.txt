@@ -4,8 +4,8 @@ project (etcd-cpp-api)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
-set(etcd-cpp-api_VERSION_MINOR 1)
-set(etcd-cpp-api_VERSION_PATCH 3)
+set(etcd-cpp-api_VERSION_MINOR 2)
+set(etcd-cpp-api_VERSION_PATCH 0)
 set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MINOR}.${etcd-cpp-api_VERSION_PATCH})
 set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
 
@@ -172,6 +172,14 @@ set(CPACK_DEBIAN_PACKAGE_UPSTREAM_COPYRIGHT_YEAR 2016-2021)
 set(CPACK_DEBIAN_PACKAGE_LICENSE bsd)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Tao He <sighingnow@gmail.com>")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/")
+
+set(CPACK_DEBIAN_PACKAGE_INSTALL "/usr/lib/lib*.so*"
+                                 "/usr/lib/cmake/etcd-cpp-api/*.cmake"
+                                 "/usr/include/etcd/*.h"
+                                 "/usr/include/etcd/*.hpp"
+                                 "/usr/include/etcd/v3/*.h"
+                                 "/usr/include/etcd/v3/*.hpp"
+)
 
 set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER_PREFIX "")
 set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER 0)
