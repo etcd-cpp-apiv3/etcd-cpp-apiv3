@@ -5,7 +5,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 1)
-set(etcd-cpp-api_VERSION ${etcd-cpp-api_MAJOR_VERSION}.${etcd-cpp-api_MINOR_VERSION})
+set(etcd-cpp-api_VERSION_PATCH 1)
+set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MINOR}.${etcd-cpp-api_VERSION_PATCH})
+set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
 
 include(CheckCXXCompilerFlag)
 include(CheckLibraryExists)
@@ -120,3 +122,54 @@ install(EXPORT etcd-targets
         FILE etcd-targets.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etcd-cpp-api
 )
+
+# deb/rpc packaging for Linux
+
+set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
+set(CPACK_PACKAGE_VENDOR etcd-cpp-apiv3)
+set(CPACK_PACKAGE_CONTACT "Tao He <sighingnow@gmail.com>")
+set(CPACK_PACKAGE_VERSION "${etcd-cpp-api_VERSION}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${etcd-cpp-api_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${etcd-cpp-api_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${etcd-cpp-api_VERSION_PATCH}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The etcd-cpp-apiv3 is a C++ API for etcd's v3 client API, i.e., `ETCDCTL_API=3`.")
+
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_SOURCE_IGNORE_FILES "${PROJECT_BINARY_DIR}")
+
+set(CPACK_CMAKE_GENERATOR "Unix Makefiles")
+set(CPACK_GENERATOR "STGZ;TGZ")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+include(CPack)
+
+# generate deb for ppa
+#
+# requires: apt-get install devscripts
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcpprest-dev, libprotobuf-dev, libgrpc-dev, libgrpc++-dev, libssl-dev")
+set(CPACK_DEBIAN_BUILD_DEPENDS "ca-certificates,
+                                gcc,
+                                g++,
+                                libboost-all-dev,
+                                libcurl4-openssl-dev,
+                                libgrpc-dev,
+                                libgrpc++-dev,
+                                libprotobuf-dev,
+                                libprotoc-dev,
+                                libssl-dev,
+                                libz-dev,
+                                lsb-release,
+                                openssl,
+                                protobuf-compiler-grpc")
+
+set(CPACK_DEBIAN_PACKAGE_UPSTREAM_COPYRIGHT_YEAR 2016-2021)
+set(CPACK_DEBIAN_PACKAGE_LICENSE bsd)
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Tao He <sighingnow@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/")
+
+set(CPACK_DEBIAN_PACKAGE_DISTRIBUTION "focal")
+set(DPUT_HOST "ppa:graphscope/etcd-cpp-api")
+set(DPUT_SNAPSHOT_HOST "ppa:graphscope/etcd-cpp-api")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(UploadPPA)
