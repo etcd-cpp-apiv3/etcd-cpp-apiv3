@@ -13,20 +13,40 @@ namespace etcd
   public:
     Watcher(Client const &client, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(Client const &client, std::string const & key,
+            std::string const &range_end,
+            std::function<void(Response)> callback);
     Watcher(Client const &client, std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(Client const &client, std::string const & key,
+            std::string const &range_end, int fromIndex,
+            std::function<void(Response)> callback);
     Watcher(std::string const & address, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(std::string const & address, std::string const & key,
+            std::string const &range_end,
+            std::function<void(Response)> callback);
     Watcher(std::string const & address, std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(std::string const & address, std::string const & key,
+            std::string const &range_end, int fromIndex,
+            std::function<void(Response)> callback);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
             std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
+            std::string const & key, std::string const &range_end,
+            std::function<void(Response)> callback);
+    Watcher(std::string const & address,
+            std::string const & username, std::string const & password,
             std::string const & key, int fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(std::string const & address,
+            std::string const & username, std::string const & password,
+            std::string const & key, std::string const &range_end, int fromIndex,
+            std::function<void(Response)> callback);
 
     Watcher(Watcher const &) = delete;
     Watcher(Watcher &&) = delete;
@@ -55,6 +75,7 @@ namespace etcd
 
   protected:
     void doWatch(std::string const & key,
+                 std::string const & range_end,
                  std::string const & auth_token,
                  std::function<void(Response)> callback);
 

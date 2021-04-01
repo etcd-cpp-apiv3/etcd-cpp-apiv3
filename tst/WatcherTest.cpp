@@ -46,7 +46,29 @@ TEST_CASE("create watcher with cancel")
   CHECK(4 == watcher_called);
 
   etcd.rmdir("/test", true);
+}
 
+TEST_CASE("create watcher on ranges with cancel")
+{
+  etcd::SyncClient etcd(etcd_uri);
+  etcd.rmdir("/test", true);
+
+  watcher_called = 0;
+  etcd::Watcher watcher(etcd_uri, "/test/key1", "/test/key5", printResponse);
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  etcd.set("/test/key1", "42");
+  etcd.set("/test/key2", "43");
+  etcd.rm("/test/key1");
+  etcd.set("/test/key5", "44");
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  CHECK(3 == watcher_called);
+  watcher.Cancel();
+  etcd.set("/test/key3", "50");
+  etcd.set("/test/key4", "51");
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  CHECK(3 == watcher_called);
+
+  etcd.rmdir("/test", true);
 }
 
 TEST_CASE("create watcher")
