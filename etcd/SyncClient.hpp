@@ -55,8 +55,13 @@ namespace etcd
     Response rm_if(std::string const & key, std::string const & old_value);
     Response rm_if(std::string const & key, int old_index);
     Response ls(std::string const & key);
+    Response ls(std::string const & key, size_t const limit);
+    Response ls(std::string const & key, std::string const &range_end);
+    Response ls(std::string const & key, std::string const &range_end, size_t const limit);
     Response mkdir(std::string const & key, int ttl = 0);
     Response rmdir(std::string const & key, bool recursive = false);
+    Response rmdir(std::string const & key, const char *range_end);
+    Response rmdir(std::string const & key, std::string const &range_end);
     Response leasegrant(int ttl);
     Response leaserevoke(int64_t lease_id);
     Response leasetimetolive(int64_t lease_id);
@@ -70,6 +75,8 @@ namespace etcd
      * @param recursive if true watch a whole subtree
      */
     Response watch(std::string const & key, bool recursive = false);
+    Response watch(std::string const & key, const char *range_end);
+    Response watch(std::string const & key, std::string const &range_end);
 
     /**
      * Watches for changes of a key or a subtree from a specific index. The index value can be in the "past".
@@ -78,6 +85,7 @@ namespace etcd
      * @param recursive if true watch a whole subtree
      */
     Response watch(std::string const & key, int fromIndex, bool recursive = false);
+    Response watch(std::string const & key, std::string const &range_end, int fromIndex);
 
   protected:
     Client client;

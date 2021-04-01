@@ -20,10 +20,14 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters param)
 
   if(parameters.withPrefix)
   {
-    std::string range_end(parameters.key); 
-    int ascii = (int)range_end[range_end.length()-1];
-    range_end.back() = ascii+1;
-    watch_create_req.set_range_end(range_end);
+    if (parameters.key.empty()) {
+      watch_create_req.set_range_end(detail::string_plus_one("\0"));
+    } else {
+      watch_create_req.set_range_end(detail::string_plus_one(parameters.key));
+    }
+  }
+  if(!parameters.range_end.empty()) {
+    watch_create_req.set_range_end(parameters.range_end);
   }
 
   watch_req.mutable_create_request()->CopyFrom(watch_create_req);

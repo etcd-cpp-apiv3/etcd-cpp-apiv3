@@ -485,7 +485,6 @@ pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
   return Response::create(call);
 }
 
-
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::string const & old_value)
 {
   etcdv3::ActionParameters params;
@@ -520,6 +519,23 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool rec
   return Response::create(call);
 }
 
+pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, const char *range_end)
+{
+  return rmdir(key, std::string(range_end));
+}
+
+pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, std::string const &range_end)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key.assign(key);
+  params.range_end.assign(range_end);
+  params.withPrefix = false;
+  params.kv_stub = stubs->kvServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncDeleteAction> call(new etcdv3::AsyncDeleteAction(params));
+  return Response::create(call);
+}
+
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 {
   etcdv3::ActionParameters params;
@@ -544,6 +560,32 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t cons
   return Response::create(call);
 }
 
+pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key.assign(key);
+  params.range_end.assign(range_end);
+  params.withPrefix = false;
+  params.limit = 0;  // default no limit.
+  params.kv_stub = stubs->kvServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end, size_t const limit)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key.assign(key);
+  params.range_end.assign(range_end);
+  params.withPrefix = false;
+  params.limit = limit;
+  params.kv_stub = stubs->kvServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  return Response::create(call);
+}
+
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
 {
   etcdv3::ActionParameters params;
@@ -561,6 +603,36 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int from
   params.auth_token.assign(this->auth_token);
   params.key.assign(key);
   params.withPrefix = recursive;
+  params.revision = fromIndex;
+  params.watch_stub = stubs->watchServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncWatchAction> call(new etcdv3::AsyncWatchAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, const char *range_end)
+{
+  return watch(key, std::string(range_end));
+}
+
+pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key.assign(key);
+  params.range_end.assign(range_end);
+  params.withPrefix = false;
+  params.watch_stub = stubs->watchServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncWatchAction> call(new etcdv3::AsyncWatchAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end, int fromIndex)
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.key.assign(key);
+  params.range_end.assign(range_end);
+  params.withPrefix = false;
   params.revision = fromIndex;
   params.watch_stub = stubs->watchServiceStub.get();
   std::shared_ptr<etcdv3::AsyncWatchAction> call(new etcdv3::AsyncWatchAction(params));

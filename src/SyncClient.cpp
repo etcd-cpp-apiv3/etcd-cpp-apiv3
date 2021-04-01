@@ -99,9 +99,34 @@ etcd::Response etcd::SyncClient::rmdir(std::string const & key, bool recursive)
   CHECK_EXCEPTIONS(client.rmdir(key, recursive).get());
 }
 
+etcd::Response etcd::SyncClient::rmdir(std::string const & key, const char *range_end)
+{
+  CHECK_EXCEPTIONS(client.rmdir(key, range_end).get());
+}
+
+etcd::Response etcd::SyncClient::rmdir(std::string const & key, std::string const &range_end)
+{
+  CHECK_EXCEPTIONS(client.rmdir(key, range_end).get());
+}
+
 etcd::Response etcd::SyncClient::ls(std::string const & key)
 {
   CHECK_EXCEPTIONS(client.ls(key).get());
+}
+
+etcd::Response etcd::SyncClient::ls(std::string const & key, size_t const limit)
+{
+  CHECK_EXCEPTIONS(client.ls(key, limit).get());
+}
+
+etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end)
+{
+  CHECK_EXCEPTIONS(client.ls(key, range_end).get());
+}
+
+etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end, size_t limit)
+{
+  CHECK_EXCEPTIONS(client.ls(key, range_end, limit).get());
 }
 
 etcd::Response etcd::SyncClient::leasegrant(int ttl)
@@ -127,4 +152,19 @@ etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
 etcd::Response etcd::SyncClient::watch(std::string const & key, int fromIndex, bool recursive)
 {
   CHECK_EXCEPTIONS(client.watch(key, fromIndex, recursive).get());
+}
+
+etcd::Response etcd::SyncClient::watch(std::string const & key, const char *range_end)
+{
+  CHECK_EXCEPTIONS(client.watch(key, range_end).get());
+}
+
+etcd::Response etcd::SyncClient::watch(std::string const & key, std::string const &range_end)
+{
+  CHECK_EXCEPTIONS(client.watch(key, range_end).get());
+}
+
+etcd::Response etcd::SyncClient::watch(std::string const & key, std::string const &range_end, int fromIndex)
+{
+  CHECK_EXCEPTIONS(client.watch(key, range_end, fromIndex).get());
 }
