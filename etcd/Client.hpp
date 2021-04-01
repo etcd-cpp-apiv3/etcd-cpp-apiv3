@@ -224,6 +224,26 @@ namespace etcd
      */
     pplx::task<Response> ls(std::string const & key, size_t const limit);
 
+    /**
+     * Gets a directory listing of the directory identified by the key and range_end, i.e., get
+     * all keys in the range [key, range_end).
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     */
+    pplx::task<Response> ls(std::string const & key, std::string const &range_end);
+
+
+    /**
+     * Gets a directory listing of the directory identified by the key and range_end, i.e., get
+     * all keys in the range [key, range_end).
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    pplx::task<Response> ls(std::string const & key, std::string const &range_end, size_t const limit);
 
     /**
      * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
@@ -231,6 +251,24 @@ namespace etcd
      * @param recursive if true then delete a whole subtree, otherwise deletes only an empty directory.
      */
     pplx::task<Response> rmdir(std::string const & key, bool recursive = false);
+
+    /**
+     * Removes multiple keys between [key, range_end).
+     *
+     * This overload for `const char *` is to avoid const char * to bool implicit casting.
+     *
+     * @param key is the directory to be created to be listed
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> rmdir(std::string const & key, const char *range_end);
+
+    /**
+     * Removes multiple keys between [key, range_end).
+     *
+     * @param key is the directory to be created to be listed
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> rmdir(std::string const & key, std::string const &range_end);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
@@ -249,6 +287,35 @@ namespace etcd
      * @param recursive if true watch a whole subtree
      */
     pplx::task<Response> watch(std::string const & key, int fromIndex, bool recursive = false);
+
+    /**
+     * Watches for changes of a range of keys inside [key, range_end).
+     *
+     * This overload for `const char *` is to avoid const char * to bool implicit casting.
+     *
+     * @param key is the value or directory to be watched
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> watch(std::string const & key, const char *range_end);
+
+    /**
+     * Watches for changes of a range of keys inside [key, range_end).
+     *
+     * @param key is the value or directory to be watched
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> watch(std::string const & key, std::string const &range_end);
+
+    /**
+     * Watches for changes of a range of keys inside [key, range_end) from a specific index. The index value
+     * can be in the "past".
+     *
+     * Watches for changes of a key or a subtree from a specific index. The index value can be in the "past".
+     * @param key is the value or directory to be watched
+     * @param range_end is the end of key range to be removed.
+     * @param fromIndex the first index we are interested in
+     */
+    pplx::task<Response> watch(std::string const & key, std::string const &range_end, int fromIndex);
 
     /**
      * Grants a lease.

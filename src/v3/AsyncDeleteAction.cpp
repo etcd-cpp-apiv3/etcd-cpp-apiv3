@@ -9,12 +9,16 @@ etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
   DeleteRangeRequest del_request;
   del_request.set_key(parameters.key);
   del_request.set_prev_kv(true);
-  std::string range_end(parameters.key); 
   if(parameters.withPrefix)
   {
-    int ascii = (int)range_end[range_end.length()-1];
-    range_end.back() = ascii+1;
-    del_request.set_range_end(range_end);
+    if (parameters.key.empty()) {
+      del_request.set_range_end(detail::string_plus_one("\0"));
+    } else {
+      del_request.set_range_end(detail::string_plus_one(parameters.key));
+    }
+  }
+  if(!parameters.range_end.empty()) {
+    del_request.set_range_end(parameters.range_end);
   }
 
   response_reader = parameters.kv_stub->AsyncDeleteRange(&context, del_request, &cq_);
@@ -32,7 +36,7 @@ etcdv3::AsyncDeleteRangeResponse etcdv3::AsyncDeleteAction::ParseResponse()
   }
   else
   { 
-    del_resp.ParseResponse(parameters.key, parameters.withPrefix, reply); 
+    del_resp.ParseResponse(parameters.key, parameters.withPrefix || !parameters.range_end.empty(), reply); 
   }
     
   return del_resp;

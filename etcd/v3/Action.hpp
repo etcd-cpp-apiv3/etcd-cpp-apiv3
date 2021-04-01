@@ -34,6 +34,7 @@ namespace etcdv3
     int ttl;
     int limit;
     std::string key;
+    std::string range_end;
     std::string value;
     std::string old_value;
     std::string auth_token;
@@ -56,5 +57,9 @@ namespace etcdv3
     etcdv3::ActionParameters parameters;
     std::chrono::high_resolution_clock::time_point start_timepoint;
   };
+
+  namespace detail {
+    std::string string_plus_one(std::string const &value);
+  }
 }
 #endif

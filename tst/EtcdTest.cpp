@@ -222,15 +222,47 @@ TEST_CASE("list a directory")
   CHECK(resp.values()[2].is_dir() == 0);
 
   CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
+
+  CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
+}
+
+TEST_CASE("list by range")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
+
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value1").wait();
+  etcd.set("/test/new_dir/key3", "value1").wait();
+  etcd.set("/test/new_dir/key4", "value1").wait();
+
+  etcd::Response resp1 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key3").get();
+  REQUIRE(resp1.is_ok());
+  CHECK("get" == resp1.action());
+  REQUIRE(2 == resp1.keys().size());
+  REQUIRE(2 == resp1.values().size());
+
+  etcd::Response resp2 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key4").get();
+  REQUIRE(resp2.is_ok());
+  CHECK("get" == resp2.action());
+  REQUIRE(3 == resp2.keys().size());
+  REQUIRE(3 == resp2.values().size());
+
+  CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
+
+  CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
 
 TEST_CASE("delete a directory")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
 
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/key3", "value3").wait();
+
   CHECK(100 == etcd.rmdir("/test/new_dir").get().error_code()); // key not found
   etcd::Response resp = etcd.ls("/test/new_dir").get();
-
 
   resp = etcd.rmdir("/test/new_dir", true).get();
   int index = resp.index();
@@ -251,6 +283,27 @@ TEST_CASE("delete a directory")
   CHECK(!resp.is_ok());
   CHECK(100 == resp.error_code());
   CHECK("Key not found" == resp.error_message());
+}
+
+TEST_CASE("delete by range")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  CHECK(100 == etcd.rmdir("/test/new_dir").get().error_code()); // key not found
+  etcd::Response resp = etcd.ls("/test/new_dir").get();
+
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/key3", "value3").wait();
+  etcd.set("/test/new_dir/key4", "value4").wait();
+
+  resp = etcd.rmdir("/test/new_dir/key1", "/test/new_dir/key3").get();
+  CHECK("delete" == resp.action());
+  REQUIRE(2 == resp.keys().size());
+  CHECK("/test/new_dir/key1" == resp.key(0));
+  CHECK("/test/new_dir/key2" == resp.key(1));
+  CHECK("value1" == resp.value(0).as_string());
+  CHECK("value2" == resp.value(1).as_string());
 }
 
 TEST_CASE("wait for a value change")
@@ -322,11 +375,34 @@ TEST_CASE("watch changes in the past")
   CHECK("45" == res.value().as_string());
 }
 
+TEST_CASE("watch range changes in the past")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
+  int index = etcd.set("/test/key1", "42").get().index();
+
+  etcd.set("/test/key1", "43").wait();
+  etcd.set("/test/key2", "44").wait();
+  etcd.set("/test/key3", "45").wait();
+  etcd.set("/test/key4", "45").wait();
+
+  etcd::Response res;
+
+  res = etcd.watch("/test/key1", "/test/key4", index).get();
+  CHECK(4 == res.events().size());
+  res = etcd.watch("/test/key1", "/test/key5", index).get();
+  CHECK(5 == res.events().size());
+  res = etcd.watch("/test/key1", "/test/key4", ++index).get();
+  CHECK(3 == res.events().size());
+  res = etcd.watch("/test/key1", "/test/key5", ++index).get();
+  CHECK(3 == res.events().size());
+}
+
 TEST_CASE("watch multiple keys and use promise") {
   etcd::Client etcd("http://127.0.0.1:2379");
 
-  int start_index = etcd.add("/test/key1", "value1").get().index();
-  etcd.add("/test/key2", "value2").get();
+  int start_index = etcd.set("/test/key1", "value1").get().index();
+  etcd.set("/test/key2", "value2").get();
 
   pplx::task<size_t> res = etcd.watch("/test", start_index, true)
     .then([](pplx::task<etcd::Response> const &resp_task) -> size_t {
@@ -418,6 +494,3 @@ TEST_CASE("cleanup")
   etcd::Client etcd("http://127.0.0.1:2379");
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
 }
-
-
-
