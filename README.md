@@ -527,6 +527,26 @@ Keep alive for leases is implemented using a seperate class `KeepAlive`, which c
 
 It will perform a periodly keep-alive action before it is cancelled explicitly, or destructed implicitly.
 
+`KeepAlive` may fails (e.g., when the etcd server stopped unexpectedly), the constructor of `KeepAlive`
+could accept a handler of type `std::function<std::exception_ptr>` and the handler will be invoked
+when exception occurs during keeping it alive.
+
+```c++
+  std::function<void (std::exception_ptr)> handler = [](std::exception_ptr eptr) {
+    try {
+        if (eptr) {
+            std::rethrow_exception(eptr);
+        }
+    } catch(const std::exception& e) {
+        std::cerr << "Caught exception \"" << e.what() << "\"\n";
+    }
+  };
+  etcd::KeepAlive keepalive(etcd, handler, ttl, lease_id);
+```
+
+Without handler, the internal state can be checked via `KeepAlive::Check()` and it will rethrow
+the async exception when there are errors during keeping the lease alive.
+
 ### TODO
 
 1. Cancellation of asynchronous calls(except for watch)
