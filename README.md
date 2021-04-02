@@ -531,6 +531,9 @@ It will perform a periodly keep-alive action before it is cancelled explicitly, 
 could accept a handler of type `std::function<std::exception_ptr>` and the handler will be invoked
 when exception occurs during keeping it alive.
 
+Note that the handler will invoked in a separated thread, not the thread where the `KeepAlive` object
+is constructed.
+
 ```c++
   std::function<void (std::exception_ptr)> handler = [](std::exception_ptr eptr) {
     try {
