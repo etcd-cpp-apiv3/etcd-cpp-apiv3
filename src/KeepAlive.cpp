@@ -33,9 +33,13 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
   currentTask = pplx::task<void>([this]() {
-    // start refresh
-    this->refresh();
-    context.run();
+    try {
+      // start refresh
+      this->refresh();
+      context.run();
+    } catch (...) {
+      eptr_ = std::current_exception();
+    }
     context.stop();  // clean up
   });
 }
@@ -48,6 +52,48 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
                            int ttl, int64_t lease_id):
     KeepAlive(Client(address, username, password), ttl, lease_id) {
+}
+
+etcd::KeepAlive::KeepAlive(Client const &client,
+                           std::function<void (std::exception_ptr)> const &handler,
+                           int ttl, int64_t lease_id):
+    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true) {
+  stubs.reset(new EtcdServerStubs{});
+  stubs->leaseServiceStub = Lease::NewStub(client.channel);
+
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(client.auth_token);
+  params.lease_id = this->lease_id;
+  params.lease_stub = stubs->leaseServiceStub.get();
+
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  currentTask = pplx::task<void>([this]() {
+    try {
+      // start refresh
+      this->refresh();
+      context.run();
+    } catch (...) {
+      if (handler_) {
+        handler_(std::current_exception());
+      } else {
+        eptr_ = std::current_exception();
+      }
+    }
+    context.stop();  // clean up
+  });
+}
+
+etcd::KeepAlive::KeepAlive(std::string const & address,
+                           std::function<void (std::exception_ptr)> const &handler,
+                           int ttl, int64_t lease_id):
+    KeepAlive(Client(address), handler, ttl, lease_id) {
+}
+
+etcd::KeepAlive::KeepAlive(std::string const & address,
+                           std::string const & username, std::string const & password,
+                           std::function<void (std::exception_ptr)> const &handler,
+                           int ttl, int64_t lease_id):
+    KeepAlive(Client(address, username, password), handler, ttl, lease_id) {
 }
 
 etcd::KeepAlive::~KeepAlive()
@@ -64,7 +110,8 @@ void etcd::KeepAlive::Cancel()
 #ifndef NDEBUG
   {
     std::ios::fmtflags os_flags (std::cout.flags());
-    std::cout << "Cancel keepalive for " << std::hex << lease_id << std::endl;
+    std::cout << "Cancel keepalive for " << lease_id
+              << "(" << std::hex << lease_id << ")" << std::endl;
     std::cout.flags(os_flags);
   }
 #endif
@@ -73,6 +120,12 @@ void etcd::KeepAlive::Cancel()
     keepalive_timer_->cancel();
   }
   currentTask.wait();
+}
+
+void etcd::KeepAlive::Check() {
+  if (eptr_) {
+    std::rethrow_exception(eptr_);
+  }
 }
 
 void etcd::KeepAlive::refresh()
@@ -86,7 +139,8 @@ void etcd::KeepAlive::refresh()
   {
     std::ios::fmtflags os_flags (std::cout.flags());
     std::cout << "Trigger the next keepalive round with ttl " << keepalive_ttl
-              << " for " << std::hex << lease_id << std::endl;
+              << " for " << lease_id
+              << "(" << std::hex << lease_id << ")" << std::endl;
     std::cout.flags(os_flags);
   }
 #endif
