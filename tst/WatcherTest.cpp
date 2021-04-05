@@ -84,6 +84,7 @@ TEST_CASE("create watcher")
     etcd.set("/test/key", "43");
     std::this_thread::sleep_for(std::chrono::seconds(3));
   }
+  std::this_thread::sleep_for(std::chrono::seconds(10));
   CHECK(2 == watcher_called);
   etcd.rmdir("/test", true).error_code();
 }
