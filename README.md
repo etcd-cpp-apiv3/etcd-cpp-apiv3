@@ -540,8 +540,10 @@ is constructed.
         if (eptr) {
             std::rethrow_exception(eptr);
         }
-    } catch(const std::exception& e) {
-        std::cerr << "Caught exception \"" << e.what() << "\"\n";
+    } catch(const std::runtime_error& e) {
+        std::cerr << "Connection failure \"" << e.what() << "\"\n";
+    } catch(const std::out_of_range& e) {
+        std::cerr << "Lease expiry \"" << e.what() << "\"\n";
     }
   };
   etcd::KeepAlive keepalive(etcd, handler, ttl, lease_id);

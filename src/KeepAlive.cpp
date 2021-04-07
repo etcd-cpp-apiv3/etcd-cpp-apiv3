@@ -158,8 +158,8 @@ void etcd::KeepAlive::refresh()
           throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
                                    ", message: " + resp.error_message());
         }
-        if (resp.value().ttl() == -1) {
-          throw std::runtime_error("Failed to refresh lease due to expiration: the new TTL is -1.");
+        if (resp.value().ttl() == 0) {
+          throw std::out_of_range("Failed to refresh lease due to expiration: the new TTL is 0.");
         }
         // trigger the next round;
         this->refresh();
