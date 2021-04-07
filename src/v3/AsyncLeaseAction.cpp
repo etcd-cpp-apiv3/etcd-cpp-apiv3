@@ -82,12 +82,16 @@ etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::ParseResp
   return lease_resp;
 }
 
-etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::Refresh()
+etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
 {
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
 
+  auto start_timepoint = std::chrono::high_resolution_clock::now();
   if (isCancelled) {
-    return ParseResponse();
+    auto resp = ParseResponse();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - start_timepoint);
+    return etcd::Response(resp, duration);
   }
 
   LeaseKeepAliveRequest leasekeepalive_request;
@@ -102,10 +106,13 @@ etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::Refresh()
     stream->Read(&reply, (void*)"keepalive read");
     // wait read finish
     if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive read") {
-      return ParseResponse();
+      auto resp = ParseResponse();
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - start_timepoint);
+      return etcd::Response(resp, duration);
     }
   }
-  throw std::runtime_error("Failed to create a lease keep-alive connection");
+  return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
 }
 
 void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()

@@ -7,6 +7,7 @@
 #include "proto/rpc.grpc.pb.h"
 #include "etcd/v3/Action.hpp"
 #include "etcd/v3/AsyncLeaseResponse.hpp"
+#include "etcd/Response.hpp"
 
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientAsyncReaderWriter;
@@ -45,7 +46,7 @@ namespace etcdv3
       AsyncLeaseKeepAliveAction(etcdv3::ActionParameters param);
       AsyncLeaseKeepAliveResponse ParseResponse();
 
-      AsyncLeaseKeepAliveResponse Refresh();
+      etcd::Response Refresh();
       void CancelKeepAlive();
       bool Cancelled() const;
 
