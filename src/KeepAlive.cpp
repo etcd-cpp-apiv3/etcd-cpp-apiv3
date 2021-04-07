@@ -152,9 +152,18 @@ void etcd::KeepAlive::refresh()
       std::cerr << "keepalive timer error: " << error << ", " << error.message() << std::endl;
 #endif
     } else {
-      this->stubs->call->Refresh();
-      // trigger the next round;
-      this->refresh();
+      if (this->continue_next) {
+        auto resp = this->stubs->call->Refresh();
+        if (!resp.is_ok()) {
+          throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
+                                   ", message: " + resp.error_message());
+        }
+        if (resp.value().ttl() == -1) {
+          throw std::runtime_error("Failed to refresh lease due to expiration: the new TTL is -1.");
+        }
+        // trigger the next round;
+        this->refresh();
+      }
     }
   });
 }

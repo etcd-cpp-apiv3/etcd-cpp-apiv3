@@ -12,6 +12,7 @@
 
 namespace etcdv3 {
   class AsyncWatchAction;
+  class AsyncLeaseKeepAliveAction;
   class V3Response;
 }
 
@@ -139,6 +140,7 @@ namespace etcd
     std::chrono::microseconds _duration; // execute duration (in microseconds), during the action created and response parsed
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
+    friend class etcdv3::AsyncLeaseKeepAliveAction;
     friend class Client;
   };
 }
