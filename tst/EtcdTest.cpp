@@ -231,10 +231,11 @@ TEST_CASE("list by range")
   etcd::Client etcd("http://127.0.0.1:2379");
   CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
 
+  etcd.set("/test/new_dir/key0", "value0").wait();
   etcd.set("/test/new_dir/key1", "value1").wait();
-  etcd.set("/test/new_dir/key2", "value1").wait();
-  etcd.set("/test/new_dir/key3", "value1").wait();
-  etcd.set("/test/new_dir/key4", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/key3", "value3").wait();
+  etcd.set("/test/new_dir/key4", "value4").wait();
 
   etcd::Response resp1 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key3").get();
   REQUIRE(resp1.is_ok());
@@ -247,6 +248,12 @@ TEST_CASE("list by range")
   CHECK("get" == resp2.action());
   REQUIRE(3 == resp2.keys().size());
   REQUIRE(3 == resp2.values().size());
+
+  etcd::Response resp3 = etcd.ls("/test/new_dir/key1", {"\xC0\x80"}).get();
+  REQUIRE(resp3.is_ok());
+  CHECK("get" == resp3.action());
+  REQUIRE(4 == resp3.keys().size());
+  REQUIRE(4 == resp3.values().size());
 
   CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
 

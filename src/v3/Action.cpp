@@ -50,6 +50,7 @@ std::string etcdv3::detail::string_plus_one(std::string const &value) {
       return ret;
     }
   }
-  // see: noPrefixEnd in etcd
-  return {"\0"};
+  // see: noPrefixEnd in etcd, however c++ doesn't allows '\0' inside a string, thus we use
+  // the UTF-8 char U+0000 (i.e., "\xC0\x80").
+  return {"\xC0\x80"};
 }
