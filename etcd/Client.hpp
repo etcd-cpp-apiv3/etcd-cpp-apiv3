@@ -12,6 +12,10 @@
 
 namespace etcdv3 {
   class Transaction;
+
+  namespace detail {
+    std::string string_plus_one(std::string const &value);
+  }
 }
 
 namespace etcd

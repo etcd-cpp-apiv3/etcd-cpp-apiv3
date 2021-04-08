@@ -255,6 +255,12 @@ TEST_CASE("list by range")
   REQUIRE(4 == resp3.keys().size());
   REQUIRE(4 == resp3.values().size());
 
+  etcd::Response resp4 = etcd.ls("/test/new_dir/key1", etcdv3::detail::string_plus_one("/test/new_dir/key")).get();
+  REQUIRE(resp4.is_ok());
+  CHECK("get" == resp4.action());
+  REQUIRE(4 == resp4.keys().size());
+  REQUIRE(4 == resp4.values().size());
+
   CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
 
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
