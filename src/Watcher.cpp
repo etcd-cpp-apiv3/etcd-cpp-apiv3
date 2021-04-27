@@ -107,7 +107,7 @@ void etcd::Watcher::Wait(std::function<void(bool)> callback)
   currentTask.then([this, callback](pplx::task<void> const & resp_task) {
     resp_task.wait();
     callback(this->stubs->call->Cancelled());
-  });
+  }).wait();
 }
 
 void etcd::Watcher::Cancel()
