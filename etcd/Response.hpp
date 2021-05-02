@@ -32,18 +32,40 @@ namespace etcd
     {
       return pplx::task<etcd::Response>([call]()
       {
-        etcd::Response resp;     
-
         call->waitForResponse();
-
         auto v3resp = call->ParseResponse();
-          
+
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        resp = etcd::Response(v3resp, duration);    
-
-        return resp;
+        return etcd::Response(v3resp, duration);
       });
+    }
+
+    template <typename T>
+    static pplx::task<etcd::Response> create(std::function<std::shared_ptr<T>()> callfn)
+    {
+      return pplx::task<etcd::Response>([callfn]()
+      {
+        auto call = callfn();
+
+        call->waitForResponse();
+        auto v3resp = call->ParseResponse();
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - call->startTimepoint());
+        return etcd::Response(v3resp, duration);
+      });
+    }
+
+    template <typename T>
+    static etcd::Response create_sync(std::shared_ptr<T> call)
+    {
+      call->waitForResponse();
+      auto v3resp = call->ParseResponse();
+
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now() - call->startTimepoint());
+      return etcd::Response(v3resp, duration);
     }
 
     Response();

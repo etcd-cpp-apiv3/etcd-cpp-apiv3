@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <thread>
 
@@ -108,7 +109,7 @@ TEST_CASE("lock using lease")
     keepalive.Check();  // shouldn't throw
 
     // lock
-    etcd::Response resp1 = etcd.lock("/test/abcd", lease_id).get();
+    etcd::Response resp1 = etcd.lock_with_lease("/test/abcd", lease_id).get();
     CHECK("lock" == resp1.action());
     REQUIRE(resp1.is_ok());
     REQUIRE(0 == resp1.error_code());
@@ -141,7 +142,7 @@ TEST_CASE("lock using lease")
     keepalive.Check();  // shouldn't throw
 
     // lock
-    etcd::Response resp1 = etcd.lock("/test/abcd", lease_id).get();
+    etcd::Response resp1 = etcd.lock_with_lease("/test/abcd", lease_id).get();
     CHECK("lock" == resp1.action());
     REQUIRE(resp1.is_ok());
     REQUIRE(0 == resp1.error_code());
@@ -162,5 +163,34 @@ TEST_CASE("lock using lease")
 
     REQUIRE(!failed);
     keepalive.Check();  // shouldn't throw
+  }
+}
+
+TEST_CASE("concurrent lock & unlock")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+  std::string const lock_key = "/test/test_key";
+
+  constexpr size_t trials = 128;
+
+  std::function<void(std::string const &, const size_t)> locker = [&etcd](std::string const &key, const size_t index) {
+    std::cout << "start lock for " << index << std::endl;
+    auto resp = etcd.lock(key).get();
+    std::cout << "lock for " << index << " is ok, start sleep: ..." << resp.error_message() << std::endl;
+    REQUIRE(resp.is_ok());
+    std::srand(index);
+    size_t time_to_sleep = 1;
+    std::this_thread::sleep_for(std::chrono::seconds(time_to_sleep));
+    REQUIRE(etcd.unlock(resp.lock_key()).get().is_ok());
+    std::cout << "thread " << index << " been unlocked" << std::endl;
+  };
+
+  std::vector<std::thread> locks(trials);
+  for (size_t index = 0; index < trials; ++index) {
+    locks[index] = std::thread(locker, lock_key, index);
+  }
+
+  for (size_t index = 0; index < trials; ++index) {
+    locks[index].join();
   }
 }

@@ -328,6 +328,12 @@ namespace etcd
     pplx::task<Response> leasegrant(int ttl);
 
     /**
+     * Grants a lease.
+     * @param ttl is the time to live of the lease
+     */
+    pplx::task<std::shared_ptr<KeepAlive>> leasekeepalive(int ttl);
+
+    /**
      * Revoke a lease.
      * @param lease_id is the id the lease
      */
@@ -359,7 +365,7 @@ namespace etcd
      * of by the library.
      * @param key is the key to be used to request the lock.
      */
-    pplx::task<Response> lock(std::string const &key, int64_t lease_id);
+    pplx::task<Response> lock_with_lease(std::string const &key, int64_t lease_id);
 
     /**
      * Releases a lock at a key.
