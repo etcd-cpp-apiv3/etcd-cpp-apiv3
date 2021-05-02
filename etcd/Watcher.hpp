@@ -1,7 +1,9 @@
 #ifndef __ETCD_WATCHER_HPP__
 #define __ETCD_WATCHER_HPP__
 
+#include <functional>
 #include <string>
+#include <thread>
 
 #include "etcd/Client.hpp"
 #include "etcd/Response.hpp"
@@ -81,7 +83,11 @@ namespace etcd
 
     int index;
     std::function<void(Response)> callback;
-    pplx::task<void> currentTask;
+    std::function<void(bool)> wait_callback;
+
+    // Don't use `pplx::task` to avoid sharing thread pool with other actions on the client
+    // to avoid any potential blocking, which may block the keepalive loop and evict the lease.
+    std::thread task_;
 
     struct EtcdServerStubs;
     struct EtcdServerStubsDeleter {
