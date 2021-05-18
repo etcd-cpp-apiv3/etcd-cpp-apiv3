@@ -92,16 +92,15 @@ etcd::Watcher::Watcher(std::string const & address,
 
 etcd::Watcher::~Watcher()
 {
-  stubs->call->CancelWatch();
-  if (task_.joinable()) {
-    task_.join();
-  }
+  this->Cancel();
 }
 
 bool etcd::Watcher::Wait()
 {
-  if (task_.joinable()) {
-    task_.join();
+  if (cancelled.exchange(true)) {
+    if (task_.joinable()) {
+      task_.join();
+    }
   }
   return stubs->call->Cancelled();
 }
@@ -144,4 +143,5 @@ void etcd::Watcher::doWatch(std::string const & key,
       wait_callback(stubs->call->Cancelled());
     }
   });
+  cancelled.store(false);
 }

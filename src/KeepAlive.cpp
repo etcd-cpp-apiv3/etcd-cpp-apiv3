@@ -115,7 +115,9 @@ void etcd::KeepAlive::Cancel()
 
   // clean up
   context.stop();
-  task_.join();
+  if (task_.joinable()) {
+    task_.join();
+  }
 }
 
 void etcd::KeepAlive::Check() {

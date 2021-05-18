@@ -1,6 +1,7 @@
 #ifndef __ETCD_WATCHER_HPP__
 #define __ETCD_WATCHER_HPP__
 
+#include <atomic>
 #include <functional>
 #include <string>
 #include <thread>
@@ -98,6 +99,7 @@ namespace etcd
   private:
     int fromIndex;
     bool recursive;
+    std::atomic_bool cancelled;
   };
 }
 
