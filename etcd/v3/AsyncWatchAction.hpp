@@ -1,6 +1,7 @@
 #ifndef __ASYNC_WATCHACTION_HPP__
 #define __ASYNC_WATCHACTION_HPP__
 
+#include <atomic>
 #include <mutex>
 
 #include <grpc++/grpc++.h>
@@ -28,7 +29,7 @@ namespace etcdv3
     private:
       WatchResponse reply;
       std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;   
-      bool isCancelled;
+      std::atomic_bool isCancelled;
       std::mutex protect_is_cancalled;
   };
 }

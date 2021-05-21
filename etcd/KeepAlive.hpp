@@ -1,9 +1,11 @@
 #ifndef __ETCD_KEEPALIVE_HPP__
 #define __ETCD_KEEPALIVE_HPP__
 
+#include <atomic>
 #include <exception>
 #include <functional>
 #include <string>
+#include <thread>
 
 #include "etcd/Client.hpp"
 #include "etcd/Response.hpp"
@@ -19,7 +21,7 @@
 namespace etcd
 {
   /**
-   * If ID is set to 0, etcd will choose an ID.
+   * If ID is set to 0, the library will choose an ID, and can be accessed from ".Lease()".
    */
   class KeepAlive
   {
@@ -43,9 +45,10 @@ namespace etcd
               std::function<void (std::exception_ptr)> const &handler,
               int ttl, int64_t lease_id=0);
 
-
     KeepAlive(KeepAlive const &) = delete;
     KeepAlive(KeepAlive &&) = delete;
+
+    int64_t Lease() const { return lease_id; }
 
     /**
      * Stop the keep alive action.
@@ -64,7 +67,6 @@ namespace etcd
   protected:
     void refresh();
 
-    pplx::task<void> currentTask;
     struct EtcdServerStubs;
     struct EtcdServerStubsDeleter {
       void operator()(EtcdServerStubs *stubs);
@@ -76,9 +78,13 @@ namespace etcd
     std::exception_ptr eptr_;
     std::function<void (std::exception_ptr)> handler_;
 
+    // Don't use `pplx::task` to avoid sharing thread pool with other actions on the client
+    // to avoid any potential blocking, which may block the keepalive loop and evict the lease.
+    std::thread task_;
+
     int ttl;
     int64_t lease_id;
-    bool continue_next;
+    std::atomic_bool continue_next;
 #if BOOST_VERSION >= 106600
     boost::asio::io_context context;
 #else

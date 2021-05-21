@@ -31,8 +31,10 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 
+  continue_next.store(true);
+
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
-  currentTask = pplx::task<void>([this]() {
+  task_ = std::thread([this]() {
     try {
       // start refresh
       this->refresh();
@@ -67,7 +69,7 @@ etcd::KeepAlive::KeepAlive(Client const &client,
   params.lease_stub = stubs->leaseServiceStub.get();
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
-  currentTask = pplx::task<void>([this]() {
+  task_ = std::thread([this]() {
     try {
       // start refresh
       this->refresh();
@@ -78,8 +80,8 @@ etcd::KeepAlive::KeepAlive(Client const &client,
       } else {
         eptr_ = std::current_exception();
       }
+      this->Cancel();
     }
-    context.stop();  // clean up
   });
 }
 
@@ -103,23 +105,19 @@ etcd::KeepAlive::~KeepAlive()
 
 void etcd::KeepAlive::Cancel()
 {
-  if (!continue_next) {
+  if (!continue_next.exchange(false)) {
     return;
   }
-  continue_next = false;
-#ifndef NDEBUG
-  {
-    std::ios::fmtflags os_flags (std::cout.flags());
-    std::cout << "Cancel keepalive for " << lease_id
-              << "(" << std::hex << lease_id << ")" << std::endl;
-    std::cout.flags(os_flags);
-  }
-#endif
   stubs->call->CancelKeepAlive();
   if (keepalive_timer_) {
     keepalive_timer_->cancel();
   }
-  currentTask.wait();
+
+  // clean up
+  context.stop();
+  if (task_.joinable()) {
+    task_.join();
+  }
 }
 
 void etcd::KeepAlive::Check() {
@@ -130,29 +128,20 @@ void etcd::KeepAlive::Check() {
 
 void etcd::KeepAlive::refresh()
 {
-  if (!continue_next) {
+  if (!continue_next.load()) {
     return;
   }
   // minimal resolution: 1 second
   int keepalive_ttl = std::max(ttl - 1, 1);
-#ifndef NDEBUG
-  {
-    std::ios::fmtflags os_flags (std::cout.flags());
-    std::cout << "Trigger the next keepalive round with ttl " << keepalive_ttl
-              << " for " << lease_id
-              << "(" << std::hex << lease_id << ")" << std::endl;
-    std::cout.flags(os_flags);
-  }
-#endif
   keepalive_timer_.reset(new boost::asio::steady_timer(
       context, std::chrono::seconds(keepalive_ttl)));
   keepalive_timer_->async_wait([this](const boost::system::error_code& error) {
     if (error) {
 #ifndef NDEBUG
-      std::cerr << "keepalive timer error: " << error << ", " << error.message() << std::endl;
+      std::cerr << "keepalive timer cancelled: " << error << ", " << error.message() << std::endl;
 #endif
     } else {
-      if (this->continue_next) {
+      if (this->continue_next.load()) {
         auto resp = this->stubs->call->Refresh();
         if (!resp.is_ok()) {
           throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +

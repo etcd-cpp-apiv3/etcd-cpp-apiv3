@@ -92,22 +92,26 @@ etcd::Watcher::Watcher(std::string const & address,
 
 etcd::Watcher::~Watcher()
 {
-  stubs->call->CancelWatch();
-  currentTask.wait();
+  this->Cancel();
 }
 
 bool etcd::Watcher::Wait()
 {
-  currentTask.wait();
+  if (!cancelled.exchange(true)) {
+    if (task_.joinable()) {
+      task_.join();
+    }
+  }
   return stubs->call->Cancelled();
 }
 
 void etcd::Watcher::Wait(std::function<void(bool)> callback)
 {
-  currentTask.then([this, callback](pplx::task<void> const & resp_task) {
-    resp_task.wait();
-    callback(this->stubs->call->Cancelled());
-  });
+  if (wait_callback == nullptr) {
+    wait_callback = callback;
+  } else {
+    std::cerr << "Failed to set a asynchronous wait callback since it has already been set" << std::endl;
+  }
 }
 
 void etcd::Watcher::Cancel()
@@ -133,8 +137,11 @@ void etcd::Watcher::doWatch(std::string const & key,
 
   stubs->call.reset(new etcdv3::AsyncWatchAction(params));
 
-  currentTask = pplx::task<void>([this, callback]()
-  {  
-    return stubs->call->waitForResponse(callback);
+  task_ = std::thread([this, callback]() {
+    stubs->call->waitForResponse(callback);
+    if (wait_callback != nullptr) {
+      wait_callback(stubs->call->Cancelled());
+    }
   });
+  cancelled.store(false);
 }

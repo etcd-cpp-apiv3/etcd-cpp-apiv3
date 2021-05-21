@@ -421,7 +421,7 @@ Users can also feed their own lease directory for lock:
 
 ```c++
   etcd::Client etcd("http://127.0.0.1:4001");
-  etcd.lock("/test/lock", lease_id);
+  etcd.lock_with_lease("/test/lock", lease_id);
 ```
 
 ### Watching for changes
@@ -508,6 +508,13 @@ The lease can be revoked by
 
 ```c++
   etcd.leaserevoke(resp.value().lease());
+```
+
+A lease can also be attached with a `KeepAlive` object at the creation time,
+
+```c++
+  std::shared_ptr<etcd::KeepAlive> keepalive = etcd.leasekeepalive(60).get();
+  std::cout << "lease id: " << keepalive->Lease();
 ```
 
 The remaining time-to-live of a lease can be inspected by
