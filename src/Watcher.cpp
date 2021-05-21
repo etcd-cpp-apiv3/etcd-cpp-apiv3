@@ -97,7 +97,7 @@ etcd::Watcher::~Watcher()
 
 bool etcd::Watcher::Wait()
 {
-  if (cancelled.exchange(true)) {
+  if (!cancelled.exchange(true)) {
     if (task_.joinable()) {
       task_.join();
     }
