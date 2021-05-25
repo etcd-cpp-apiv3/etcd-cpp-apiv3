@@ -89,7 +89,6 @@ TEST_CASE("atomic compare-and-swap")
 
   // modify success
   etcd::Response res = etcd.modify_if("/test/key1", "43", "42").get();
-  int index = res.index();
   REQUIRE(res.is_ok());
   CHECK("compareAndSwap" == res.action());
   CHECK("43" == res.value().as_string());
@@ -118,6 +117,12 @@ TEST_CASE("delete a value")
   int index = etcd.get("/test/key1").get().index();
   int create_index = etcd.get("/test/key1").get().value().created_index();
   int modify_index = etcd.get("/test/key1").get().value().modified_index();
+
+  std::cerr << "index = " << index
+            << ", create index = " << create_index
+            << ", modify index = " << modify_index
+            << std::endl;
+
   resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
   CHECK( "/test/key1" == resp.prev_value().key());
@@ -278,7 +283,6 @@ TEST_CASE("delete a directory")
   etcd::Response resp = etcd.ls("/test/new_dir").get();
 
   resp = etcd.rmdir("/test/new_dir", true).get();
-  int index = resp.index();
   CHECK("delete" == resp.action());
   REQUIRE(3 == resp.keys().size());
   CHECK("/test/new_dir/key1" == resp.key(0));
