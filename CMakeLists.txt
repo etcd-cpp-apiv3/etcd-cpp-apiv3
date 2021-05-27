@@ -10,6 +10,7 @@ set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MI
 set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
 
 include(CheckCXXCompilerFlag)
+include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
 include(GNUInstallDirs)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -84,6 +85,19 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR}
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare -std=c++11")
+endif()
+
+message("GRPC_INCLUDE_DIR = ${gRPC_FOUND}")
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${GRPC_INCLUDE_DIR}")
+set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${GRPC_LIBRARIES}")
+set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
+check_cxx_source_compiles("
+#include <grpc++/grpc++.h>
+namespace grpc { class Channel; }
+int main() {}
+" GRPC_CHANNEL_CLASS_FOUND)
+if(GRPC_CHANNEL_CLASS_FOUND)
+    add_definitions(-DWITH_GRPC_CHANNEL_CLASS)
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -185,5 +199,10 @@ set(CPACK_DEBIAN_PACKAGE_DISTRIBUTION "focal")
 set(DPUT_HOST "ppa:graphscope/etcd-cpp-api")
 set(DPUT_SNAPSHOT_HOST "ppa:graphscope/etcd-cpp-api")
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(UploadPPA)
+find_program(DEBUILD_EXECUTABLE debuild)
+find_program(DPUT_EXECUTABLE dput)
+
+if(DEBUILD_EXECUTABLE AND DPUT_EXECUTABLE)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    include(UploadPPA)
+endif()

@@ -17,9 +17,15 @@ namespace etcdv3 {
   }
 }
 
+#if defined(WITH_GRPC_CHANNEL_CLASS)
 namespace grpc {
   class Channel;
 }
+#else
+namespace grpc_impl {
+  class Channel;
+}
+#endif
 
 namespace etcd
 {
@@ -383,7 +389,11 @@ namespace etcd
     pplx::task<Response> txn(etcdv3::Transaction const &txn);
 
   private:
+#if defined(WITH_GRPC_CHANNEL_CLASS)
     std::shared_ptr<grpc::Channel> channel;
+#else
+    std::shared_ptr<grpc_impl::Channel> channel;
+#endif
     std::string auth_token;
 
     struct EtcdServerStubs;
