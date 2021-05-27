@@ -8,8 +8,17 @@ namespace etcdv3 {
   class KeyValue;
 }
 
+namespace mvccpb {
+  class KeyValue;
+  class Event;
+}
+
 namespace etcd
 {
+  class Value;
+  class Event;
+  class Response;
+
   /**
    * Represents a value object received from the etcd server
    */
@@ -54,8 +63,12 @@ namespace etcd
     friend class BaseResponse; //deliberately done since Value class will be removed during full V3
     friend class DeleteRpcResponse;
     friend class AsyncDeleteResponse;
+
+    friend class Event;
+
     Value();
     Value(etcdv3::KeyValue const & kvs);
+    Value(mvccpb::KeyValue const & kvs);
     std::string _key;
     bool        dir;
     std::string value;
@@ -66,6 +79,38 @@ namespace etcd
   };
 
   typedef std::vector<Value> Values;
+
+  class Event
+  {
+  public:
+    enum class EventType {
+      PUT,
+      DELETE_,
+      INVALID,
+    };
+
+    enum EventType event_type() const;
+
+    bool has_kv() const;
+
+    bool has_prev_kv() const;
+
+    const Value &kv() const;
+
+    const Value &prev_kv() const;
+
+  protected:
+    friend class Response;
+
+    Event(mvccpb::Event const & event);
+
+  private:
+    enum EventType event_type_;
+    Value _kv, _prev_kv;
+    bool _has_kv, _has_prev_kv;
+  };
+
+  typedef std::vector<Event> Events;
 }
 
 #endif

@@ -5,7 +5,6 @@
 #include <mutex>
 #include <string>
 
-#include <grpc++/grpc++.h>
 #include "pplx/pplxtasks.h"
 
 #include "etcd/Response.hpp"
@@ -16,6 +15,10 @@ namespace etcdv3 {
   namespace detail {
     std::string string_plus_one(std::string const &value);
   }
+}
+
+namespace grpc {
+  class Channel;
 }
 
 namespace etcd

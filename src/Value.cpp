@@ -15,13 +15,24 @@ etcd::Value::Value()
 
 etcd::Value::Value(etcdv3::KeyValue const & kv)
 {
-  dir=false;
-  _key=kv.kvs.key();
-  value=kv.kvs.value();
-  created=kv.kvs.create_revision();
-  modified=kv.kvs.mod_revision();
+  dir = false;
+  _key = kv.kvs.key();
+  value = kv.kvs.value();
+  created = kv.kvs.create_revision();
+  modified = kv.kvs.mod_revision();
   leaseId = kv.kvs.lease();
   _ttl = kv.get_ttl();
+}
+
+etcd::Value::Value(mvccpb::KeyValue const & kv)
+{
+  dir = false;
+  _key = kv.key();
+  value = kv.value();
+  created = kv.create_revision();
+  modified = kv.mod_revision();
+  leaseId = kv.lease();
+  _ttl = -1;
 }
 
 std::string const & etcd::Value::key() const
@@ -57,4 +68,42 @@ int etcd::Value::ttl() const
 int64_t etcd::Value::lease() const
 {
   return leaseId;
+}
+
+etcd::Event::Event(mvccpb::Event const & event) {
+  _has_kv = event.has_kv();
+  _has_prev_kv = event.has_prev_kv();
+  if (_has_kv) {
+    _kv = Value(event.kv());
+  }
+  if (_has_prev_kv) {
+    _prev_kv = Value(event.prev_kv());
+  }
+  if (event.type() == mvccpb::Event::PUT) {
+    event_type_ = EventType::PUT;
+  } else if (event.type() == mvccpb::Event::DELETE_) {
+    event_type_ = EventType::DELETE_;
+  } else {
+    event_type_ = EventType::INVALID;
+  }
+}
+
+enum etcd::Event::EventType etcd::Event::event_type() const {
+  return event_type_;
+}
+
+bool etcd::Event::has_kv() const {
+  return _has_kv;
+}
+
+bool etcd::Event::has_prev_kv() const {
+  return _has_prev_kv;
+}
+
+const etcd::Value &etcd::Event::kv() const {
+  return _kv;
+}
+
+const etcd::Value &etcd::Event::prev_kv() const {
+  return _prev_kv;
 }

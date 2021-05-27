@@ -88,12 +88,9 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+enable_testing()
 add_subdirectory(src)
-
-if (BUILD_ETCD_TESTS)
-    enable_testing()
-    add_subdirectory(tst)
-endif ()
+add_subdirectory(tst)
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/KeepAlive.hpp

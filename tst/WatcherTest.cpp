@@ -21,6 +21,14 @@ void printResponse(etcd::Response const & resp)
   {
     std::cout << resp.action() << " " << resp.value().as_string() << std::endl;
     std::cout << "Previous value: " << resp.prev_value().as_string() << std::endl;
+
+    std::cout << "Events size: " << resp.events().size() << std::endl;
+    for (auto const &ev: resp.events()) {
+      std::cout << "Value change in events: " << static_cast<int>(ev.event_type())
+                << ", prev kv = " << ev.prev_kv().key() << " -> " << ev.prev_kv().as_string()
+                << ", kv = " << ev.kv().key() << " -> " << ev.kv().as_string()
+                << std::endl;
+    }
   }
 }
 

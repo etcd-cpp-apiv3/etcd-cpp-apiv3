@@ -8,7 +8,6 @@
 #include "pplx/pplxtasks.h"
 
 #include "etcd/Value.hpp"
-#include "kv.pb.h"
 
 namespace etcdv3 {
   class AsyncWatchAction;
@@ -138,7 +137,7 @@ namespace etcd
     /**
      * Returns the watched events.
      */
-    std::vector<mvccpb::Event> const & events() const;
+    std::vector<Event> const & events() const;
 
     /**
      * Returns the duration of request execution in microseconds.
@@ -158,7 +157,7 @@ namespace etcd
     Values      _values;
     Keys        _keys;
     std::string _lock_key; // for lock
-    std::vector<mvccpb::Event> _events; // for watch
+    std::vector<Event> _events; // for watch
     std::chrono::microseconds _duration; // execute duration (in microseconds), during the action created and response parsed
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;

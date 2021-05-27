@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-
 etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseconds const& duration)
 {
   _index = reply.get_index();
@@ -27,7 +26,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _prev_value = Value(reply.get_prev_value());
 
   _lock_key = reply.get_lock_key();
-  _events = reply.get_events();
+  for (auto const &ev: reply.get_events()) {
+    _events.emplace_back(etcd::Event(ev));
+  }
 
   // duration
   _duration = duration;
@@ -111,7 +112,7 @@ std::string const & etcd::Response::lock_key() const {
   return _lock_key;
 }
 
-std::vector<mvccpb::Event> const & etcd::Response::events() const {
+std::vector<etcd::Event> const & etcd::Response::events() const {
   return this->_events;
 }
 
