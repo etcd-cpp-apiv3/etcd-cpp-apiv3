@@ -130,7 +130,7 @@ this case since the respose has been already arrived (we are inside the callback
   {
     try
     {
-      etcd::Response response = response.task.get(); // can throw
+      etcd::Response response = response_task.get(); // can throw
       std::cout << response.value().as_string();
     }
     catch (std::ecxeption const & ex)
