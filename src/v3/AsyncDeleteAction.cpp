@@ -12,7 +12,7 @@ etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
   if(parameters.withPrefix)
   {
     if (parameters.key.empty()) {
-      del_request.set_range_end(detail::string_plus_one("\0"));
+      del_request.set_range_end(detail::string_plus_one(etcdv3::NUL));
     } else {
       del_request.set_range_end(detail::string_plus_one(parameters.key));
     }

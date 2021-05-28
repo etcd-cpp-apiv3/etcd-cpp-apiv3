@@ -11,7 +11,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
 {
   RangeRequest get_request;
   if (parameters.key.empty()) {
-    get_request.set_key("\0");
+    get_request.set_key(etcdv3::NUL);
   } else {
     get_request.set_key(parameters.key);
   }
@@ -19,7 +19,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
   if(parameters.withPrefix)
   {
     if (parameters.key.empty()) {
-      get_request.set_range_end(detail::string_plus_one("\0"));
+      get_request.set_range_end(detail::string_plus_one(etcdv3::NUL));
     } else {
       get_request.set_range_end(detail::string_plus_one(parameters.key));
     }

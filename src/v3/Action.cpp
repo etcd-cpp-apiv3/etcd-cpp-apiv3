@@ -1,4 +1,5 @@
 #include <grpc/support/log.h>
+#include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Action.hpp"
 
 etcdv3::Action::Action(etcdv3::ActionParameters params)
@@ -50,7 +51,5 @@ std::string etcdv3::detail::string_plus_one(std::string const &value) {
       return ret;
     }
   }
-  // see: noPrefixEnd in etcd, however c++ doesn't allows '\0' inside a string, thus we use
-  // the UTF-8 char U+0000 (i.e., "\xC0\x80").
-  return {"\xC0\x80"};
+  return {etcdv3::NUL};
 }
