@@ -59,11 +59,11 @@ etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(etcdv3::ActionParam
   : etcdv3::Action(param)
 {
   isCancelled = false;
-  stream = parameters.lease_stub->AsyncLeaseKeepAlive(&context, &cq_, (void*)"keepalive create");
+  stream = parameters.lease_stub->AsyncLeaseKeepAlive(&context, &cq_, (void*)etcdv3::KEEPALIVE_CREATE);
 
   void *got_tag = nullptr;
   bool ok = false;
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive create") {
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_CREATE) {
     // ok
   } else {
     throw std::runtime_error("Failed to create a lease keep-alive connection");
@@ -100,12 +100,12 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
   void *got_tag = nullptr;
   bool ok = false;
 
-  stream->Write(leasekeepalive_request, (void *)"keepalive write");
+  stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
   // wait write finish
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive write") {
-    stream->Read(&reply, (void*)"keepalive read");
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
+    stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
     // wait read finish
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)"keepalive read") {
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
       auto resp = ParseResponse();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start_timepoint);
@@ -121,7 +121,7 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
   if(isCancelled == false)
   {
     isCancelled = true;
-    stream->WritesDone((void*)"keepalive done");
+    stream->WritesDone((void*)etcdv3::KEEPALIVE_DONE);
     grpc::Status status;
     stream->Finish(&status, (void *)this);
     cq_.Shutdown();
