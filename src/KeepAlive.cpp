@@ -101,6 +101,10 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
 etcd::KeepAlive::~KeepAlive()
 {
   this->Cancel();
+  // clean up
+  if (task_.joinable()) {
+    task_.join();
+  }
 }
 
 void etcd::KeepAlive::Cancel()
@@ -112,12 +116,7 @@ void etcd::KeepAlive::Cancel()
   if (keepalive_timer_) {
     keepalive_timer_->cancel();
   }
-
-  // clean up
   context.stop();
-  if (task_.joinable()) {
-    task_.join();
-  }
 }
 
 void etcd::KeepAlive::Check() {
