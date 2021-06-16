@@ -123,6 +123,9 @@ TEST_CASE("delete a value")
             << ", modify index = " << modify_index
             << std::endl;
 
+  int head_index = etcd.head().get().index();
+  CHECK(index == head_index);
+
   resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
   CHECK( "/test/key1" == resp.prev_value().key());
@@ -378,6 +381,9 @@ TEST_CASE("watch changes in the past")
   etcd.set("/test/key1", "44").wait();
   etcd.set("/test/key1", "45").wait();
 
+  int head_index = etcd.head().get().index();
+  CHECK(index + 3 == head_index);
+
   etcd::Response res = etcd.watch("/test/key1", ++index).get();
   CHECK("set" == res.action());
   CHECK("43" == res.value().as_string());
@@ -402,6 +408,9 @@ TEST_CASE("watch range changes in the past")
   etcd.set("/test/key2", "44").wait();
   etcd.set("/test/key3", "45").wait();
   etcd.set("/test/key4", "45").wait();
+
+  int head_index = etcd.head().get().index();
+  CHECK(index + 4 == head_index);
 
   etcd::Response res;
 

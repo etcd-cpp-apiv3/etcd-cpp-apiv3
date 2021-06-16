@@ -40,7 +40,8 @@
 #include "etcd/v3/AsyncCompareAndSwapAction.hpp"
 #include "etcd/v3/AsyncCompareAndDeleteAction.hpp"
 #include "etcd/v3/AsyncUpdateAction.hpp"
-#include "etcd/v3/AsyncGetAction.hpp"
+#include "etcd/v3/AsyncHeadAction.hpp"
+#include "etcd/v3/AsyncRangeAction.hpp"
 #include "etcd/v3/AsyncDeleteAction.hpp"
 #include "etcd/v3/AsyncWatchAction.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
@@ -262,6 +263,15 @@ etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
   return new etcd::Client(etcd_url, ca, cert, key, load_balancer);
 }
 
+pplx::task<etcd::Response> etcd::Client::head()
+{
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.kv_stub = stubs->kvServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncHeadAction> call(new etcdv3::AsyncHeadAction(params));
+  return Response::create(call);
+}
+
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
   etcdv3::ActionParameters params;
@@ -269,7 +279,7 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
   params.key.assign(key);
   params.withPrefix = false;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  std::shared_ptr<etcdv3::AsyncRangeAction> call(new etcdv3::AsyncRangeAction(params));
   return Response::create(call);
 }
 
@@ -546,7 +556,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
   params.withPrefix = true;
   params.limit = 0;  // default no limit.
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  std::shared_ptr<etcdv3::AsyncRangeAction> call(new etcdv3::AsyncRangeAction(params));
   return Response::create(call);
 }
 
@@ -558,7 +568,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t cons
   params.withPrefix = true;
   params.limit = limit;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  std::shared_ptr<etcdv3::AsyncRangeAction> call(new etcdv3::AsyncRangeAction(params));
   return Response::create(call);
 }
 
@@ -571,7 +581,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string
   params.withPrefix = false;
   params.limit = 0;  // default no limit.
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  std::shared_ptr<etcdv3::AsyncRangeAction> call(new etcdv3::AsyncRangeAction(params));
   return Response::create(call);
 }
 
@@ -584,7 +594,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string
   params.withPrefix = false;
   params.limit = limit;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncGetAction> call(new etcdv3::AsyncGetAction(params));
+  std::shared_ptr<etcdv3::AsyncRangeAction> call(new etcdv3::AsyncRangeAction(params));
   return Response::create(call);
 }
 

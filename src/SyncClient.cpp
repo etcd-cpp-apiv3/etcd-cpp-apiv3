@@ -23,6 +23,11 @@ etcd::SyncClient::SyncClient(std::string const & address,
 {
 }
 
+etcd::Response etcd::SyncClient::head()
+{
+  CHECK_EXCEPTIONS(client.head().get());
+}
+
 etcd::Response etcd::SyncClient::get(std::string const & key)
 {
   CHECK_EXCEPTIONS(client.get(key).get());

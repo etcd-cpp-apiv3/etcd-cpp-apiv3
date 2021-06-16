@@ -110,7 +110,12 @@ namespace etcd
            std::string const & load_balancer = "round_robin");
 
     /**
-     * Sends a get request to the etcd server
+     * Get the HEAD revision of the connected etcd server.
+     */
+    pplx::task<Response> head();
+
+    /**
+     * Get the value of specified key from the etcd server
      * @param key is the key to be read
      */
     pplx::task<Response> get(std::string const & key);

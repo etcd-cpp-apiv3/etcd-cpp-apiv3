@@ -1,4 +1,4 @@
-#include "etcd/v3/AsyncGetAction.hpp"
+#include "etcd/v3/AsyncRangeAction.hpp"
 
 #include <cstdlib>
 
@@ -6,7 +6,7 @@
 
 using etcdserverpb::RangeRequest;
 
-etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
+etcdv3::AsyncRangeAction::AsyncRangeAction(etcdv3::ActionParameters param)
   : etcdv3::Action(param)
 {
   RangeRequest get_request;
@@ -33,7 +33,7 @@ etcdv3::AsyncGetAction::AsyncGetAction(etcdv3::ActionParameters param)
   response_reader->Finish(&reply, &status, (void*)this);
 }
 
-etcdv3::AsyncRangeResponse etcdv3::AsyncGetAction::ParseResponse()
+etcdv3::AsyncRangeResponse etcdv3::AsyncRangeAction::ParseResponse()
 {
   AsyncRangeResponse range_resp;
   if(!status.ok())

@@ -40,6 +40,7 @@ namespace etcd
                std::string const & password,
                std::string const & load_balancer = "round_robin");
 
+    Response head();
     Response get(std::string const & key);
     Response set(std::string const & key, std::string const & value, int ttl = 0);
     Response set(std::string const & key, std::string const & value, int64_t leaseId);
