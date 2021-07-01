@@ -25,15 +25,15 @@ i.e., `ETCDCTL_API=3`.
 
 ## Requirements
 
-1. boost
+1. boost and openssl
 
    + On Ubuntu, above requirement could be installed as:
 
-         apt-get install libboost-all-dev
+         apt-get install libboost-all-dev libssl-dev
 
    + On MacOS, above requirement could be installed as:
 
-         brew install boost
+         brew install boost openssl
 
 2. protobuf
 3. gRPC
