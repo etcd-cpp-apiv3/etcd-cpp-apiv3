@@ -22,6 +22,7 @@ endif()
 set(ETCD_CPP_HOME "${CMAKE_CURRENT_LIST_DIR}/../../..")
 include("${CMAKE_CURRENT_LIST_DIR}/etcd-targets.cmake")
 
+set(etcd-cpp-api_FOUND TRUE)
 set(ETCD_CPP_LIBRARIES etcd-cpp-api)
 set(ETCD_CPP_INCLUDE_DIR "${ETCD_CPP_HOME}/include")
 set(ETCD_CPP_INCLUDE_DIRS "${ETCD_CPP_INCLUDE_DIR}")
