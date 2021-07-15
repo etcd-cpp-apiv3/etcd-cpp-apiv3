@@ -487,7 +487,47 @@ either by user implicitly calling ```Cancel()``` or when watcher class is destro
   watcher.Cancel();
   etcd.set("/test/key", "43"); /* print response will NOT be called,
                                   since watch is already cancelled */
+```
+
+#### Watcher re-connection
+
+A watcher will be disconnected from etcd server in some cases, for some examples, the etcd server is restarted, or the network is temporarily unavailable. It is users' responsibility to decide if a watcher should re-connect to the etcd server. 
+
+Here is an example how users can make a watcher re-connect to server after disconnected.
+
+```c++
+void wait_for_connection(Client &client) {
+  // wait until the client connects to etcd server 
+  // `head` API is only available in version later than 0.2.1
+  while (!client.head().get().is_ok()) {
+    sleep(1);
+  }
 }
+
+void initialize_watcher(const std::string &endpoints, 
+  const std::string &prefix,
+  std::function<void(Response)> callback, 
+  std::unique_ptr<etcd::Watcher> &watcher) {
+    Client client(endpoints);
+    wait_for_connection(client); 
+    watcher->reset(new etcd::Watcher(client, prefix, callback));
+    watcher->Wait([endpoints, prefix, callback, &watcher](bool cancelled) {
+        if (cancelled) {
+            return;
+        }
+        initialize_watcher(endpoints, prefix, callback, watcher);
+    });
+}
+```
+
+```c++
+std::string endpoints = "http://127.0.0.1:2379";  
+std::function<void(Response)> callback = printResponse;
+const std::string prefix = "/test/key"; 
+
+// the watcher initialized in this way will auto re-connect to etcd
+std::unique_ptr<etcd::Watcher> watcher;
+initialize_watcher(endpoints, prefix, callback, watcher);
 ```
 
 ### Requesting for lease
