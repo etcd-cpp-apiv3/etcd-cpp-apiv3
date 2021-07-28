@@ -507,11 +507,12 @@ void wait_for_connection(Client &client) {
 void initialize_watcher(const std::string &endpoints, 
   const std::string &prefix,
   std::function<void(Response)> callback, 
-  std::unique_ptr<etcd::Watcher> &watcher) {
+  std::shared_ptr<etcd::Watcher> &watcher) {
     Client client(endpoints);
     wait_for_connection(client); 
     watcher->reset(new etcd::Watcher(client, prefix, callback));
-    watcher->Wait([endpoints, prefix, callback, &watcher](bool cancelled) {
+    watcher->Wait([endpoints, prefix, callback,
+                   watcher_ref /* keep the shared_ptr alive */, &watcher](bool cancelled) {
         if (cancelled) {
             return;
         }
