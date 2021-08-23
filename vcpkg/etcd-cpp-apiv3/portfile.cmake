@@ -1,8 +1,8 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO etcd-cpp-apiv3/etcd-cpp-apiv3
-    REF 0dc89e4c1edace3c135506a4c704f39ef9195ae7
-    SHA512 11ce76f1191adef4e971ee7a36e64356a0f2e1a56760eefe7cf0de082c0f27f0b245df2dc0512f570af217083fad8ef6fd81c1182054333a3104a44786adb9a1
+    REF 1b68f9c79dede1264a0977a239e497358760b0ac
+    SHA512 b575cbd76a50ae2869c234050aadfe5201a580554ff617043b6d0eac4b08331b5cd8e6fb7c218d74ae756d8971a68f761c665e3c9e868b5d447c3f0c9311abc5
     HEAD_REF master
 )
 
@@ -20,7 +20,6 @@ vcpkg_fixup_cmake_targets(CONFIG_PATH lib/cmake/etcd-cpp-api)
 
 file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)
 file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/lib)
 
 vcpkg_copy_pdbs()
 
