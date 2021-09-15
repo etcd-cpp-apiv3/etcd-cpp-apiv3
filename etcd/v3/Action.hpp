@@ -6,6 +6,7 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
+#include "proto/v3election.grpc.pb.h"
 
 using grpc::ClientContext;
 using grpc::CompletionQueue;
@@ -15,6 +16,7 @@ using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using etcdserverpb::Lease;
 using v3lockpb::Lock;
+using v3electionpb::Election;
 
 namespace etcdv3
 {
@@ -33,6 +35,7 @@ namespace etcdv3
     int64_t lease_id;
     int ttl;
     int limit;
+    std::string name;  // for campaign (in v3election)
     std::string key;
     std::string range_end;
     std::string value;
@@ -42,6 +45,7 @@ namespace etcdv3
     Watch::Stub* watch_stub;
     Lease::Stub* lease_stub;
     Lock::Stub* lock_stub;
+    Election::Stub* election_stub;
   };
 
   class Action

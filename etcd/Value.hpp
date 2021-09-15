@@ -13,6 +13,10 @@ namespace mvccpb {
   class Event;
 }
 
+namespace electionpb {
+  class LeaderKey;
+}
+
 namespace etcd
 {
   class Value;

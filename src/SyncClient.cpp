@@ -149,6 +149,37 @@ etcd::Response etcd::SyncClient::leasetimetolive(int64_t lease_id)
   CHECK_EXCEPTIONS(client.leasetimetolive(lease_id).get());
 }
 
+etcd::Response etcd::SyncClient::campaign(std::string const &name, int64_t lease_id,
+                                          std::string const &value)
+{
+  CHECK_EXCEPTIONS(client.campaign(name, lease_id, value).get());
+}
+
+etcd::Response etcd::SyncClient::proclaim(std::string const &name, int64_t lease_id,
+                                          std::string const &key, int revision,
+                                          std::string const &value)
+{
+  CHECK_EXCEPTIONS(client.proclaim(name, lease_id, key, revision, value).get());
+}
+
+etcd::Response etcd::SyncClient::leader(std::string const &name)
+{
+  CHECK_EXCEPTIONS(client.leader(name).get());
+}
+
+std::unique_ptr<etcd::Client::Observer> etcd::SyncClient::observe(
+    std::string const &name, std::function<void(etcd::Response)> callback,
+    const bool once)
+{
+  return client.observe(name, callback, once);
+}
+
+etcd::Response etcd::SyncClient::resign(std::string const &name, int64_t lease_id,
+                                        std::string const &key, int revision)
+{
+  CHECK_EXCEPTIONS(client.resign(name, lease_id, key, revision).get());
+}
+
 etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
 {
   CHECK_EXCEPTIONS(client.watch(key, recursive).get());

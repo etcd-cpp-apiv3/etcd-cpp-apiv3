@@ -69,6 +69,14 @@ std::string const & etcdv3::V3Response::get_lock_key() const {
   return this->lock_key;
 }
 
+void etcdv3::V3Response::set_name(std::string const &name) {
+  this->name = name;
+}
+
+std::string const & etcdv3::V3Response::get_name() const {
+  return this->name;
+}
+
 std::vector<mvccpb::Event> const & etcdv3::V3Response::get_events() const {
   return this->events;
 }

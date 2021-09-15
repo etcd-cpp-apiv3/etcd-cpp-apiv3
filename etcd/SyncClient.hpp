@@ -67,6 +67,17 @@ namespace etcd
     Response leaserevoke(int64_t lease_id);
     Response leasetimetolive(int64_t lease_id);
 
+    Response campaign(std::string const &name, int64_t lease_id,
+                      std::string const &value);
+    Response proclaim(std::string const &name, int64_t lease_id,
+                      std::string const &key, int revision, std::string const &value);
+    Response leader(std::string const &name);
+    std::unique_ptr<Client::Observer> observe(std::string const &name,
+                                              std::function<void(Response)> callback,
+                                              const bool once = false);
+    Response resign(std::string const &name, int64_t lease_id,
+                    std::string const &key, int revision);
+
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
      * a new key is created, like "/testdir/newkey" then no change happened in the value of

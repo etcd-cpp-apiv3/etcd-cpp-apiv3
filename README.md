@@ -603,6 +603,31 @@ is constructed.
 Without handler, the internal state can be checked via `KeepAlive::Check()` and it will rethrow
 the async exception when there are errors during keeping the lease alive.
 
+### Election API
+
+Etcd v3's [election APIs](https://github.com/etcd-io/etcd/blob/main/server/etcdserver/api/v3election/v3electionpb/v3election.proto)
+are supported via the following interfaces,
+
+```c++
+pplx::task<Response> campaign(std::string const &name, int64_t lease_id,
+                              std::string const &value);
+
+pplx::task<Response> proclaim(std::string const &name, int64_t lease_id,
+                              std::string const &key, , int revision,
+                              std::string const &value);
+
+pplx::task<Response> leader(std::string const &name);
+
+std::unique_ptr<Observer> observe(std::string const &name,
+                                  std::function<void(Response)> callback,
+                                  const bool once = false);
+
+pplx::task<Response> resign(std::string const &name, int64_t lease_id,
+                            std::string const &key, int revision);
+```
+
+for more details, please refer to [etcd/Client.hpp](./etcd/Client.hpp).
+
 ### TODO
 
 1. Cancellation of asynchronous calls(except for watch)

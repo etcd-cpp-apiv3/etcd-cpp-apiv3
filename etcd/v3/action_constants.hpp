@@ -21,6 +21,12 @@ namespace etcdv3
   extern char const * LEASETIMETOLIVE;
   extern char const * LEASELEASES;
 
+  extern char const * CAMPAIGN_ACTION;
+  extern char const * PROCLAIM_ACTION;
+  extern char const * LEADER_ACTION;
+  extern char const * OBSERVE_ACTION;
+  extern char const * RESIGN_ACTION;
+
   extern char const * NUL;
 
   extern char const * KEEPALIVE_CREATE;
@@ -31,6 +37,8 @@ namespace etcdv3
   extern char const * WATCH_CREATE;
   extern char const * WATCH_WRITE;
   extern char const * WATCH_WRITES_DONE;
+
+  extern char const * ELECTION_OBSERVE_CREATE;
 
   extern const int ERROR_KEY_NOT_FOUND;
   extern const int ERROR_COMPARE_FAILED;

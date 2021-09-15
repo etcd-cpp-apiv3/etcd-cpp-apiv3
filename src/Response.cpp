@@ -22,10 +22,11 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   {
     _value = Value(reply.get_value());
   }
-
   _prev_value = Value(reply.get_prev_value());
 
   _lock_key = reply.get_lock_key();
+  _name = reply.get_name();
+
   for (auto const &ev: reply.get_events()) {
     _events.emplace_back(etcd::Event(ev));
   }
@@ -110,6 +111,10 @@ std::string const & etcd::Response::key(int index) const
 
 std::string const & etcd::Response::lock_key() const {
   return _lock_key;
+}
+
+std::string const & etcd::Response::name() const {
+  return _name;
 }
 
 std::vector<etcd::Event> const & etcd::Response::events() const {

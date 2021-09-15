@@ -18,6 +18,12 @@ char const * etcdv3::LEASEKEEPALIVE = "leasekeepalive";
 char const * etcdv3::LEASETIMETOLIVE = "leasetimetolive";
 char const * etcdv3::LEASELEASES = "leaseleases";
 
+char const * etcdv3::CAMPAIGN_ACTION = "campaign";
+char const * etcdv3::PROCLAIM_ACTION = "preclaim";
+char const * etcdv3::LEADER_ACTION = "leader";
+char const * etcdv3::OBSERVE_ACTION = "obverse";
+char const * etcdv3::RESIGN_ACTION = "resign";
+
 // see: noPrefixEnd in etcd, however c++ doesn't allows '\0' inside a string, thus we use
 // the UTF-8 char U+0000 (i.e., "\xC0\x80").
 char const * etcdv3::NUL = "\xC0\x80";
@@ -30,6 +36,8 @@ char const * etcdv3::KEEPALIVE_DONE = "keepalive done";
 char const * etcdv3::WATCH_CREATE = "watch create";
 char const * etcdv3::WATCH_WRITE = "watch write";
 char const * etcdv3::WATCH_WRITES_DONE = "watch writes done";
+
+char const * etcdv3::ELECTION_OBSERVE_CREATE = "observe create";
 
 const int etcdv3::ERROR_KEY_NOT_FOUND = 100;
 const int etcdv3::ERROR_COMPARE_FAILED = 101;

@@ -24,16 +24,18 @@
 #include <grpc++/security/credentials.h>
 #include "proto/rpc.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
+#include "proto/v3election.grpc.pb.h"
 
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Action.hpp"
-#include "etcd/v3/AsyncTxnResponse.hpp"
 #include "etcd/v3/AsyncRangeResponse.hpp"
 #include "etcd/v3/AsyncWatchResponse.hpp"
 #include "etcd/v3/AsyncDeleteRangeResponse.hpp"
 #include "etcd/v3/AsyncLockResponse.hpp"
+#include "etcd/v3/AsyncElectionResponse.hpp"
+#include "etcd/v3/AsyncTxnResponse.hpp"
 #include "etcd/v3/Transaction.hpp"
 
 #include "etcd/v3/AsyncSetAction.hpp"
@@ -46,6 +48,7 @@
 #include "etcd/v3/AsyncWatchAction.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
 #include "etcd/v3/AsyncLockAction.hpp"
+#include "etcd/v3/AsyncElectionAction.hpp"
 #include "etcd/v3/AsyncTxnAction.hpp"
 
 using grpc::Channel;
@@ -165,6 +168,7 @@ struct etcd::Client::EtcdServerStubs {
   std::unique_ptr<etcdserverpb::Watch::Stub> watchServiceStub;
   std::unique_ptr<etcdserverpb::Lease::Stub> leaseServiceStub;
   std::unique_ptr<v3lockpb::Lock::Stub> lockServiceStub;
+  std::unique_ptr<v3electionpb::Election::Stub> electionServiceStub;
 };
 
 void etcd::Client::EtcdServerStubsDeleter::operator()(etcd::Client::EtcdServerStubs *stubs) {
@@ -191,6 +195,7 @@ etcd::Client::Client(std::string const & address,
   stubs->watchServiceStub= Watch::NewStub(this->channel);
   stubs->leaseServiceStub= Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
 etcd::Client::Client(std::string const & address,
@@ -220,6 +225,7 @@ etcd::Client::Client(std::string const & address,
   stubs->watchServiceStub= Watch::NewStub(this->channel);
   stubs->leaseServiceStub= Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
 etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
@@ -253,6 +259,7 @@ etcd::Client::Client(std::string const & address,
   stubs->watchServiceStub= Watch::NewStub(this->channel);
   stubs->leaseServiceStub= Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
 etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
@@ -794,4 +801,73 @@ pplx::task<etcd::Response> etcd::Client::txn(etcdv3::Transaction const &txn) {
   params.kv_stub = stubs->kvServiceStub.get();
   std::shared_ptr<etcdv3::AsyncTxnAction> call(new etcdv3::AsyncTxnAction(params, txn));
   return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::campaign(
+    std::string const &name, int64_t lease_id, std::string const &value) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name = name;
+  params.lease_id = lease_id;
+  params.value = value;
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncCampaignAction> call(new etcdv3::AsyncCampaignAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::proclaim(
+    std::string const &name, int64_t lease_id,
+    std::string const &key, int revision, std::string const &value) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name = name;
+  params.lease_id = lease_id;
+  params.key = key;
+  params.revision = revision;
+  params.value = value;
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncProclaimAction> call(new etcdv3::AsyncProclaimAction(params));
+  return Response::create(call);
+}
+
+pplx::task<etcd::Response> etcd::Client::leader(std::string const &name) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name = name;
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncLeaderAction> call(new etcdv3::AsyncLeaderAction(params));
+  return Response::create(call);
+}
+
+std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
+    std::string const &name, std::function<void(Response)> callback, const bool once) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name.assign(name);
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncObserveAction> call(new etcdv3::AsyncObserveAction(params, once));
+  std::unique_ptr<Observer> observer(new Observer());
+  observer->action = call;
+  observer->resp = Response::create(call);
+  return observer;
+}
+
+pplx::task<etcd::Response> etcd::Client::resign(
+    std::string const &name, int64_t lease_id, std::string const &key, int revision) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name = name;
+  params.lease_id = lease_id;
+  params.key = key;
+  params.revision = revision;
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncResignAction> call(new etcdv3::AsyncResignAction(params));
+  return Response::create(call);
+}
+
+etcd::Client::Observer::~Observer() {
+  if (action != nullptr) {
+    action->CancelObserve();
+    resp.wait();
+  }
 }
