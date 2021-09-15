@@ -6,7 +6,8 @@
 
 using etcdserverpb::RangeRequest;
 
-etcdv3::AsyncHeadAction::AsyncHeadAction(etcdv3::ActionParameters param)
+etcdv3::AsyncHeadAction::AsyncHeadAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
   RangeRequest get_request;
@@ -18,15 +19,17 @@ etcdv3::AsyncHeadAction::AsyncHeadAction(etcdv3::ActionParameters param)
 
 etcdv3::AsyncHeadResponse etcdv3::AsyncHeadAction::ParseResponse()
 {
-  AsyncHeadResponse range_resp;
+  AsyncHeadResponse head_resp;
+  head_resp.set_action(etcdv3::GET_ACTION);
+
   if(!status.ok())
   {
-    range_resp.set_error_code(status.error_code());
-    range_resp.set_error_message(status.error_message());
+    head_resp.set_error_code(status.error_code());
+    head_resp.set_error_message(status.error_message());
   }
   else
   {
-    range_resp.ParseResponse(reply, parameters.withPrefix || !parameters.range_end.empty());
+    head_resp.ParseResponse(reply);
   }
-  return range_resp;
+  return head_resp;
 }

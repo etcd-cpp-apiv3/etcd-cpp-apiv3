@@ -19,7 +19,7 @@ namespace etcdv3
   class AsyncWatchAction : public etcdv3::Action
   {
     public:
-      AsyncWatchAction(etcdv3::ActionParameters param);
+      AsyncWatchAction(etcdv3::ActionParameters const &param);
       AsyncWatchResponse ParseResponse();
       void waitForResponse();
       void waitForResponse(std::function<void(etcd::Response)> callback); 

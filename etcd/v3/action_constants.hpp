@@ -13,6 +13,13 @@ namespace etcdv3
   extern char const * LOCK_ACTION;
   extern char const * UNLOCK_ACTION;
   extern char const * TXN_ACTION;
+  extern char const * WATCH_ACTION;
+
+  extern char const * LEASEGRANT;
+  extern char const * LEASEREVOKE;
+  extern char const * LEASEKEEPALIVE;
+  extern char const * LEASETIMETOLIVE;
+  extern char const * LEASELEASES;
 
   extern char const * NUL;
 
@@ -24,6 +31,10 @@ namespace etcdv3
   extern char const * WATCH_CREATE;
   extern char const * WATCH_WRITE;
   extern char const * WATCH_WRITES_DONE;
+
+  extern const int ERROR_KEY_NOT_FOUND;
+  extern const int ERROR_COMPARE_FAILED;
+  extern const int ERROR_KEY_ALREADY_EXISTS;
 }
 
 #endif

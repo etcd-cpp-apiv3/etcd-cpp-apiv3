@@ -8,6 +8,22 @@ using etcdserverpb::PutRequest;
 using etcdserverpb::RequestOp;
 using etcdserverpb::DeleteRangeRequest;
 
+namespace etcdv3 {
+
+namespace detail {
+
+static etcdserverpb::Compare::CompareResult to_compare_result(CompareResult r) {
+	return static_cast<etcdserverpb::Compare::CompareResult>(static_cast<int>(r));
+}
+
+static etcdserverpb::Compare::CompareTarget to_compare_target(CompareTarget t) {
+	return static_cast<etcdserverpb::Compare::CompareTarget>(static_cast<int>(t));
+}
+
+}
+
+}
+
 etcdv3::Transaction::Transaction() {
 	txn_request.reset(new etcdserverpb::TxnRequest{});
 }
@@ -16,28 +32,28 @@ etcdv3::Transaction::Transaction(const std::string& key) : key(key) {
 	txn_request.reset(new etcdserverpb::TxnRequest{});
 }
 
-void etcdv3::Transaction::init_compare(Compare::CompareResult result, Compare::CompareTarget target){
+void etcdv3::Transaction::init_compare(CompareResult result, CompareTarget target){
 	Compare* compare = txn_request->add_compare();
-	compare->set_result(result);
-	compare->set_target(target);
+	compare->set_result(detail::to_compare_result(result));
+	compare->set_target(detail::to_compare_target(target));
 	compare->set_key(key);
 
 	compare->set_version(0);
 }
 
-void etcdv3::Transaction::init_compare(std::string const& old_value, Compare::CompareResult result, Compare::CompareTarget target){
+void etcdv3::Transaction::init_compare(std::string const& old_value, CompareResult result, CompareTarget target){
 	Compare* compare = txn_request->add_compare();
-	compare->set_result(result);
-	compare->set_target(target);
+	compare->set_result(detail::to_compare_result(result));
+	compare->set_target(detail::to_compare_target(target));
 	compare->set_key(key);
 
 	compare->set_value(old_value);
 }
 
-void etcdv3::Transaction::init_compare(int old_index, Compare::CompareResult result, Compare::CompareTarget target){
+void etcdv3::Transaction::init_compare(int old_index, CompareResult result, CompareTarget target){
 	Compare* compare = txn_request->add_compare();
-	compare->set_result(result);
-	compare->set_target(target);
+	compare->set_result(detail::to_compare_result(result));
+	compare->set_target(detail::to_compare_target(target));
 	compare->set_key(key);
 
 	compare->set_mod_revision(old_index);

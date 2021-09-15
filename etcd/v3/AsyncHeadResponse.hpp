@@ -15,7 +15,7 @@ namespace etcdv3
   {
     public:
       AsyncHeadResponse(){};
-      void ParseResponse(RangeResponse& resp, bool prefix=false);
+      void ParseResponse(RangeResponse& resp);
   };
 }
 

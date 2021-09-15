@@ -4,12 +4,11 @@
 
 void etcdv3::AsyncRangeResponse::ParseResponse(RangeResponse& resp, bool prefix)
 {
-  action = etcdv3::GET_ACTION;
   index = resp.header().revision();
   if(resp.kvs_size() == 0 && !prefix)
   {
-    error_code=100;
-    error_message="Key not found";
+    error_code = etcdv3::ERROR_KEY_NOT_FOUND;
+    error_message = "Key not found";
     return;
   }
   else

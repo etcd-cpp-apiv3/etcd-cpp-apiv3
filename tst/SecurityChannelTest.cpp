@@ -29,8 +29,8 @@ TEST_CASE("add a new key after authenticate")
   CHECK(0 < val.created_index());
   CHECK(0 < val.modified_index());
   CHECK(0 < resp.index());
-  CHECK(105 == etcd->add("/test/key1", "43").get().error_code()); // Key already exists
-  CHECK(105 == etcd->add("/test/key1", "42").get().error_code()); // Key already exists
+  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd->add("/test/key1", "43").get().error_code()); // Key already exists
+  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd->add("/test/key1", "42").get().error_code()); // Key already exists
   CHECK("Key already exists" == etcd->add("/test/key1", "42").get().error_message());
 }
 

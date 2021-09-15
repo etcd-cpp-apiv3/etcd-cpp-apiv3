@@ -9,6 +9,7 @@
 
 
 using grpc::ClientAsyncResponseReader;
+using etcdserverpb::TxnRequest;
 using etcdserverpb::TxnResponse;
 using etcdserverpb::KV;
 
@@ -17,7 +18,7 @@ namespace etcdv3
   class AsyncTxnAction : public etcdv3::Action
   {
     public:
-      AsyncTxnAction(etcdv3::ActionParameters param, etcdv3::Transaction const &tx);
+      AsyncTxnAction(etcdv3::ActionParameters const &param, etcdv3::Transaction const &tx);
       AsyncTxnResponse ParseResponse();
     private:
       TxnResponse reply;

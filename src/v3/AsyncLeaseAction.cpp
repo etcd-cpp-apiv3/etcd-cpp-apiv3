@@ -9,7 +9,8 @@ using etcdserverpb::LeaseKeepAliveRequest;
 using etcdserverpb::LeaseTimeToLiveRequest;
 using etcdserverpb::LeaseLeasesRequest;
 
-etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(etcdv3::ActionParameters param)
+etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
 	LeaseGrantRequest leasegrant_request;
@@ -24,6 +25,8 @@ etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(etcdv3::ActionParameters pa
 etcdv3::AsyncLeaseGrantResponse etcdv3::AsyncLeaseGrantAction::ParseResponse()
 {
   AsyncLeaseGrantResponse lease_resp;
+  lease_resp.set_action(etcdv3::LEASEGRANT);
+
   if (!status.ok()) {
     lease_resp.set_error_code(status.error_code());
     lease_resp.set_error_message(status.error_message());
@@ -33,7 +36,8 @@ etcdv3::AsyncLeaseGrantResponse etcdv3::AsyncLeaseGrantAction::ParseResponse()
   return lease_resp;
 }
 
-etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(etcdv3::ActionParameters param)
+etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
 	LeaseRevokeRequest leaserevoke_request;
@@ -46,6 +50,8 @@ etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(etcdv3::ActionParameters 
 etcdv3::AsyncLeaseRevokeResponse etcdv3::AsyncLeaseRevokeAction::ParseResponse()
 {
   AsyncLeaseRevokeResponse lease_resp;
+  lease_resp.set_action(etcdv3::LEASEREVOKE);
+
   if (!status.ok()) {
     lease_resp.set_error_code(status.error_code());
     lease_resp.set_error_message(status.error_message());
@@ -55,7 +61,8 @@ etcdv3::AsyncLeaseRevokeResponse etcdv3::AsyncLeaseRevokeAction::ParseResponse()
   return lease_resp;
 }
 
-etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(etcdv3::ActionParameters param)
+etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
   isCancelled = false;
@@ -73,6 +80,8 @@ etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(etcdv3::ActionParam
 etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::ParseResponse()
 {
   AsyncLeaseKeepAliveResponse lease_resp;
+  lease_resp.set_action(etcdv3::LEASEKEEPALIVE);
+
   if (!status.ok()) {
     lease_resp.set_error_code(status.error_code());
     lease_resp.set_error_message(status.error_message());
@@ -133,7 +142,8 @@ bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const
   return isCancelled;
 }
 
-etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters param)
+etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
 	LeaseTimeToLiveRequest leasetimetolive_request;
@@ -148,6 +158,8 @@ etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(etcdv3::ActionPar
 etcdv3::AsyncLeaseTimeToLiveResponse etcdv3::AsyncLeaseTimeToLiveAction::ParseResponse()
 {
   AsyncLeaseTimeToLiveResponse lease_resp;
+  lease_resp.set_action(etcdv3::LEASETIMETOLIVE);
+
   if (!status.ok()) {
     lease_resp.set_error_code(status.error_code());
     lease_resp.set_error_message(status.error_message());
@@ -157,7 +169,8 @@ etcdv3::AsyncLeaseTimeToLiveResponse etcdv3::AsyncLeaseTimeToLiveAction::ParseRe
   return lease_resp;
 }
 
-etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(etcdv3::ActionParameters param)
+etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
 	LeaseLeasesRequest leaseleases_request;
@@ -169,6 +182,8 @@ etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(etcdv3::ActionParameters 
 etcdv3::AsyncLeaseLeasesResponse etcdv3::AsyncLeaseLeasesAction::ParseResponse()
 {
   AsyncLeaseLeasesResponse lease_resp;
+  lease_resp.set_action(etcdv3::LEASELEASES);
+
   if (!status.ok()) {
     lease_resp.set_error_code(status.error_code());
     lease_resp.set_error_message(status.error_message());
