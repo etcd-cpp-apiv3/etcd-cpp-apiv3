@@ -2,6 +2,7 @@
 #define V3_SRC_TRANSACTION_HPP_
 
 #include <string>
+#include <memory>
 
 namespace etcdserverpb {
 	class TxnRequest;
