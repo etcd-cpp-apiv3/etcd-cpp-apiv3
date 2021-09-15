@@ -8,6 +8,7 @@
 #include "pplx/pplxtasks.h"
 
 #include "etcd/Response.hpp"
+#include "etcd/v3/action_constants.hpp"
 
 namespace etcdv3 {
   class Transaction;
@@ -29,6 +30,10 @@ namespace grpc_impl {
 
 namespace etcd
 {
+  using etcdv3::ERROR_KEY_NOT_FOUND;
+  using etcdv3::ERROR_COMPARE_FAILED;
+  using etcdv3::ERROR_KEY_ALREADY_EXISTS;
+
   class KeepAlive;
   class Watcher;
 

@@ -3,7 +3,8 @@
 
 using etcdserverpb::DeleteRangeRequest;
 
-etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
+etcdv3::AsyncDeleteAction::AsyncDeleteAction(
+    ActionParameters const &param)
   : etcdv3::Action(param) 
 {
   DeleteRangeRequest del_request;
@@ -28,6 +29,7 @@ etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters param)
 etcdv3::AsyncDeleteRangeResponse etcdv3::AsyncDeleteAction::ParseResponse()
 {
   AsyncDeleteRangeResponse del_resp;
+  del_resp.set_action(etcdv3::DELETE_ACTION);
   
   if(!status.ok())
   {

@@ -8,12 +8,11 @@ void etcdv3::AsyncDeleteRangeResponse::ParseResponse(std::string const& key, boo
 
   if(resp.prev_kvs_size() == 0)
   {
-    error_code=100;
-    error_message="Key not found";
+    error_code = etcdv3::ERROR_KEY_NOT_FOUND;
+    error_message = "Key not found";
   }
   else
   {
-    action = etcdv3::DELETE_ACTION;
     //get all previous values
     for(int cnt=0; cnt < resp.prev_kvs_size(); cnt++)
     {
@@ -29,6 +28,5 @@ void etcdv3::AsyncDeleteRangeResponse::ParseResponse(std::string const& key, boo
       value.kvs.clear_value();
       values.clear();
     }
-
   }
 }

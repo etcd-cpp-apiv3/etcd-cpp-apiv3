@@ -347,7 +347,7 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
       params.lease_id = res.value().lease();
     }
   }
-  std::shared_ptr<etcdv3::AsyncSetAction> call(new etcdv3::AsyncSetAction(params,true));
+  std::shared_ptr<etcdv3::AsyncSetAction> call(new etcdv3::AsyncSetAction(params, true));
   return Response::create(call);
 }
 
@@ -428,7 +428,8 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
       params.lease_id = res.value().lease();
     }
   }
-  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_VALUE));
+  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(
+      new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::AtomicityType::PREV_VALUE));
   return Response::create(call);
 }
 
@@ -441,7 +442,8 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   params.old_value.assign(old_value);
   params.lease_id = leaseid;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_VALUE));
+  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(
+      new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::AtomicityType::PREV_VALUE));
   return Response::create(call);
 }
 
@@ -468,7 +470,8 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
       params.lease_id = res.value().lease();
     }
   }
-  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_INDEX));
+  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(
+      new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::AtomicityType::PREV_INDEX));
   return Response::create(call);
 }
 
@@ -481,7 +484,8 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   params.lease_id = leaseid;
   params.old_revision = old_index;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::Atomicity_Type::PREV_INDEX));
+  std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> call(
+      new etcdv3::AsyncCompareAndSwapAction(params,etcdv3::AtomicityType::PREV_INDEX));
   return Response::create(call);
 }
 
@@ -504,7 +508,8 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
   params.key.assign(key);
   params.old_value.assign(old_value);
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(new etcdv3::AsyncCompareAndDeleteAction(params,etcdv3::Atomicity_Type::PREV_VALUE));
+  std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(
+      new etcdv3::AsyncCompareAndDeleteAction(params,etcdv3::AtomicityType::PREV_VALUE));
   return Response::create(call);
 }
 
@@ -515,7 +520,8 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_
   params.key.assign(key);
   params.old_revision = old_index;
   params.kv_stub = stubs->kvServiceStub.get();
-  std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(new etcdv3::AsyncCompareAndDeleteAction(params, etcdv3::Atomicity_Type::PREV_INDEX));;
+  std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> call(
+      new etcdv3::AsyncCompareAndDeleteAction(params, etcdv3::AtomicityType::PREV_INDEX));;
   return Response::create(call);
 
 }

@@ -125,10 +125,9 @@ install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
                ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/kv.pb.h
                DESTINATION include/etcd)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
-               ${CMAKE_CURRENT_BINARY_DIR}/proto/gen/proto/txn.pb.h
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/action_constants.hpp
+               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
                DESTINATION include/etcd/v3)
 
 configure_file(etcd-cpp-api-config.in.cmake
@@ -201,8 +200,8 @@ set(CPACK_DEBIAN_PACKAGE_INSTALL "/usr/lib/lib*.so*"
                                  "/usr/lib/cmake/etcd-cpp-api/*.cmake"
                                  "/usr/include/etcd/*.h"
                                  "/usr/include/etcd/*.hpp"
-                                 "/usr/include/etcd/v3/*.h"
-                                 "/usr/include/etcd/v3/*.hpp"
+                                 "/usr/include/etcd/v3/action_constants.hpp"
+                                 "/usr/include/etcd/v3/Transaction.hpp"
 )
 
 set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER_PREFIX "")

@@ -14,12 +14,12 @@ TEST_CASE("sync operations")
 
   // add
   CHECK(0 == etcd.add("/test/key1", "42").error_code());
-  CHECK(105 == etcd.add("/test/key1", "42").error_code()); // Key already exists
+  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd.add("/test/key1", "42").error_code()); // Key already exists
   CHECK("42" == etcd.get("/test/key1").value().as_string());
 
   // modify
   CHECK(0 == etcd.modify("/test/key1", "43").error_code());
-  CHECK(100 == etcd.modify("/test/key2", "43").error_code()); // Key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.modify("/test/key2", "43").error_code()); // Key not found
   CHECK("43" == etcd.modify("/test/key1", "42").prev_value().as_string());
 
   // set
@@ -32,7 +32,7 @@ TEST_CASE("sync operations")
   CHECK("43" == etcd.get("/test/key1").value().as_string());
   CHECK("44" == etcd.get("/test/key2").value().as_string());
   CHECK("44" == etcd.get("/test/key3").value().as_string());
-  CHECK(100 == etcd.get("/test/key4").error_code()); // key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.get("/test/key4").error_code()); // key not found
 
   // rm
   CHECK(3 == etcd.ls("/test").keys().size());
@@ -46,25 +46,25 @@ TEST_CASE("sync operations")
   CHECK(2 == etcd.ls("/test/new_dir").keys().size());
 
   // rmdir
-  CHECK(100 == etcd.rmdir("/test/new_dir").error_code()); // key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.rmdir("/test/new_dir").error_code()); // key not found
   CHECK(0 == etcd.rmdir("/test/new_dir", true).error_code());
 
   // compare and swap
   etcd.set("/test/key1", "42");
   int index = etcd.modify_if("/test/key1", "43", "42").index();
-  CHECK(101 == etcd.modify_if("/test/key1", "44", "42").error_code());
+  CHECK(etcd::ERROR_COMPARE_FAILED == etcd.modify_if("/test/key1", "44", "42").error_code());
   REQUIRE(etcd.modify_if("/test/key1", "44", index).is_ok());
-  CHECK(101 == etcd.modify_if("/test/key1", "45", index).error_code());
+  CHECK(etcd::ERROR_COMPARE_FAILED == etcd.modify_if("/test/key1", "45", index).error_code());
 
   // atomic compare-and-delete based on prevValue
   etcd.set("/test/key1", "42");
-  CHECK(101 == etcd.rm_if("/test/key1", "43").error_code());
-  CHECK(0   == etcd.rm_if("/test/key1", "42").error_code());
+  CHECK(etcd::ERROR_COMPARE_FAILED == etcd.rm_if("/test/key1", "43").error_code());
+  CHECK(0 == etcd.rm_if("/test/key1", "42").error_code());
 
   // atomic compare-and-delete based on prevIndex
   index = etcd.set("/test/key1", "42").index();
-  CHECK(101 == etcd.rm_if("/test/key1", index - 1).error_code());
-  CHECK(0   == etcd.rm_if("/test/key1", index).error_code());
+  CHECK(etcd::ERROR_COMPARE_FAILED == etcd.rm_if("/test/key1", index - 1).error_code());
+  CHECK(0 == etcd.rm_if("/test/key1", index).error_code());
 
   //leasegrant
   etcd::Response res = etcd.leasegrant(60);
@@ -75,19 +75,19 @@ TEST_CASE("sync operations")
 
   //add with lease
   res = etcd.add("/test/key1111", "43", leaseid);
-  REQUIRE(0  == res.error_code()); // overwrite
+  REQUIRE(0 == res.error_code()); // overwrite
   CHECK("create" == res.action());
   CHECK(leaseid ==  res.value().lease());
 
   //set with lease
   res = etcd.set("/test/key1", "43", leaseid);
-  REQUIRE(0  == res.error_code());
+  REQUIRE(0 == res.error_code());
   CHECK("set" == res.action());
   CHECK(leaseid ==  res.value().lease());
 
   //modify with lease
   res = etcd.modify("/test/key1", "44", leaseid);
-  REQUIRE(0  == res.error_code()); 
+  REQUIRE(0 == res.error_code()); 
   CHECK("update" == res.action());
   CHECK(leaseid ==  res.value().lease());
   CHECK("44" ==  res.value().as_string());

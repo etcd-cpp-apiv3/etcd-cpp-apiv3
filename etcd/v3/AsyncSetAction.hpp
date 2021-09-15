@@ -16,7 +16,7 @@ namespace etcdv3
   class AsyncSetAction : public etcdv3::Action
   {
     public:
-      AsyncSetAction(etcdv3::ActionParameters param, bool create=false);
+      AsyncSetAction(etcdv3::ActionParameters const &param, bool create=false);
       AsyncTxnResponse ParseResponse();
     private:
       TxnResponse reply;

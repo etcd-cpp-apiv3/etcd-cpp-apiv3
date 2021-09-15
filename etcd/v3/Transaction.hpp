@@ -2,8 +2,7 @@
 #define V3_SRC_TRANSACTION_HPP_
 
 #include <string>
-
-#include "txn.pb.h"
+#include <memory>
 
 namespace etcdserverpb {
 	class TxnRequest;
@@ -11,14 +10,29 @@ namespace etcdserverpb {
 
 namespace etcdv3 {
 
+enum class CompareResult {
+	EQUAL = 0,
+    GREATER = 1,
+    LESS = 2,
+    NOT_EQUAL = 3,
+};
+
+enum class CompareTarget {
+    VERSION = 0,
+    CREATE = 1,
+    MOD = 2,
+    VALUE = 3,
+    LEASE = 4,
+};
+
 class Transaction {
 public:
 	Transaction();
 	Transaction(std::string const&);
 	virtual ~Transaction();
-	void init_compare(etcdserverpb::Compare::CompareResult, etcdserverpb::Compare::CompareTarget);
-	void init_compare(std::string const &, etcdserverpb::Compare::CompareResult, etcdserverpb::Compare::CompareTarget);
-	void init_compare(int, etcdserverpb::Compare::CompareResult, etcdserverpb::Compare::CompareTarget);
+	void init_compare(CompareResult, CompareTarget);
+	void init_compare(std::string const &old_value, CompareResult, CompareTarget);
+	void init_compare(int old_value, CompareResult, CompareTarget);
 
 	void setup_basic_failure_operation(std::string const &key);
 	void setup_set_failure_operation(std::string const &key, std::string const &value, int64_t leaseid);

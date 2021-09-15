@@ -4,7 +4,8 @@
 using v3lockpb::LockRequest;
 using v3lockpb::UnlockRequest;
 
-etcdv3::AsyncLockAction::AsyncLockAction(ActionParameters param)
+etcdv3::AsyncLockAction::AsyncLockAction(
+    ActionParameters const &param)
   : etcdv3::Action(param) 
 {
   LockRequest lock_request;
@@ -18,6 +19,7 @@ etcdv3::AsyncLockAction::AsyncLockAction(ActionParameters param)
 etcdv3::AsyncLockResponse etcdv3::AsyncLockAction::ParseResponse()
 {
   AsyncLockResponse lock_resp;
+  lock_resp.set_action(etcdv3::LOCK_ACTION);
   
   if(!status.ok())
   {
@@ -27,13 +29,13 @@ etcdv3::AsyncLockResponse etcdv3::AsyncLockAction::ParseResponse()
   else
   { 
     lock_resp.ParseResponse(reply);
-    lock_resp.set_action(etcdv3::LOCK_ACTION);
   }
 
   return lock_resp;
 }
 
-etcdv3::AsyncUnlockAction::AsyncUnlockAction(ActionParameters param)
+etcdv3::AsyncUnlockAction::AsyncUnlockAction(
+    ActionParameters const &param)
   : etcdv3::Action(param) 
 {
   UnlockRequest unlock_request;
@@ -46,7 +48,8 @@ etcdv3::AsyncUnlockAction::AsyncUnlockAction(ActionParameters param)
 etcdv3::AsyncUnlockResponse etcdv3::AsyncUnlockAction::ParseResponse()
 {
   AsyncUnlockResponse unlock_resp;
-  
+  unlock_resp.set_action(etcdv3::UNLOCK_ACTION);
+
   if(!status.ok())
   {
     unlock_resp.set_error_code(status.error_code());
@@ -55,7 +58,6 @@ etcdv3::AsyncUnlockResponse etcdv3::AsyncUnlockAction::ParseResponse()
   else
   { 
     unlock_resp.ParseResponse(reply);
-    unlock_resp.set_action(etcdv3::UNLOCK_ACTION);
   }
     
   return unlock_resp;

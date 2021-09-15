@@ -6,7 +6,8 @@ using etcdserverpb::RangeRequest;
 using etcdserverpb::RangeResponse;
 using etcdserverpb::WatchCreateRequest;
 
-etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters param)
+etcdv3::AsyncWatchAction::AsyncWatchAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param) 
 {
   isCancelled.store(false);
@@ -158,6 +159,8 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
 etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
 {
   AsyncWatchResponse watch_resp;
+  watch_resp.set_action(etcdv3::WATCH_ACTION);
+
   if(!status.ok())
   {
     watch_resp.set_error_code(status.error_code());

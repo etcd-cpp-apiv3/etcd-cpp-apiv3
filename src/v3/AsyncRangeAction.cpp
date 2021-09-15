@@ -6,7 +6,8 @@
 
 using etcdserverpb::RangeRequest;
 
-etcdv3::AsyncRangeAction::AsyncRangeAction(etcdv3::ActionParameters param)
+etcdv3::AsyncRangeAction::AsyncRangeAction(
+    etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
   RangeRequest get_request;
@@ -36,6 +37,8 @@ etcdv3::AsyncRangeAction::AsyncRangeAction(etcdv3::ActionParameters param)
 etcdv3::AsyncRangeResponse etcdv3::AsyncRangeAction::ParseResponse()
 {
   AsyncRangeResponse range_resp;
+  range_resp.set_action(etcdv3::GET_ACTION);
+
   if(!status.ok())
   {
     range_resp.set_error_code(status.error_code());

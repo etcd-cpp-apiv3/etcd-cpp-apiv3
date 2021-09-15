@@ -18,7 +18,7 @@ using v3lockpb::Lock;
 
 namespace etcdv3
 {
-  enum Atomicity_Type
+  enum AtomicityType
   {
     PREV_INDEX = 0,
     PREV_VALUE = 1
@@ -47,7 +47,7 @@ namespace etcdv3
   class Action
   {
   public:
-    Action(etcdv3::ActionParameters params);
+    Action(etcdv3::ActionParameters const &params);
     void waitForResponse();
     const std::chrono::high_resolution_clock::time_point startTimepoint();
   protected:

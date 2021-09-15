@@ -2,7 +2,7 @@
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Action.hpp"
 
-etcdv3::Action::Action(etcdv3::ActionParameters params)
+etcdv3::Action::Action(etcdv3::ActionParameters const &params)
 {
   parameters = params;
   if (!parameters.auth_token.empty()) {

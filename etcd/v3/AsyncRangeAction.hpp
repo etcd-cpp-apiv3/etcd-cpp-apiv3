@@ -15,7 +15,7 @@ namespace etcdv3
   class AsyncRangeAction : public etcdv3::Action
   {
     public:
-      AsyncRangeAction(etcdv3::ActionParameters param);
+      AsyncRangeAction(etcdv3::ActionParameters const &param);
       AsyncRangeResponse ParseResponse();
     private:
       RangeResponse reply;
