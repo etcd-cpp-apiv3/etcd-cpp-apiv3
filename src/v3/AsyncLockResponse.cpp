@@ -1,7 +1,6 @@
 #include "etcd/v3/AsyncLockResponse.hpp"
 #include "etcd/v3/action_constants.hpp"
 
-
 void etcdv3::AsyncLockResponse::ParseResponse(LockResponse& resp)
 {
   index = resp.header().revision();

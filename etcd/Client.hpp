@@ -2,6 +2,7 @@
 #define __ETCD_CLIENT_HPP__
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -12,6 +13,7 @@
 
 namespace etcdv3 {
   class Transaction;
+  class AsyncObserveAction;
 
   namespace detail {
     std::string string_plus_one(std::string const &value);
@@ -398,6 +400,83 @@ namespace etcd
       */
     pplx::task<Response> txn(etcdv3::Transaction const &txn);
 
+    /**
+     * Campaign for the election @name@.
+     *
+     * @param name is the name of election that will campaign for.
+     * @param lease_id is a user-managed (usually with a `KeepAlive`) lease id.
+     * @param value is the value for campaign.
+     *
+     * @returns a leader key if succeed, consist of
+     *
+     *    - name: the name of the election
+     *    - key:  a generated election key
+     *    - created rev:  the revision of the generated key
+     *    - lease: the lease id of the election leader
+     */
+    pplx::task<Response> campaign(std::string const &name, int64_t lease_id,
+                                  std::string const &value);
+
+    /**
+     * Updates the value of election with a new value, with leader key returns by
+     * @campaign@.
+     *
+     * @param name is the name of election
+     * @param lease_id is the user-provided lease id for the proclamation
+     * @param key is the generated associated key returned by @campaign@
+     * @param revision is the created revision of key-value returned by @campaign@
+     * @param value is the new value to set.
+     */
+    pplx::task<Response> proclaim(std::string const &name, int64_t lease_id,
+                                  std::string const &key, int revision, std::string const &value);
+
+    /**
+     * Get the current leader proclamation.
+     *
+     * @param name is the names of election.
+     *
+     * @returns current election key and value.
+     */
+    pplx::task<Response> leader(std::string const &name);
+
+    /**
+     * An observer that will cancel the associated election::observe request
+     * when being destruct.
+     */
+    class Observer {
+      public:
+        ~Observer();
+      private:
+        std::shared_ptr<etcdv3::AsyncObserveAction> action = nullptr;
+        pplx::task<etcd::Response> resp;
+
+        friend class Client;
+    };
+
+    /**
+     * Observe the leader change.
+     *
+     * @param name is the names of election to watch.
+     * @param callback is the names of election to watch.
+     *
+     * @returns an observer that holds that action and will cancel the request when being destructed.
+     */
+    std::unique_ptr<Observer> observe(std::string const &name,
+                                      std::function<void(Response)> callback,
+                                      const bool once = false);
+
+    /**
+     * Updates the value of election with a new value, with leader key returns by
+     * @campaign@.
+     *
+     * @param name is the name of election
+     * @param lease_id is the user-provided lease id for the proclamation
+     * @param key is the generated associated key returned by @campaign@
+     * @param revision is the created revision of key-value returned by @campaign@
+     */
+    pplx::task<Response> resign(std::string const &name, int64_t lease_id,
+                                std::string const &key, int revision);
+
   private:
 #if defined(WITH_GRPC_CHANNEL_CLASS)
     std::shared_ptr<grpc::Channel> channel;
@@ -419,8 +498,6 @@ namespace etcd
     friend class KeepAlive;
     friend class Watcher;
 };
-
-
 
 }
 

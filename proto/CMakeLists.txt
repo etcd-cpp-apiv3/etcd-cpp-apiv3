@@ -14,6 +14,7 @@ protobuf_generate_latest(
 compute_generated_srcs(PROTO_GENERATES_SRCS "${PROTO_GEN_OUT_DIR}" false ${PROTO_SRCS})
 
 set(PROTO_GRPC_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/rpc.proto"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/v3election.proto"
                     "${CMAKE_CURRENT_SOURCE_DIR}/v3lock.proto")
 grpc_generate_cpp(PROTO_GRPC_GENERATES PROTO_GRPC_GENERATES_HDRS
     "${PROTO_GEN_OUT_DIR}"

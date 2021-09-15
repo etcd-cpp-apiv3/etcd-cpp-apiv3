@@ -12,6 +12,7 @@
 namespace etcdv3 {
   class AsyncWatchAction;
   class AsyncLeaseKeepAliveAction;
+  class AsyncObserveAction;
   class V3Response;
 }
 
@@ -135,6 +136,11 @@ namespace etcd
     std::string const & lock_key() const;
 
     /**
+     * Return the "name" in response.
+     */
+    std::string const & name() const;
+
+    /**
      * Returns the watched events.
      */
     std::vector<Event> const & events() const;
@@ -157,12 +163,16 @@ namespace etcd
     Values      _values;
     Keys        _keys;
     std::string _lock_key; // for lock
+    std::string _name;  // for campaign (in v3election)
     std::vector<Event> _events; // for watch
-    std::chrono::microseconds _duration; // execute duration (in microseconds), during the action created and response parsed
+    // execute duration (in microseconds), during the action created and response parsed
+    std::chrono::microseconds _duration;
+
+    friend class Client;
     friend class SyncClient;
     friend class etcdv3::AsyncWatchAction;
     friend class etcdv3::AsyncLeaseKeepAliveAction;
-    friend class Client;
+    friend class etcdv3::AsyncObserveAction;
   };
 }
 

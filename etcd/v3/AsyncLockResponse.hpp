@@ -5,7 +5,6 @@
 #include "proto/v3lock.grpc.pb.h"
 #include "etcd/v3/V3Response.hpp"
 
-
 using grpc::ClientAsyncResponseReader;
 using v3lockpb::LockRequest;
 using v3lockpb::LockResponse;

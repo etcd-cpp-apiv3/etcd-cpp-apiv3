@@ -161,6 +161,7 @@ jobs:
           ./build/bin/EtcdTest
           ./build/bin/LockTest
           ./build/bin/WatcherTest
+          ./build/bin/ElectionTest
 
           killall -TERM etcd
           sleep 5

@@ -3,6 +3,7 @@
 
 #include <grpc++/grpc++.h>
 #include "proto/kv.pb.h"
+#include "proto/v3election.pb.h"
 
 #include "etcd/v3/KeyValue.hpp"
 
@@ -26,6 +27,8 @@ namespace etcdv3
     bool has_values() const;
     void set_lock_key(std::string const &key);
     std::string const &get_lock_key() const;
+    void set_name(std::string const &name);
+    std::string const &get_name() const;
     std::vector<mvccpb::Event> const & get_events() const;
   protected:
     int error_code;
@@ -37,6 +40,7 @@ namespace etcdv3
     std::vector<etcdv3::KeyValue> values;
     std::vector<etcdv3::KeyValue> prev_values; 
     std::string lock_key; // for lock
+    std::string name;  // for campaign (in v3election)
     std::vector<mvccpb::Event> events; // for watch
   };
 }

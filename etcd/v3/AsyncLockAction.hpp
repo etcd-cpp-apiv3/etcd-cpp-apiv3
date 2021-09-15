@@ -14,7 +14,6 @@ using v3lockpb::LockResponse;
 using v3lockpb::UnlockRequest;
 using v3lockpb::UnlockResponse;
 
-
 namespace etcdv3
 {
   class AsyncLockAction : public etcdv3::Action

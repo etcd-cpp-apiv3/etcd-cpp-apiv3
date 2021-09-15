@@ -24,7 +24,6 @@ namespace etcdv3
       void waitForResponse();
       void waitForResponse(std::function<void(etcd::Response)> callback); 
       void CancelWatch();
-      void WatchReq(std::string const & key);
       bool Cancelled() const;
     private:
       WatchResponse reply;
