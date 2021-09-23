@@ -61,6 +61,9 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     {
       break;
     }
+    if(isCancelled.load()) {
+      break;
+    }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE) {
       isCancelled.store(true);
       cq_.Shutdown();
@@ -71,6 +74,7 @@ void etcdv3::AsyncWatchAction::waitForResponse()
       if (reply.canceled()) {
         isCancelled.store(true);
         cq_.Shutdown();
+        break;
       }
       else if ((reply.created() && reply.header().revision() < parameters.revision) ||
           reply.events_size() > 0) {
@@ -79,22 +83,26 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         // 1. watch for a future revision, return immediately with empty events set
         // 2. receive any effective events.
         isCancelled.store(true);
+
         stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+
         grpc::Status status;
         stream->Finish(&status, (void *)this);
+
         cq_.Shutdown();
 
         // leave a warning if the response is too large and been fragmented
         if (reply.fragment()) {
           std::cerr << "WARN: The response hasn't been fully received and parsed" << std::endl;
         }
+        break;
       }
       else
       {
         // otherwise, start next round read-reply
         stream->Read(&reply, (void*)this);
-      } 
-    }  
+      }
+    }
   }
 }
 
@@ -103,8 +111,10 @@ void etcdv3::AsyncWatchAction::CancelWatch()
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if (!isCancelled.exchange(true)) {
     stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+
     grpc::Status status;
     stream->Finish(&status, (void *)this);
+
     cq_.Shutdown();
   }
 }
@@ -122,6 +132,9 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
   {
     if(ok == false)
     {
+      break;
+    }
+    if(isCancelled.load()) {
       break;
     }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)

@@ -251,8 +251,6 @@ etcd::Client::Client(std::string const & address,
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
 
-  std::cout << "this->channel : " << this->channel;
-
   // setup stubs
   stubs.reset(new EtcdServerStubs{});
   stubs->kvServiceStub = KV::NewStub(this->channel);
