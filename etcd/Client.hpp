@@ -98,6 +98,7 @@ namespace etcd
            std::string const & ca,
            std::string const & cert,
            std::string const & key,
+           std::string const & target_name_override,
            std::string const & load_balancer);
 
     /**
@@ -108,12 +109,16 @@ namespace etcd
      * @param ca   root CA file for SSL/TLS connection.
      * @param cert cert chain file for SSL/TLS authentication, could be empty string.
      * @param key  private key file for SSL/TLS authentication, could be empty string.
+     * @param target_name_override Override the target host name if you want to pass multiple address
+     * for load balancing with SSL, and there's no DNS. The @target_name_override@ must exist in the
+     * SANS of your SSL certificate.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     static etcd::Client *WithSSL(std::string const & etcd_url,
            std::string const & ca,
            std::string const & cert = "",
            std::string const & key = "",
+           std::string const & target_name_override = "",
            std::string const & load_balancer = "round_robin");
 
     /**

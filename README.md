@@ -238,6 +238,39 @@ transport security using openssl.
 
 We also provide a tool [`setup-ca.sh`](./security-config/setup-ca.sh) as a helper for development and testing.
 
+#### transport security & Multiple endpoints
+
+If you want to use multiple `https://` endpoints, and you are working with self-signed certificates, you
+may encountered errors like
+
+```
+error: 14: connections to all backends failing
+```
+
+That means your DNS have some problems with your DNS resolver and SSL authority, you could put a domain
+name (a host name) to the `SANS` field when self-signing your certificate, e.g,
+
+```
+"sans": [
+  "etcd",
+  "127.0.0.1",
+  "127.0.0.2",
+  "127.0.0.3"
+],
+```
+
+And pass a `target_name_override` arguments to `WithSSL`,
+
+```cpp
+  etcd::Client *etcd = etcd::Client::WithSSL(
+                    "https://127.0.0.1:2379,https://127.0.0.2:2479",
+                    "example.rootca.cert", "example.cert", "example.key", "etcd");
+
+```
+
+For more discussion about this feature, see also [#87](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/issues/87),
+[grpc#20186](https://github.com/grpc/grpc/issues/20186) and [grpc#22119](https://github.com/grpc/grpc/issues/22119).
+
 ### Reading a value
 
 You can read a value with the `get()` method of the client instance. The only parameter is the
