@@ -85,22 +85,9 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         isCancelled.store(true);
 
         stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
-        if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::WATCH_WRITES_DONE) {
-          // ok
-        } else {
-          std::cerr << "WARN: Failed to mark a watch connection as DONE" << std::endl;
-        }
 
         grpc::Status status;
         stream->Finish(&status, (void *)this);
-
-        // n.b., don't wait, as there might be another extra "Read" action on the fly.
-        //
-        // if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
-        //   // ok
-        // } else {
-        //   std::cerr << "WARN: Failed to finish a watch connection" << std::endl;
-        // }
 
         cq_.Shutdown();
 
@@ -123,25 +110,10 @@ void etcdv3::AsyncWatchAction::CancelWatch()
 {
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if (!isCancelled.exchange(true)) {
-    void* got_tag;
-    bool ok = false;
-
     stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::WATCH_WRITES_DONE) {
-      // ok
-    } else {
-      std::cerr << "WARN: Failed to mark a watch connection as DONE" << std::endl;
-    }
 
     grpc::Status status;
     stream->Finish(&status, (void *)this);
-    // n.b., don't wait, as there might be another extra "Read" action on the fly.
-    //
-    // if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
-    //   // ok
-    // } else {
-    //   std::cerr << "WARN: Failed to finish a watch connection" << std::endl;
-    // }
 
     cq_.Shutdown();
   }
