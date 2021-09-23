@@ -52,7 +52,7 @@ DistributedLock::DistributedLock(const std::string &lock_name,
       }
     }
   } catch (std::exception &e) {
-    throw e;
+    std::cerr << "failed to construct: " << e.what() << std::endl;
   }
 }
 
@@ -67,7 +67,7 @@ DistributedLock::~DistributedLock() noexcept {
       std::cout << resp.error_code() << std::endl;
     }
   } catch (std::exception &e) {
-    throw e;
+    std::cerr << "failed to destruct: " << e.what() << std::endl;
   }
 }
 
