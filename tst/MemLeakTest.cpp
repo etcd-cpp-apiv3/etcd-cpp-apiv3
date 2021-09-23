@@ -73,7 +73,7 @@ DistributedLock::~DistributedLock() noexcept {
 
 int main() {
   int i = 0, t = 0;
-  while(t < 500) {
+  while(t < 10 /* update this value to make it run for longer */) {
     {
       DistributedLock lock(std::to_string(i), 0);
       if(!lock.lock_acquired()) {
