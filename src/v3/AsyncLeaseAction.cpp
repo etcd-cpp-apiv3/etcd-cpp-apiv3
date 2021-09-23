@@ -130,9 +130,25 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
   if(isCancelled == false)
   {
     isCancelled = true;
+
+    void *got_tag = nullptr;
+    bool ok = false;
+
     stream->WritesDone((void*)etcdv3::KEEPALIVE_DONE);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_DONE) {
+      // ok
+    } else {
+      std::cerr << "Failed to mark a lease keep-alive connection as DONE" << std::endl;
+    }
+
     grpc::Status status;
     stream->Finish(&status, (void *)this);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
+      // ok
+    } else {
+      std::cerr << "Failed to finish a lease keep-alive connection" << std::endl;
+    }
+
     cq_.Shutdown();
   }
 }

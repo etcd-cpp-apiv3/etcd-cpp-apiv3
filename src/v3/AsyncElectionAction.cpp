@@ -190,9 +190,17 @@ void etcdv3::AsyncObserveAction::CancelObserve()
 {
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if (!isCancelled.exchange(true)) {
+    void* got_tag;
+    bool ok = false;
+    response_reader->Finish(&status, (void *)this);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
+      // ok
+    } else {
+      std::cerr << "Failed to finish a election observing connection" << std::endl;
+    }
+
     cq_.Shutdown();
   }
-  response_reader->Finish(&status, (void *)this);
 }
 
 bool etcdv3::AsyncObserveAction::Cancelled() const {

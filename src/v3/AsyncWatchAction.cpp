@@ -61,6 +61,9 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     {
       break;
     }
+    if(isCancelled.load()) {
+      break;
+    }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE) {
       isCancelled.store(true);
       cq_.Shutdown();
@@ -79,9 +82,22 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         // 1. watch for a future revision, return immediately with empty events set
         // 2. receive any effective events.
         isCancelled.store(true);
+
         stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+        if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::WATCH_WRITES_DONE) {
+          // ok
+        } else {
+          std::cerr << "WARN: Failed to mark a watch connection as DONE" << std::endl;
+        }
+
         grpc::Status status;
         stream->Finish(&status, (void *)this);
+        if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
+          // ok
+        } else {
+          std::cerr << "WARN: Failed to finish a watch connection" << std::endl;
+        }
+
         cq_.Shutdown();
 
         // leave a warning if the response is too large and been fragmented
@@ -102,9 +118,24 @@ void etcdv3::AsyncWatchAction::CancelWatch()
 {
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if (!isCancelled.exchange(true)) {
+    void* got_tag;
+    bool ok = false;
+
     stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::WATCH_WRITES_DONE) {
+      // ok
+    } else {
+      std::cerr << "WARN: Failed to mark a watch connection as DONE" << std::endl;
+    }
+
     grpc::Status status;
     stream->Finish(&status, (void *)this);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
+      // ok
+    } else {
+      std::cerr << "WARN: Failed to finish a watch connection" << std::endl;
+    }
+
     cq_.Shutdown();
   }
 }
@@ -122,6 +153,9 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
   {
     if(ok == false)
     {
+      break;
+    }
+    if(isCancelled.load()) {
       break;
     }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)

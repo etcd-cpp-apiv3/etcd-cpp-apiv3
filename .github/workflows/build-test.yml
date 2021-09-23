@@ -160,6 +160,7 @@ jobs:
           ./build/bin/EtcdSyncTest
           ./build/bin/EtcdTest
           ./build/bin/LockTest
+          ./build/bin/MemLeakTest
           ./build/bin/WatcherTest
           ./build/bin/ElectionTest
 
