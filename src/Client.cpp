@@ -239,6 +239,7 @@ etcd::Client::Client(std::string const & address,
                      std::string const & ca,
                      std::string const & cert,
                      std::string const & key,
+                     std::string const & target_name_override,
                      std::string const & load_balancer)
 {
   // create channels
@@ -249,6 +250,9 @@ etcd::Client::Client(std::string const & address,
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(
       etcd::detail::make_ssl_credentials(ca, cert, key));
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
+  if (!target_name_override.empty()) {
+    grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
+  }
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
 
   // setup stubs
@@ -261,11 +265,12 @@ etcd::Client::Client(std::string const & address,
 }
 
 etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
-           std::string const & ca,
-           std::string const & cert,
-           std::string const & key,
-           std::string const & load_balancer) {
-  return new etcd::Client(etcd_url, ca, cert, key, load_balancer);
+                                    std::string const & ca,
+                                    std::string const & cert,
+                                    std::string const & key,
+                                    std::string const & target_name_override,
+                                    std::string const & load_balancer) {
+  return new etcd::Client(etcd_url, ca, cert, key, target_name_override, load_balancer);
 }
 
 pplx::task<etcd::Response> etcd::Client::head()
