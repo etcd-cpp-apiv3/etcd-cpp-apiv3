@@ -61,6 +61,11 @@ bool etcdv3::V3Response::has_values() const
   return values.size() > 0;
 }
 
+int etcdv3::V3Response::get_compact_revision() const
+{
+  return compact_revision;
+}
+
 void etcdv3::V3Response::set_lock_key(std::string const &key) {
   this->lock_key = key;
 }
