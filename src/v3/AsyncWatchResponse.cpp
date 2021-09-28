@@ -4,8 +4,9 @@
 void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply)
 {
   if (reply.canceled() && reply.compact_revision() != 0) {
-    error_code=grpc::StatusCode::OUT_OF_RANGE;
-    error_message="required revision has been compacted";
+    error_code = grpc::StatusCode::OUT_OF_RANGE;
+    error_message = "required revision has been compacted";
+    compact_revision = reply.compact_revision();
     return;
   }
   index = reply.header().revision();

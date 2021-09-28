@@ -149,8 +149,10 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
         isCancelled.store(true);
         cq_.Shutdown();
         if (reply.compact_revision() != 0) {
-          callback(etcd::Response(grpc::StatusCode::OUT_OF_RANGE /* error code */,
-                                  "required revision has been compacted"));
+          auto resp = etcd::Response(grpc::StatusCode::OUT_OF_RANGE /* error code */,
+                                     "required revision has been compacted");
+          resp._compact_revision = reply.compact_revision();
+          callback(resp);
         }
         break;
       }
