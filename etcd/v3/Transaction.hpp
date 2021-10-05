@@ -30,6 +30,9 @@ public:
 	Transaction();
 	Transaction(std::string const&);
 	virtual ~Transaction();
+
+	void set_key(std::string const& comp_key);
+
 	void init_compare(CompareResult, CompareTarget);
 	void init_compare(std::string const &old_value, CompareResult, CompareTarget);
 	void init_compare(int old_value, CompareResult, CompareTarget);

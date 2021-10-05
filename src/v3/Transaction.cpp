@@ -32,6 +32,10 @@ etcdv3::Transaction::Transaction(const std::string& key) : key(key) {
 	txn_request.reset(new etcdserverpb::TxnRequest{});
 }
 
+void etcdv3::set_key(std::string const& comp_key) {
+	key = comp_key;
+}
+
 void etcdv3::Transaction::init_compare(CompareResult result, CompareTarget target){
 	Compare* compare = txn_request->add_compare();
 	compare->set_result(detail::to_compare_result(result));
