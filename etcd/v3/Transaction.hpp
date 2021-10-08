@@ -30,6 +30,10 @@ public:
 	Transaction();
 	Transaction(std::string const&);
 	virtual ~Transaction();
+
+	// Set a new key for different comparisons and /put/get/delete requests.
+	void reset_key(std::string const& newkey);
+
 	void init_compare(CompareResult, CompareTarget);
 	void init_compare(std::string const &old_value, CompareResult, CompareTarget);
 	void init_compare(int old_value, CompareResult, CompareTarget);
