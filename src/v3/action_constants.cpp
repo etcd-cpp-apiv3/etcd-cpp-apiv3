@@ -5,6 +5,7 @@ char const * etcdv3::COMPARESWAP_ACTION = "compareAndSwap";
 char const * etcdv3::UPDATE_ACTION = "update";
 char const * etcdv3::SET_ACTION = "set";
 char const * etcdv3::GET_ACTION = "get";
+char const * etcdv3::PUT_ACTION = "put";
 char const * etcdv3::DELETE_ACTION = "delete";
 char const * etcdv3::COMPAREDELETE_ACTION = "compareAndDelete";
 char const * etcdv3::LOCK_ACTION = "lock";

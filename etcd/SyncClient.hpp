@@ -46,6 +46,7 @@ namespace etcd
     Response set(std::string const & key, std::string const & value, int64_t leaseId);
     Response add(std::string const & key, std::string const & value, int ttl = 0);
     Response add(std::string const & key, std::string const & value, int64_t leaseId);
+    Response put(std::string const & key, std::string const & value);
     Response modify(std::string const & key, std::string const & value, int ttl = 0);
     Response modify(std::string const & key, std::string const & value, int64_t leaseId);
     Response modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl = 0);

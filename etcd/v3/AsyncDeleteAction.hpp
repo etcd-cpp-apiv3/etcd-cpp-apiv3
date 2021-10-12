@@ -4,7 +4,7 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 #include "etcd/v3/Action.hpp"
-#include "etcd/v3/AsyncDeleteRangeResponse.hpp"
+#include "etcd/v3/AsyncDeleteResponse.hpp"
 
 
 using grpc::ClientAsyncResponseReader;
@@ -16,7 +16,7 @@ namespace etcdv3
   {
     public:
       AsyncDeleteAction(etcdv3::ActionParameters const &param);
-      AsyncDeleteRangeResponse ParseResponse();
+      AsyncDeleteResponse ParseResponse();
     private:
       DeleteRangeResponse reply;
       std::unique_ptr<ClientAsyncResponseReader<DeleteRangeResponse>> response_reader;

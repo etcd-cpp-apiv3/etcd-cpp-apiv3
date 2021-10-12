@@ -32,7 +32,7 @@ namespace etcdv3
     bool withPrefix;
     int revision;
     int old_revision;
-    int64_t lease_id;
+    int64_t lease_id = 0;  // no lease
     int ttl;
     int limit;
     std::string name;  // for campaign (in v3election)

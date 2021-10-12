@@ -53,6 +53,11 @@ etcd::Response etcd::SyncClient::add(std::string const & key, std::string const 
   CHECK_EXCEPTIONS(client.add(key, value, leaseId).get());
 }
 
+etcd::Response etcd::SyncClient::put(std::string const & key, std::string const & value)
+{
+  CHECK_EXCEPTIONS(client.put(key, value).get());
+}
+
 etcd::Response etcd::SyncClient::modify(std::string const & key, std::string const & value, int ttl)
 {
   CHECK_EXCEPTIONS(client.modify(key, value, ttl).get());

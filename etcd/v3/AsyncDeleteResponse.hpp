@@ -12,10 +12,10 @@ using etcdserverpb::DeleteRangeResponse;
 
 namespace etcdv3
 {
-  class AsyncDeleteRangeResponse : public etcdv3::V3Response
+  class AsyncDeleteResponse : public etcdv3::V3Response
   {
     public:
-      AsyncDeleteRangeResponse(){};
+      AsyncDeleteResponse(){};
       void ParseResponse(std::string const& key, bool prefix, DeleteRangeResponse& resp);
   };
 }

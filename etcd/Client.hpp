@@ -61,6 +61,16 @@ namespace etcd
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
      *                 or multiple url, seperated by ',' or ';'.
+     * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     */
+    static etcd::Client *WithUrl(std::string const & etcd_url,
+           std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
@@ -164,6 +174,13 @@ namespace etcd
      * @param leaseId is the lease attached to the key
      */
     pplx::task<Response> add(std::string const & key, std::string const & value, int64_t leaseId);
+
+    /**
+     * Put a new key-value pair.
+     * @param key is the key to be put
+     * @param value is the value to be put
+     */
+    pplx::task<Response> put(std::string const & key, std::string const & value);
 
     /**
      * Modifies an existing key. Fails if the key does not exists.

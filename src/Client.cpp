@@ -32,7 +32,8 @@
 #include "etcd/v3/Action.hpp"
 #include "etcd/v3/AsyncRangeResponse.hpp"
 #include "etcd/v3/AsyncWatchResponse.hpp"
-#include "etcd/v3/AsyncDeleteRangeResponse.hpp"
+#include "etcd/v3/AsyncDeleteResponse.hpp"
+#include "etcd/v3/AsyncPutResponse.hpp"
 #include "etcd/v3/AsyncLockResponse.hpp"
 #include "etcd/v3/AsyncElectionResponse.hpp"
 #include "etcd/v3/AsyncTxnResponse.hpp"
@@ -45,6 +46,7 @@
 #include "etcd/v3/AsyncHeadAction.hpp"
 #include "etcd/v3/AsyncRangeAction.hpp"
 #include "etcd/v3/AsyncDeleteAction.hpp"
+#include "etcd/v3/AsyncPutAction.hpp"
 #include "etcd/v3/AsyncWatchAction.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
 #include "etcd/v3/AsyncLockAction.hpp"
@@ -196,6 +198,11 @@ etcd::Client::Client(std::string const & address,
   stubs->leaseServiceStub= Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
   stubs->electionServiceStub = Election::NewStub(this->channel);
+}
+
+etcd::Client *etcd::Client::WithUrl(std::string const & etcd_url,
+                                    std::string const & load_balancer) {
+  return new etcd::Client(etcd_url, load_balancer);
 }
 
 etcd::Client::Client(std::string const & address,
@@ -373,6 +380,14 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
   return Response::create(call);
 }
 
+pplx::task<etcd::Response> etcd::Client::put(std::string const & key, std::string const & value) {
+  etcdv3::ActionParameters params;
+  params.key.assign(key);
+  params.value.assign(value);
+  params.kv_stub = stubs->kvServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncPutAction> call(new etcdv3::AsyncPutAction(params));
+  return Response::create(call);
+}
 
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value, int ttl)
 {

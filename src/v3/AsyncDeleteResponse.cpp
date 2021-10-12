@@ -1,8 +1,8 @@
-#include "etcd/v3/AsyncDeleteRangeResponse.hpp"
+#include "etcd/v3/AsyncDeleteResponse.hpp"
 #include "etcd/v3/action_constants.hpp"
 
 
-void etcdv3::AsyncDeleteRangeResponse::ParseResponse(std::string const& key, bool prefix, DeleteRangeResponse& resp)
+void etcdv3::AsyncDeleteResponse::ParseResponse(std::string const& key, bool prefix, DeleteRangeResponse& resp)
 {
   index = resp.header().revision();
 
@@ -16,7 +16,7 @@ void etcdv3::AsyncDeleteRangeResponse::ParseResponse(std::string const& key, boo
     //get all previous values
     for(int cnt=0; cnt < resp.prev_kvs_size(); cnt++)
     {
-      etcdv3::KeyValue kv; 
+      etcdv3::KeyValue kv;
       kv.kvs.CopyFrom(resp.prev_kvs(cnt));
       values.push_back(kv);
     }

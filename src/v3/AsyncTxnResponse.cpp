@@ -1,6 +1,6 @@
 #include "etcd/v3/AsyncTxnResponse.hpp"
 #include "etcd/v3/AsyncRangeResponse.hpp"
-#include "etcd/v3/AsyncDeleteRangeResponse.hpp"
+#include "etcd/v3/AsyncDeleteResponse.hpp"
 #include "etcd/v3/action_constants.hpp"
 
 using etcdserverpb::ResponseOp;
@@ -36,7 +36,7 @@ void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key, bool prefix
     }
     else if(ResponseOp::ResponseCase::kResponseDeleteRange == resp.response_case())
     {
-      AsyncDeleteRangeResponse response;
+      AsyncDeleteResponse response;
       response.ParseResponse(key,prefix,*(resp.mutable_response_delete_range()));
 
       prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
