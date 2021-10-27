@@ -98,7 +98,7 @@ namespace etcd
     /**
      * Returns the current index value of etcd
      */
-    int index() const;
+    int64_t index() const;
 
     /**
      * Returns the value object of the response to a get/set/modify operation.
@@ -134,7 +134,7 @@ namespace etcd
      * Returns the compact_revision if the response is a watch-cancelled revision.
      * `-1` means uninitialized (the response is not watch-cancelled)
      */
-    int compact_revision() const;
+    int64_t compact_revision() const;
 
     /**
      * Returns the lock key.
@@ -162,13 +162,13 @@ namespace etcd
 
     int         _error_code;
     std::string _error_message;
-    int         _index;
+    int64_t         _index;
     std::string _action;
     Value       _value;
     Value       _prev_value;
     Values      _values;
     Keys        _keys;
-    int         _compact_revision = -1; // for watch
+    int64_t         _compact_revision = -1; // for watch
     std::string _lock_key; // for lock
     std::string _name;  // for campaign (in v3election)
     std::vector<Event> _events; // for watch

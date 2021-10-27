@@ -375,13 +375,13 @@ TEST_CASE("watch changes in the past")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
-  int index = etcd.set("/test/key1", "42").get().index();
+  auto index = etcd.set("/test/key1", "42").get().index();
 
   etcd.set("/test/key1", "43").wait();
   etcd.set("/test/key1", "44").wait();
   etcd.set("/test/key1", "45").wait();
 
-  int head_index = etcd.head().get().index();
+  auto head_index = etcd.head().get().index();
   CHECK(index + 3 == head_index);
 
   etcd::Response res = etcd.watch("/test/key1", ++index).get();

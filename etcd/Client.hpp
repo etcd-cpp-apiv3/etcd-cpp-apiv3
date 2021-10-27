@@ -223,7 +223,7 @@ namespace etcd
      * @param value is the new value to be set
      * @param old_index is the expected index of the original value
      */
-    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int old_index, int ttl = 0);
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int64_t old_index, int ttl = 0);
 
     /**
      * Modifies an existing key only if it has a specific modification index value. Fails if the key
@@ -233,7 +233,7 @@ namespace etcd
      * @param old_index is the expected index of the original value
      * @param leaseId is the lease attached to the key
      */
-    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId);
+    pplx::task<Response> modify_if(std::string const & key, std::string const & value, int64_t old_index, int64_t leaseId);
 
     /**
      * Removes a single key. The key has to point to a plain, non directory entry.
@@ -254,7 +254,7 @@ namespace etcd
      * @param key is the key to be deleted
      * @param old_index is the expected index of the existing value
      */
-    pplx::task<Response> rm_if(std::string const & key, int old_index);
+    pplx::task<Response> rm_if(std::string const & key, int64_t old_index);
 
     /**
      * Gets a directory listing of the directory identified by the key.
@@ -333,7 +333,7 @@ namespace etcd
      * @param fromIndex the first index we are interested in
      * @param recursive if true watch a whole subtree
      */
-    pplx::task<Response> watch(std::string const & key, int fromIndex, bool recursive = false);
+    pplx::task<Response> watch(std::string const & key, int64_t fromIndex, bool recursive = false);
 
     /**
      * Watches for changes of a range of keys inside [key, range_end).
@@ -362,7 +362,7 @@ namespace etcd
      * @param range_end is the end of key range to be removed.
      * @param fromIndex the first index we are interested in
      */
-    pplx::task<Response> watch(std::string const & key, std::string const &range_end, int fromIndex);
+    pplx::task<Response> watch(std::string const & key, std::string const &range_end, int64_t fromIndex);
 
     /**
      * Grants a lease.
@@ -450,7 +450,7 @@ namespace etcd
      * @param value is the new value to set.
      */
     pplx::task<Response> proclaim(std::string const &name, int64_t lease_id,
-                                  std::string const &key, int revision, std::string const &value);
+                                  std::string const &key, int64_t revision, std::string const &value);
 
     /**
      * Get the current leader proclamation.
@@ -497,7 +497,7 @@ namespace etcd
      * @param revision is the created revision of key-value returned by @campaign@
      */
     pplx::task<Response> resign(std::string const &name, int64_t lease_id,
-                                std::string const &key, int revision);
+                                std::string const &key, int64_t revision);
 
   private:
 #if defined(WITH_GRPC_CHANNEL_CLASS)

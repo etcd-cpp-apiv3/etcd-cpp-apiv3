@@ -158,7 +158,7 @@ TEST_CASE("watch changes in the past")
 {
   etcd::SyncClient etcd(etcd_uri);
 
-  int index = etcd.set("/test/key1", "42").index();
+  auto index = etcd.set("/test/key1", "42").index();
 
   etcd.set("/test/key1", "43");
   etcd.set("/test/key1", "44");

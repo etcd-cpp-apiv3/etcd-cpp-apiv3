@@ -18,14 +18,14 @@ namespace etcdv3
     std::string const & get_error_message() const;
     void set_error_message(std::string msg);
     void set_action(std::string action);
-    int get_index() const;
+    int64_t get_index() const;
     std::string const & get_action() const;
     std::vector<etcdv3::KeyValue> const & get_values() const;
     std::vector<etcdv3::KeyValue> const & get_prev_values() const;
     etcdv3::KeyValue const & get_value() const;
     etcdv3::KeyValue const & get_prev_value() const;
     bool has_values() const;
-    int get_compact_revision() const;
+    int64_t get_compact_revision() const;
     void set_lock_key(std::string const &key);
     std::string const &get_lock_key() const;
     void set_name(std::string const &name);
@@ -33,14 +33,14 @@ namespace etcdv3
     std::vector<mvccpb::Event> const & get_events() const;
   protected:
     int error_code;
-    int index;
+    int64_t index;
     std::string error_message;
     std::string action;
     etcdv3::KeyValue value;
     etcdv3::KeyValue prev_value; 
     std::vector<etcdv3::KeyValue> values;
     std::vector<etcdv3::KeyValue> prev_values; 
-    int compact_revision = -1;
+    int64_t compact_revision = -1;
     std::string lock_key; // for lock
     std::string name;  // for campaign (in v3election)
     std::vector<mvccpb::Event> events; // for watch
