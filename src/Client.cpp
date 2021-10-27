@@ -472,7 +472,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index, int ttl)
+pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int64_t old_index, int ttl)
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
@@ -500,7 +500,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseid)
+pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int64_t old_index, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
@@ -538,7 +538,7 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int old_index)
+pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int64_t old_index)
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
@@ -640,7 +640,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool rec
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int fromIndex, bool recursive)
+pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int64_t fromIndex, bool recursive)
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
@@ -669,7 +669,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::str
   return Response::create(call);
 }
 
-pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end, int fromIndex)
+pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end, int64_t fromIndex)
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
@@ -835,7 +835,7 @@ pplx::task<etcd::Response> etcd::Client::campaign(
 
 pplx::task<etcd::Response> etcd::Client::proclaim(
     std::string const &name, int64_t lease_id,
-    std::string const &key, int revision, std::string const &value) {
+    std::string const &key, int64_t revision, std::string const &value) {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
   params.name = name;
@@ -871,7 +871,7 @@ std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
 }
 
 pplx::task<etcd::Response> etcd::Client::resign(
-    std::string const &name, int64_t lease_id, std::string const &key, int revision) {
+    std::string const &name, int64_t lease_id, std::string const &key, int64_t revision) {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
   params.name = name;

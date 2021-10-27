@@ -78,12 +78,12 @@ etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string 
   CHECK_EXCEPTIONS(client.modify_if(key, value, old_value, leaseId).get());
 }
 
-etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int old_index, int ttl)
+etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int64_t old_index, int ttl)
 {
   CHECK_EXCEPTIONS(client.modify_if(key, value, old_index, ttl).get());
 }
 
-etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId)
+etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string const & value, int64_t old_index, int64_t leaseId)
 {
   CHECK_EXCEPTIONS(client.modify_if(key, value, old_index, leaseId).get());
 }
@@ -98,7 +98,7 @@ etcd::Response etcd::SyncClient::rm_if(std::string const & key, std::string cons
   CHECK_EXCEPTIONS(client.rm_if(key, old_value).get());
 }
 
-etcd::Response etcd::SyncClient::rm_if(std::string const & key, int old_index)
+etcd::Response etcd::SyncClient::rm_if(std::string const & key, int64_t old_index)
 {
   CHECK_EXCEPTIONS(client.rm_if(key, old_index).get());
 }
@@ -161,7 +161,7 @@ etcd::Response etcd::SyncClient::campaign(std::string const &name, int64_t lease
 }
 
 etcd::Response etcd::SyncClient::proclaim(std::string const &name, int64_t lease_id,
-                                          std::string const &key, int revision,
+                                          std::string const &key, int64_t revision,
                                           std::string const &value)
 {
   CHECK_EXCEPTIONS(client.proclaim(name, lease_id, key, revision, value).get());
@@ -180,7 +180,7 @@ std::unique_ptr<etcd::Client::Observer> etcd::SyncClient::observe(
 }
 
 etcd::Response etcd::SyncClient::resign(std::string const &name, int64_t lease_id,
-                                        std::string const &key, int revision)
+                                        std::string const &key, int64_t revision)
 {
   CHECK_EXCEPTIONS(client.resign(name, lease_id, key, revision).get());
 }
@@ -190,7 +190,7 @@ etcd::Response etcd::SyncClient::watch(std::string const & key, bool recursive)
   CHECK_EXCEPTIONS(client.watch(key, recursive).get());
 }
 
-etcd::Response etcd::SyncClient::watch(std::string const & key, int fromIndex, bool recursive)
+etcd::Response etcd::SyncClient::watch(std::string const & key, int64_t fromIndex, bool recursive)
 {
   CHECK_EXCEPTIONS(client.watch(key, fromIndex, recursive).get());
 }
@@ -205,7 +205,7 @@ etcd::Response etcd::SyncClient::watch(std::string const & key, std::string cons
   CHECK_EXCEPTIONS(client.watch(key, range_end).get());
 }
 
-etcd::Response etcd::SyncClient::watch(std::string const & key, std::string const &range_end, int fromIndex)
+etcd::Response etcd::SyncClient::watch(std::string const & key, std::string const &range_end, int64_t fromIndex)
 {
   CHECK_EXCEPTIONS(client.watch(key, range_end, fromIndex).get());
 }

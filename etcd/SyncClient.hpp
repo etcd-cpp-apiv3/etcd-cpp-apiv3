@@ -51,11 +51,11 @@ namespace etcd
     Response modify(std::string const & key, std::string const & value, int64_t leaseId);
     Response modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl = 0);
     Response modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseId);
-    Response modify_if(std::string const & key, std::string const & value, int old_index, int ttl = 0);
-    Response modify_if(std::string const & key, std::string const & value, int old_index, int64_t leaseId);
+    Response modify_if(std::string const & key, std::string const & value, int64_t old_index, int ttl = 0);
+    Response modify_if(std::string const & key, std::string const & value, int64_t old_index, int64_t leaseId);
     Response rm(std::string const & key);
     Response rm_if(std::string const & key, std::string const & old_value);
-    Response rm_if(std::string const & key, int old_index);
+    Response rm_if(std::string const & key, int64_t old_index);
     Response ls(std::string const & key);
     Response ls(std::string const & key, size_t const limit);
     Response ls(std::string const & key, std::string const &range_end);
@@ -71,13 +71,13 @@ namespace etcd
     Response campaign(std::string const &name, int64_t lease_id,
                       std::string const &value);
     Response proclaim(std::string const &name, int64_t lease_id,
-                      std::string const &key, int revision, std::string const &value);
+                      std::string const &key, int64_t revision, std::string const &value);
     Response leader(std::string const &name);
     std::unique_ptr<Client::Observer> observe(std::string const &name,
                                               std::function<void(Response)> callback,
                                               const bool once = false);
     Response resign(std::string const &name, int64_t lease_id,
-                    std::string const &key, int revision);
+                    std::string const &key, int64_t revision);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
@@ -97,8 +97,8 @@ namespace etcd
      * @param fromIndex the first index we are interested in
      * @param recursive if true watch a whole subtree
      */
-    Response watch(std::string const & key, int fromIndex, bool recursive = false);
-    Response watch(std::string const & key, std::string const &range_end, int fromIndex);
+    Response watch(std::string const & key, int64_t fromIndex, bool recursive = false);
+    Response watch(std::string const & key, std::string const &range_end, int64_t fromIndex);
 
   protected:
     Client client;
