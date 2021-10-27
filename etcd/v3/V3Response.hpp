@@ -18,7 +18,7 @@ namespace etcdv3
     std::string const & get_error_message() const;
     void set_error_message(std::string msg);
     void set_action(std::string action);
-    int get_index() const;
+    int64_t get_index() const;
     std::string const & get_action() const;
     std::vector<etcdv3::KeyValue> const & get_values() const;
     std::vector<etcdv3::KeyValue> const & get_prev_values() const;
@@ -33,7 +33,7 @@ namespace etcdv3
     std::vector<mvccpb::Event> const & get_events() const;
   protected:
     int error_code;
-    int index;
+    int64_t index;
     std::string error_message;
     std::string action;
     etcdv3::KeyValue value;

@@ -11,7 +11,7 @@ void etcdv3::V3Response::set_error_message(std::string msg)
   error_message = msg;
 }
 
-int etcdv3::V3Response::get_index() const
+int64_t etcdv3::V3Response::get_index() const
 {
   return index;
 }

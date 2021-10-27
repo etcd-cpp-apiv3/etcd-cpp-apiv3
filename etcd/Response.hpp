@@ -98,7 +98,7 @@ namespace etcd
     /**
      * Returns the current index value of etcd
      */
-    int index() const;
+    int64_t index() const;
 
     /**
      * Returns the value object of the response to a get/set/modify operation.
@@ -162,7 +162,7 @@ namespace etcd
 
     int         _error_code;
     std::string _error_message;
-    int         _index;
+    int64_t         _index;
     std::string _action;
     Value       _value;
     Value       _prev_value;

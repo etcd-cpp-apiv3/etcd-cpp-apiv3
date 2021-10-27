@@ -60,7 +60,7 @@ std::string const & etcd::Response::error_message() const
   return _error_message;
 }
 
-int etcd::Response::index() const
+int64_t etcd::Response::index() const
 {
   return _index;
 }
