@@ -50,12 +50,12 @@ std::string const & etcd::Value::as_string() const
   return value;
 }
 
-int etcd::Value::created_index() const
+int64_t etcd::Value::created_index() const
 {
   return created;
 }
 
-int etcd::Value::modified_index() const
+int64_t etcd::Value::modified_index() const
 {
   return modified;
 }

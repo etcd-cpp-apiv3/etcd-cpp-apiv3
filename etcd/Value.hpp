@@ -48,12 +48,12 @@ namespace etcd
     /**
      * Returns the creation index of this value.
      */
-    int created_index() const;
+    int64_t created_index() const;
 
     /**
      * Returns the last modification's index of this value.
      */
-    int modified_index() const;
+    int64_t modified_index() const;
 
     /**
      * Returns the ttl of this value or 0 if ttl is not set
@@ -76,8 +76,8 @@ namespace etcd
     std::string _key;
     bool        dir;
     std::string value;
-    int         created;
-    int         modified;
+    int64_t         created;
+    int64_t         modified;
     int         _ttl;
     int64_t     leaseId;
   };
