@@ -56,6 +56,11 @@ namespace etcd
     int64_t modified_index() const;
 
     /**
+     * Returns the version of this value.
+     */
+    int64_t version() const;
+
+    /**
      * Returns the ttl of this value or 0 if ttl is not set
      */
     int ttl() const;
@@ -78,6 +83,7 @@ namespace etcd
     std::string value;
     int64_t         created;
     int64_t         modified;
+    int64_t         _version;
     int         _ttl;
     int64_t     leaseId;
   };

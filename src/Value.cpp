@@ -7,6 +7,7 @@ etcd::Value::Value()
   : dir(false),
     created(0),
     modified(0),
+    _version(0),
     _ttl(0),
     leaseId(0)
 {
@@ -20,6 +21,7 @@ etcd::Value::Value(etcdv3::KeyValue const & kv)
   value = kv.kvs.value();
   created = kv.kvs.create_revision();
   modified = kv.kvs.mod_revision();
+  _version = kv.kvs.version();
   leaseId = kv.kvs.lease();
   _ttl = kv.get_ttl();
 }
@@ -31,6 +33,7 @@ etcd::Value::Value(mvccpb::KeyValue const & kv)
   value = kv.value();
   created = kv.create_revision();
   modified = kv.mod_revision();
+  _version = kv.version();
   leaseId = kv.lease();
   _ttl = -1;
 }
@@ -58,6 +61,11 @@ int64_t etcd::Value::created_index() const
 int64_t etcd::Value::modified_index() const
 {
   return modified;
+}
+
+int64_t etcd::Value::version() const
+{
+  return _version;
 }
 
 int etcd::Value::ttl() const
