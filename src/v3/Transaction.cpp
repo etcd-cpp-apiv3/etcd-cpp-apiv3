@@ -54,7 +54,7 @@ void etcdv3::Transaction::init_compare(std::string const& old_value, CompareResu
 	compare->set_value(old_value);
 }
 
-void etcdv3::Transaction::init_compare(int old_index, CompareResult result, CompareTarget target){
+void etcdv3::Transaction::init_compare(int64_t old_index, CompareResult result, CompareTarget target){
 	Compare* compare = txn_request->add_compare();
 	compare->set_result(detail::to_compare_result(result));
 	compare->set_target(detail::to_compare_target(target));
