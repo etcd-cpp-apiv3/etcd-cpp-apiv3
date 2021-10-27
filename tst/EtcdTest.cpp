@@ -27,6 +27,7 @@ TEST_CASE("add a new key")
   CHECK(!val.is_dir());
   CHECK(0 < val.created_index());
   CHECK(0 < val.modified_index());
+  CHECK(1 == val.version());
   CHECK(0 < resp.index());
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd.add("/test/key1", "43").get().error_code()); // Key already exists
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd.add("/test/key1", "42").get().error_code()); // Key already exists
@@ -117,6 +118,7 @@ TEST_CASE("delete a value")
   int index = etcd.get("/test/key1").get().index();
   int create_index = etcd.get("/test/key1").get().value().created_index();
   int modify_index = etcd.get("/test/key1").get().value().modified_index();
+  int version = etcd.get("/test/key1").get().value().version();
 
   std::cerr << "index = " << index
             << ", create index = " << create_index
@@ -131,9 +133,11 @@ TEST_CASE("delete a value")
   CHECK( "/test/key1" == resp.prev_value().key());
   CHECK( create_index == resp.prev_value().created_index());
   CHECK( modify_index == resp.prev_value().modified_index());
+  CHECK( version == resp.prev_value().version());
   CHECK("delete" == resp.action());
   CHECK( modify_index == resp.value().modified_index());
   CHECK( create_index == resp.value().created_index());
+  CHECK( version == resp.value().version());
   CHECK("" == resp.value().as_string());
   CHECK( "/test/key1" == resp.value().key());
 }
