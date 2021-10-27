@@ -110,7 +110,7 @@ std::string const & etcd::Response::key(int index) const
   return _keys[index];
 }
 
-int etcd::Response::compact_revision() const
+int64_t etcd::Response::compact_revision() const
 {
   return _compact_revision;
 }
