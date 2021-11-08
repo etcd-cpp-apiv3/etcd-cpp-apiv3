@@ -20,6 +20,10 @@ namespace etcdv3 {
   }
 }
 
+namespace grpc {
+  class ChannelArguments;
+}
+
 #if defined(WITH_GRPC_CHANNEL_CLASS)
 namespace grpc {
   class Channel;
@@ -61,10 +65,30 @@ namespace etcd
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
      *                 or multiple url, seperated by ',' or ';'.
+     * @param arguments user provided grpc channel arguments.
+     */
+    Client(std::string const & etcd_url,
+           grpc::ChannelArguments const & arguments);
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     static etcd::Client *WithUrl(std::string const & etcd_url,
-           std::string const & load_balancer = "round_robin");
+                                 std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param arguments user provided grpc channel arguments.
+     */
+    static etcd::Client *WithUrl(std::string const & etcd_url,
+                                 grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -87,12 +111,40 @@ namespace etcd
      *                 or multiple url, seperated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
+     * @param arguments user provided grpc channel arguments.
+     */
+    Client(std::string const & etcd_url,
+           std::string const & username,
+           std::string const & password,
+           grpc::ChannelArguments const & arguments);
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param username username of etcd auth
+     * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     static etcd::Client *WithUser(std::string const & etcd_url,
-           std::string const & username,
-           std::string const & password,
-           std::string const & load_balancer = "round_robin");
+                                  std::string const & username,
+                                  std::string const & password,
+                                  std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param username username of etcd auth
+     * @param password password of etcd auth
+     * @param arguments user provided grpc channel arguments.
+     */
+    static etcd::Client *WithUser(std::string const & etcd_url,
+                                  std::string const & username,
+                                  std::string const & password,
+                                  grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -119,6 +171,23 @@ namespace etcd
      * @param ca   root CA file for SSL/TLS connection.
      * @param cert cert chain file for SSL/TLS authentication, could be empty string.
      * @param key  private key file for SSL/TLS authentication, could be empty string.
+     * @param arguments user provided grpc channel arguments.
+     */
+    Client(std::string const & etcd_url,
+           std::string const & ca,
+           std::string const & cert,
+           std::string const & key,
+           std::string const & target_name_override,
+           grpc::ChannelArguments const & arguments);
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param ca   root CA file for SSL/TLS connection.
+     * @param cert cert chain file for SSL/TLS authentication, could be empty string.
+     * @param key  private key file for SSL/TLS authentication, could be empty string.
      * @param target_name_override Override the target host name if you want to pass multiple address
      * for load balancing with SSL, and there's no DNS. The @target_name_override@ must exist in the
      * SANS of your SSL certificate.
@@ -130,6 +199,26 @@ namespace etcd
            std::string const & key = "",
            std::string const & target_name_override = "",
            std::string const & load_balancer = "round_robin");
+
+    /**
+     * Constructs an etcd client object.
+     *
+     * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
+     *                 or multiple url, seperated by ',' or ';'.
+     * @param ca   root CA file for SSL/TLS connection.
+     * @param cert cert chain file for SSL/TLS authentication, could be empty string.
+     * @param key  private key file for SSL/TLS authentication, could be empty string.
+     * @param target_name_override Override the target host name if you want to pass multiple address
+     * for load balancing with SSL, and there's no DNS. The @target_name_override@ must exist in the
+     * SANS of your SSL certificate.
+     * @param arguments user provided grpc channel arguments.
+     */
+    static etcd::Client *WithSSL(std::string const & etcd_url,
+           grpc::ChannelArguments const & arguments,
+           std::string const & ca,
+           std::string const & cert = "",
+           std::string const & key = "",
+           std::string const & target_name_override = "");
 
     /**
      * Get the HEAD revision of the connected etcd server.

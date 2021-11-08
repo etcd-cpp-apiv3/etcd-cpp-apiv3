@@ -200,9 +200,34 @@ etcd::Client::Client(std::string const & address,
   stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
+etcd::Client::Client(std::string const & address,
+                     grpc::ChannelArguments const & arguments)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
+  grpc::ChannelArguments grpc_args = arguments;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  // create stubs
+  stubs.reset(new EtcdServerStubs{});
+  stubs->kvServiceStub = KV::NewStub(this->channel);
+  stubs->watchServiceStub= Watch::NewStub(this->channel);
+  stubs->leaseServiceStub= Lease::NewStub(this->channel);
+  stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
+}
+
 etcd::Client *etcd::Client::WithUrl(std::string const & etcd_url,
                                     std::string const & load_balancer) {
   return new etcd::Client(etcd_url, load_balancer);
+}
+
+etcd::Client *etcd::Client::WithUrl(std::string const & etcd_url,
+                                    grpc::ChannelArguments const & arguments) {
+  return new etcd::Client(etcd_url, arguments);
 }
 
 etcd::Client::Client(std::string const & address,
@@ -235,12 +260,49 @@ etcd::Client::Client(std::string const & address,
   stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
+etcd::Client::Client(std::string const & address,
+                     std::string const & username,
+                     std::string const & password,
+                     grpc::ChannelArguments const & arguments)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
+  grpc::ChannelArguments grpc_args = arguments;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  // auth
+  std::string token_or_message;
+  if (!etcd::detail::authenticate(this->channel, username, password, token_or_message)) {
+    throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
+  }
+  this->auth_token = token_or_message;
+
+  // setup stubs
+  stubs.reset(new EtcdServerStubs{});
+  stubs->kvServiceStub = KV::NewStub(this->channel);
+  stubs->watchServiceStub= Watch::NewStub(this->channel);
+  stubs->leaseServiceStub= Lease::NewStub(this->channel);
+  stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
+}
+
 etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
            std::string const & username,
            std::string const & password,
            std::string const & load_balancer) {
   return new etcd::Client(etcd_url, username, password, load_balancer);
 }
+
+etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
+           std::string const & username,
+           std::string const & password,
+           grpc::ChannelArguments const & arguments) {
+  return new etcd::Client(etcd_url, username, password, arguments);
+}
+
 
 etcd::Client::Client(std::string const & address,
                      std::string const & ca,
@@ -271,6 +333,34 @@ etcd::Client::Client(std::string const & address,
   stubs->electionServiceStub = Election::NewStub(this->channel);
 }
 
+etcd::Client::Client(std::string const & address,
+                     std::string const & ca,
+                     std::string const & cert,
+                     std::string const & key,
+                     std::string const & target_name_override,
+                     grpc::ChannelArguments const & arguments)
+{
+  // create channels
+  std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
+  grpc::ChannelArguments grpc_args = arguments;
+  grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
+  grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
+  std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(
+      etcd::detail::make_ssl_credentials(ca, cert, key));
+  if (!target_name_override.empty()) {
+    grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
+  }
+  this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+
+  // setup stubs
+  stubs.reset(new EtcdServerStubs{});
+  stubs->kvServiceStub = KV::NewStub(this->channel);
+  stubs->watchServiceStub= Watch::NewStub(this->channel);
+  stubs->leaseServiceStub= Lease::NewStub(this->channel);
+  stubs->lockServiceStub = Lock::NewStub(this->channel);
+  stubs->electionServiceStub = Election::NewStub(this->channel);
+}
+
 etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
                                     std::string const & ca,
                                     std::string const & cert,
@@ -278,6 +368,15 @@ etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
                                     std::string const & target_name_override,
                                     std::string const & load_balancer) {
   return new etcd::Client(etcd_url, ca, cert, key, target_name_override, load_balancer);
+}
+
+etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
+                                    grpc::ChannelArguments const & arguments,
+                                    std::string const & ca,
+                                    std::string const & cert,
+                                    std::string const & key,
+                                    std::string const & target_name_override) {
+  return new etcd::Client(etcd_url, ca, cert, key, target_name_override, arguments);
 }
 
 pplx::task<etcd::Response> etcd::Client::head()
