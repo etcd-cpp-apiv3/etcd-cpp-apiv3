@@ -20,17 +20,15 @@ namespace etcdv3 {
   }
 }
 
-namespace grpc {
-  class ChannelArguments;
-}
-
 #if defined(WITH_GRPC_CHANNEL_CLASS)
 namespace grpc {
   class Channel;
+  class ChannelArguments;
 }
 #else
 namespace grpc_impl {
   class Channel;
+  class ChannelArguments;
 }
 #endif
 
@@ -68,7 +66,12 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     Client(std::string const & etcd_url,
-           grpc::ChannelArguments const & arguments);
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+           grpc::ChannelArguments const & arguments
+#else
+           grpc_impl::ChannelArguments const & arguments
+#endif
+           );
 
     /**
      * Constructs an etcd client object.
@@ -88,7 +91,12 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     static etcd::Client *WithUrl(std::string const & etcd_url,
-                                 grpc::ChannelArguments const & arguments);
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+                                 grpc::ChannelArguments const & arguments
+#else
+                                 grpc_impl::ChannelArguments const & arguments
+#endif
+                                 );
 
     /**
      * Constructs an etcd client object.
@@ -116,7 +124,13 @@ namespace etcd
     Client(std::string const & etcd_url,
            std::string const & username,
            std::string const & password,
-           grpc::ChannelArguments const & arguments);
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+           grpc::ChannelArguments const & arguments
+#else
+           grpc_impl::ChannelArguments const & arguments
+#endif
+           );
+
 
     /**
      * Constructs an etcd client object.
@@ -144,7 +158,13 @@ namespace etcd
     static etcd::Client *WithUser(std::string const & etcd_url,
                                   std::string const & username,
                                   std::string const & password,
-                                  grpc::ChannelArguments const & arguments);
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+                                  grpc::ChannelArguments const & arguments
+#else
+                                  grpc_impl::ChannelArguments const & arguments
+#endif
+                                  );
+
 
     /**
      * Constructs an etcd client object.
@@ -178,7 +198,13 @@ namespace etcd
            std::string const & cert,
            std::string const & key,
            std::string const & target_name_override,
-           grpc::ChannelArguments const & arguments);
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+           grpc::ChannelArguments const & arguments
+#else
+           grpc_impl::ChannelArguments const & arguments
+#endif
+           );
+
 
     /**
      * Constructs an etcd client object.
@@ -194,11 +220,11 @@ namespace etcd
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     static etcd::Client *WithSSL(std::string const & etcd_url,
-           std::string const & ca,
-           std::string const & cert = "",
-           std::string const & key = "",
-           std::string const & target_name_override = "",
-           std::string const & load_balancer = "round_robin");
+                                 std::string const & ca,
+                                 std::string const & cert = "",
+                                 std::string const & key = "",
+                                 std::string const & target_name_override = "",
+                                 std::string const & load_balancer = "round_robin");
 
     /**
      * Constructs an etcd client object.
@@ -214,11 +240,15 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     static etcd::Client *WithSSL(std::string const & etcd_url,
-           grpc::ChannelArguments const & arguments,
-           std::string const & ca,
-           std::string const & cert = "",
-           std::string const & key = "",
-           std::string const & target_name_override = "");
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+                                 grpc::ChannelArguments const & arguments,
+#else
+                                 grpc_impl::ChannelArguments const & arguments,
+#endif
+                                 std::string const & ca,
+                                 std::string const & cert = "",
+                                 std::string const & key = "",
+                                 std::string const & target_name_override = "");
 
     /**
      * Get the HEAD revision of the connected etcd server.
