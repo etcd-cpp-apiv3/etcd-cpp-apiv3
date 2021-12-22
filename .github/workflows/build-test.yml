@@ -133,7 +133,9 @@ jobs:
 
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+          cmake .. -DCMAKE_CXX_STANDARD=17 \
+                   -DCMAKE_CXX_STANDARD_REQUIRED=TRUE \
+                   -DCMAKE_BUILD_TYPE=Debug \
                    -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache

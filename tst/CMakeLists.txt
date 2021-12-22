@@ -17,7 +17,6 @@ foreach(testfile ${TEST_FILES})
     endif()
     add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
 
-    set_property(TARGET ${test_name} PROPERTY CXX_STANDARD 11)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
     target_link_libraries(${test_name} etcd-cpp-api)
