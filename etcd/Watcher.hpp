@@ -37,19 +37,23 @@ namespace etcd
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
             std::string const & key,
-            std::function<void(Response)> callback, bool recursive=false);
+            std::function<void(Response)> callback, bool recursive=false,
+            int const auth_token_ttl = 300);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
             std::string const & key, std::string const &range_end,
-            std::function<void(Response)> callback);
+            std::function<void(Response)> callback,
+            int const auth_token_ttl = 300);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
             std::string const & key, int fromIndex,
-            std::function<void(Response)> callback, bool recursive=false);
+            std::function<void(Response)> callback, bool recursive=false,
+            int const auth_token_ttl = 300);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
             std::string const & key, std::string const &range_end, int fromIndex,
-            std::function<void(Response)> callback);
+            std::function<void(Response)> callback,
+            int const auth_token_ttl = 300);
 
     Watcher(Watcher const &) = delete;
     Watcher(Watcher &&) = delete;

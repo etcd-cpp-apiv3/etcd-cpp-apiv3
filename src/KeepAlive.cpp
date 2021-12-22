@@ -27,7 +27,7 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
   stubs->leaseServiceStub = Lease::NewStub(client.channel);
 
   etcdv3::ActionParameters params;
-  params.auth_token.assign(client.auth_token);
+  params.auth_token.assign(client.current_auth_token());
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 
@@ -52,8 +52,8 @@ etcd::KeepAlive::KeepAlive(std::string const & address, int ttl, int64_t lease_i
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
-                           int ttl, int64_t lease_id):
-    KeepAlive(Client(address, username, password), ttl, lease_id) {
+                           int ttl, int64_t lease_id, int const auth_token_ttl):
+    KeepAlive(Client(address, username, password, auth_token_ttl), ttl, lease_id) {
 }
 
 etcd::KeepAlive::KeepAlive(Client const &client,
@@ -64,7 +64,7 @@ etcd::KeepAlive::KeepAlive(Client const &client,
   stubs->leaseServiceStub = Lease::NewStub(client.channel);
 
   etcdv3::ActionParameters params;
-  params.auth_token.assign(client.auth_token);
+  params.auth_token.assign(client.current_auth_token());
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 
@@ -94,8 +94,8 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
                            std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id):
-    KeepAlive(Client(address, username, password), handler, ttl, lease_id) {
+                           int ttl, int64_t lease_id, const int auth_token_ttl):
+    KeepAlive(Client(address, username, password, auth_token_ttl), handler, ttl, lease_id) {
 }
 
 etcd::KeepAlive::~KeepAlive()

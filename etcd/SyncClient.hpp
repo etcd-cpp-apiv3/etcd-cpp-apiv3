@@ -34,10 +34,12 @@ namespace etcd
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
      */
     SyncClient(std::string const & etcd_url,
                std::string const & username,
                std::string const & password,
+               int const auth_token_ttl = 300,
                std::string const & load_balancer = "round_robin");
 
     Response head();

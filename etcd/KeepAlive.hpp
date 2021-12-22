@@ -27,23 +27,25 @@ namespace etcd
   {
   public:
     KeepAlive(Client const &client,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,
               std::string const & username, std::string const & password,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0,
+              int const auth_token_ttl = 300);
 
     KeepAlive(Client const &client,
               std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,
               std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,
               std::string const & username, std::string const & password,
               std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id=0);
+              int ttl, int64_t lease_id = 0,
+              int const auth_token_ttl = 300);
 
     KeepAlive(KeepAlive const &) = delete;
     KeepAlive(KeepAlive &&) = delete;

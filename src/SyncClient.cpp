@@ -18,8 +18,9 @@ etcd::SyncClient::SyncClient(std::string const & address, std::string const & lo
 etcd::SyncClient::SyncClient(std::string const & address,
                              std::string const & username,
                              std::string const & password,
+                             const int auth_token_ttl,
                              std::string const & load_balancer)
-  : client(address, username, password, load_balancer)
+  : client(address, username, password, auth_token_ttl, load_balancer)
 {
 }
 
