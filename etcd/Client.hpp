@@ -598,7 +598,16 @@ namespace etcd
      * Observe the leader change.
      *
      * @param name is the names of election to watch.
-     * @param callback is the names of election to watch.
+     *
+     * @returns an observer that holds that action and will cancel the request when being destructed.
+     */
+    std::unique_ptr<Observer> observe(std::string const &name,
+                                      const bool once = false);
+
+    /**
+     * Observe the leader change.
+     *
+     * @param name is the names of election to watch.
      *
      * @returns an observer that holds that action and will cancel the request when being destructed.
      */

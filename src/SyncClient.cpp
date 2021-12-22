@@ -173,7 +173,14 @@ etcd::Response etcd::SyncClient::leader(std::string const &name)
 }
 
 std::unique_ptr<etcd::Client::Observer> etcd::SyncClient::observe(
-    std::string const &name, std::function<void(etcd::Response)> callback,
+    std::string const &name, const bool once)
+{
+  return client.observe(name, once);
+}
+
+std::unique_ptr<etcd::Client::Observer> etcd::SyncClient::observe(
+    std::string const &name,
+    std::function<void(etcd::Response)> callback,
     const bool once)
 {
   return client.observe(name, callback, once);

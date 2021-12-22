@@ -74,6 +74,8 @@ namespace etcd
                       std::string const &key, int64_t revision, std::string const &value);
     Response leader(std::string const &name);
     std::unique_ptr<Client::Observer> observe(std::string const &name,
+                                              const bool once = false);
+    std::unique_ptr<Client::Observer> observe(std::string const &name,
                                               std::function<void(Response)> callback,
                                               const bool once = false);
     Response resign(std::string const &name, int64_t lease_id,

@@ -42,6 +42,21 @@ namespace etcd
     }
 
     template <typename T>
+    static pplx::task<etcd::Response> create(std::shared_ptr<T> call,
+                                             std::function<void(Response)> callback)
+    {
+      return pplx::task<etcd::Response>([call, callback]()
+      {
+        call->waitForResponse(callback);
+        auto v3resp = call->ParseResponse();
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - call->startTimepoint());
+        return etcd::Response(v3resp, duration);
+      });
+    }
+
+    template <typename T>
     static pplx::task<etcd::Response> create(std::function<std::shared_ptr<T>()> callfn)
     {
       return pplx::task<etcd::Response>([callfn]()

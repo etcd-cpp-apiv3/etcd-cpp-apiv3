@@ -957,7 +957,7 @@ pplx::task<etcd::Response> etcd::Client::leader(std::string const &name) {
 }
 
 std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
-    std::string const &name, std::function<void(Response)> callback, const bool once) {
+    std::string const &name, const bool once) {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->auth_token);
   params.name.assign(name);
@@ -966,6 +966,19 @@ std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
   std::unique_ptr<Observer> observer(new Observer());
   observer->action = call;
   observer->resp = Response::create(call);
+  return observer;
+}
+
+std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
+    std::string const &name, std::function<void(Response)> callback, const bool once) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->auth_token);
+  params.name.assign(name);
+  params.election_stub = stubs->electionServiceStub.get();
+  std::shared_ptr<etcdv3::AsyncObserveAction> call(new etcdv3::AsyncObserveAction(params, once));
+  std::unique_ptr<Observer> observer(new Observer());
+  observer->action = call;
+  observer->resp = Response::create(call, callback);
   return observer;
 }
 
