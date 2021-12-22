@@ -5,6 +5,9 @@ add_custom_target(check ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1
                         ${CMAKE_CTEST_COMMAND} -C $<CONFIG> --verbose
                         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
+add_custom_target(etcd_tests)
+add_dependencies(check etcd_tests)
+
 file(GLOB TEST_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 foreach(testfile ${TEST_FILES})
     string(REGEX MATCH "^(.*)\\.[^.]*$" dummy ${testfile})
@@ -21,5 +24,5 @@ foreach(testfile ${TEST_FILES})
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
     target_link_libraries(${test_name} etcd-cpp-api)
 
-    add_dependencies(check ${test_name})
+    add_dependencies(etcd_tests ${test_name})
 endforeach()

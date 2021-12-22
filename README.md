@@ -180,6 +180,13 @@ Or the etcd client can be constructed explicitly:
                     "http://127.0.0.1:2379", "root", "root");
 ```
 
+The default authentication token will be expired every 5 minutes (300 seconds), which is controlled by
+the `--auth-token-ttl` flag of etcd. When constructing a etcd client, a customized TTL value is allow:
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:2379", "root", "root", 300);
+```
+
 Enabling v3 authentication requires a bit more work for older versions etcd (etcd 3.2.x and etcd 3.3.x).
 First you need to set the `ETCDCTL_API=3`, then
 

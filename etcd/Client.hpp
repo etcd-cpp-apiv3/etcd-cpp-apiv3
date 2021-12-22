@@ -47,6 +47,13 @@ namespace etcd
    */
   class Client
   {
+  private:
+    class TokenAuthenticator;
+    class TokenAuthenticatorDeleter {
+      public:
+        void operator()(TokenAuthenticator *authenticator);
+    };
+
   public:
     /**
      * Constructs an etcd client object.
@@ -106,10 +113,12 @@ namespace etcd
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
      */
     Client(std::string const & etcd_url,
            std::string const & username,
            std::string const & password,
+           int const auth_token_ttl = 300,
            std::string const & load_balancer = "round_robin");
 
     /**
@@ -120,10 +129,13 @@ namespace etcd
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param arguments user provided grpc channel arguments.
+     * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
+     *                       Default value should be 300.
      */
     Client(std::string const & etcd_url,
            std::string const & username,
            std::string const & password,
+           int const auth_token_ttl,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
            grpc::ChannelArguments const & arguments
 #else
@@ -140,10 +152,12 @@ namespace etcd
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
+     * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
      */
     static etcd::Client *WithUser(std::string const & etcd_url,
                                   std::string const & username,
                                   std::string const & password,
+                                  int const auth_token_ttl = 300,
                                   std::string const & load_balancer = "round_robin");
 
     /**
@@ -154,10 +168,13 @@ namespace etcd
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param arguments user provided grpc channel arguments.
+     * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
+     *                       Default value should be 300.
      */
     static etcd::Client *WithUser(std::string const & etcd_url,
                                   std::string const & username,
                                   std::string const & password,
+                                  int const auth_token_ttl,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
                                   grpc::ChannelArguments const & arguments
 #else
@@ -627,13 +644,19 @@ namespace etcd
     pplx::task<Response> resign(std::string const &name, int64_t lease_id,
                                 std::string const &key, int64_t revision);
 
+    /**
+     * Return current auth token.
+     */
+    const std::string &current_auth_token() const;
+
   private:
 #if defined(WITH_GRPC_CHANNEL_CLASS)
     std::shared_ptr<grpc::Channel> channel;
 #else
     std::shared_ptr<grpc_impl::Channel> channel;
 #endif
-    std::string auth_token;
+
+    mutable std::unique_ptr<TokenAuthenticator, TokenAuthenticatorDeleter> token_authenticator;
 
     struct EtcdServerStubs;
     struct EtcdServerStubsDeleter {

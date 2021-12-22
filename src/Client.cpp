@@ -15,6 +15,7 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -165,6 +166,56 @@ static grpc::SslCredentialsOptions make_ssl_credentials(std::string const &ca,
 }
 }
 
+class etcd::Client::TokenAuthenticator {
+  private:
+    std::shared_ptr<grpc::Channel> channel_;
+    std::string username_, password_, token_;
+    int ttl_ = 300;  // see also --auth-token-ttl for etcd
+    std::chrono::time_point<std::chrono::system_clock> updated_at;
+    std::mutex mtx_;
+    bool has_token_ = false;
+
+  public:
+    TokenAuthenticator(): has_token_(false) {
+    }
+
+    TokenAuthenticator(std::shared_ptr<grpc::Channel> channel,
+                       std::string const &username,
+                       std::string const &password,
+                       const int ttl=300)
+      : channel_(channel), username_(username), password_(password), ttl_(ttl), has_token_(false) {
+      if ((!username.empty()) && (!(password.empty()))) {
+        has_token_ = true;
+        renew_if_expired(true);
+      }
+    }
+
+    std::string const &renew_if_expired(const bool force = false) {
+      if (!has_token_) {
+        return token_;
+      }
+      std::lock_guard<std::mutex> scoped_lock(mtx_);
+      if (!token_.empty()) {
+        auto tp = std::chrono::system_clock::now();
+        if (force || std::chrono::duration_cast<std::chrono::seconds>(tp - updated_at).count()
+          > std::max(1, ttl_ - 3)) {
+          updated_at = tp;
+          // auth
+          if (!etcd::detail::authenticate(this->channel_, username_, password_, token_)) {
+            throw std::invalid_argument("Etcd authentication failed: " + token_);
+          }
+        }
+      }
+      return token_;
+    }
+};
+
+void etcd::Client::TokenAuthenticatorDeleter::operator()(etcd::Client::TokenAuthenticator *authenticator) {
+  if (authenticator) {
+    delete authenticator;
+  }
+}
+
 struct etcd::Client::EtcdServerStubs {
   std::unique_ptr<etcdserverpb::KV::Stub> kvServiceStub;
   std::unique_ptr<etcdserverpb::Watch::Stub> watchServiceStub;
@@ -190,6 +241,7 @@ etcd::Client::Client(std::string const & address,
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+  this->token_authenticator.reset(new TokenAuthenticator());
 
   // create stubs
   stubs.reset(new EtcdServerStubs{});
@@ -210,6 +262,7 @@ etcd::Client::Client(std::string const & address,
   grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+  this->token_authenticator.reset(new TokenAuthenticator());
 
   // create stubs
   stubs.reset(new EtcdServerStubs{});
@@ -233,6 +286,7 @@ etcd::Client *etcd::Client::WithUrl(std::string const & etcd_url,
 etcd::Client::Client(std::string const & address,
                      std::string const & username,
                      std::string const & password,
+                     int const auth_token_ttl,
                      std::string const & load_balancer)
 {
   // create channels
@@ -245,11 +299,7 @@ etcd::Client::Client(std::string const & address,
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
 
   // auth
-  std::string token_or_message;
-  if (!etcd::detail::authenticate(this->channel, username, password, token_or_message)) {
-    throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
-  }
-  this->auth_token = token_or_message;
+  this->token_authenticator.reset(new TokenAuthenticator(this->channel, username, password, auth_token_ttl));
 
   // setup stubs
   stubs.reset(new EtcdServerStubs{});
@@ -263,6 +313,7 @@ etcd::Client::Client(std::string const & address,
 etcd::Client::Client(std::string const & address,
                      std::string const & username,
                      std::string const & password,
+                     int const auth_token_ttl,
                      grpc::ChannelArguments const & arguments)
 {
   // create channels
@@ -274,11 +325,7 @@ etcd::Client::Client(std::string const & address,
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
 
   // auth
-  std::string token_or_message;
-  if (!etcd::detail::authenticate(this->channel, username, password, token_or_message)) {
-    throw std::invalid_argument("Etcd authentication failed: " + token_or_message);
-  }
-  this->auth_token = token_or_message;
+  this->token_authenticator.reset(new TokenAuthenticator(this->channel, username, password, auth_token_ttl));
 
   // setup stubs
   stubs.reset(new EtcdServerStubs{});
@@ -290,17 +337,19 @@ etcd::Client::Client(std::string const & address,
 }
 
 etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
-           std::string const & username,
-           std::string const & password,
-           std::string const & load_balancer) {
-  return new etcd::Client(etcd_url, username, password, load_balancer);
+                                     std::string const & username,
+                                     std::string const & password,
+                                     int const auth_token_ttl,
+                                     std::string const & load_balancer) {
+  return new etcd::Client(etcd_url, username, password, auth_token_ttl, load_balancer);
 }
 
 etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
-           std::string const & username,
-           std::string const & password,
-           grpc::ChannelArguments const & arguments) {
-  return new etcd::Client(etcd_url, username, password, arguments);
+                                     std::string const & username,
+                                     std::string const & password,
+                                     int const auth_token_ttl,
+                                     grpc::ChannelArguments const & arguments) {
+  return new etcd::Client(etcd_url, username, password, auth_token_ttl, arguments);
 }
 
 
@@ -323,6 +372,7 @@ etcd::Client::Client(std::string const & address,
     grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
   }
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+  this->token_authenticator.reset(new TokenAuthenticator());
 
   // setup stubs
   stubs.reset(new EtcdServerStubs{});
@@ -351,6 +401,7 @@ etcd::Client::Client(std::string const & address,
     grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
   }
   this->channel = grpc::CreateCustomChannel(addresses, creds, grpc_args);
+  this->token_authenticator.reset(new TokenAuthenticator());
 
   // setup stubs
   stubs.reset(new EtcdServerStubs{});
@@ -382,7 +433,7 @@ etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
 pplx::task<etcd::Response> etcd::Client::head()
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.kv_stub = stubs->kvServiceStub.get();
   std::shared_ptr<etcdv3::AsyncHeadAction> call(new etcdv3::AsyncHeadAction(params));
   return Response::create(call);
@@ -391,7 +442,7 @@ pplx::task<etcd::Response> etcd::Client::head()
 pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = false;
   params.kv_stub = stubs->kvServiceStub.get();
@@ -402,7 +453,7 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.kv_stub = stubs->kvServiceStub.get();
@@ -430,7 +481,7 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
@@ -443,7 +494,7 @@ pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.kv_stub = stubs->kvServiceStub.get();
@@ -470,7 +521,7 @@ pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::add(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
@@ -491,7 +542,7 @@ pplx::task<etcd::Response> etcd::Client::put(std::string const & key, std::strin
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value, int ttl)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.kv_stub = stubs->kvServiceStub.get();
@@ -518,7 +569,7 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::st
 pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::string const & value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
@@ -531,7 +582,7 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const & key, std::st
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int ttl)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.old_value.assign(old_value);
@@ -560,7 +611,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, std::string const & old_value, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.old_value.assign(old_value);
@@ -574,7 +625,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int64_t old_index, int ttl)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.old_revision = old_index;
@@ -602,7 +653,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std::string const & value, int64_t old_index, int64_t leaseid)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.value.assign(value);
   params.lease_id = leaseid;
@@ -617,7 +668,7 @@ pplx::task<etcd::Response> etcd::Client::modify_if(std::string const & key, std:
 pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = false;
   params.kv_stub = stubs->kvServiceStub.get();
@@ -628,7 +679,7 @@ pplx::task<etcd::Response> etcd::Client::rm(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::string const & old_value)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.old_value.assign(old_value);
   params.kv_stub = stubs->kvServiceStub.get();
@@ -640,7 +691,7 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, std::str
 pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int64_t old_index)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.old_revision = old_index;
   params.kv_stub = stubs->kvServiceStub.get();
@@ -653,7 +704,7 @@ pplx::task<etcd::Response> etcd::Client::rm_if(std::string const & key, int64_t 
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, bool recursive)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = recursive;
   params.kv_stub = stubs->kvServiceStub.get();
@@ -669,7 +720,7 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, const ch
 pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, std::string const &range_end)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.withPrefix = false;
@@ -681,7 +732,7 @@ pplx::task<etcd::Response> etcd::Client::rmdir(std::string const & key, std::str
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = true;
   params.limit = 0;  // default no limit.
@@ -693,7 +744,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key)
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t const limit)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = true;
   params.limit = limit;
@@ -705,7 +756,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t cons
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.withPrefix = false;
@@ -718,7 +769,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end, size_t const limit)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.withPrefix = false;
@@ -731,7 +782,7 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = recursive;
   params.watch_stub = stubs->watchServiceStub.get();
@@ -742,7 +793,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool rec
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, int64_t fromIndex, bool recursive)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.withPrefix = recursive;
   params.revision = fromIndex;
@@ -759,7 +810,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, const ch
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.withPrefix = false;
@@ -771,7 +822,7 @@ pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::str
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, std::string const & range_end, int64_t fromIndex)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.withPrefix = false;
@@ -787,7 +838,7 @@ pplx::task<etcd::Response> etcd::Client::leasegrant(int ttl)
   // immediately after the lease is granted by the server.
   return Response::create<etcdv3::AsyncLeaseGrantAction>([this, ttl]() {
     etcdv3::ActionParameters params;
-    params.auth_token.assign(this->auth_token);
+    params.auth_token.assign(this->token_authenticator->renew_if_expired());
     params.ttl = ttl;
     params.lease_stub = stubs->leaseServiceStub.get();
     return std::make_shared<etcdv3::AsyncLeaseGrantAction>(params);
@@ -798,7 +849,7 @@ pplx::task<std::shared_ptr<etcd::KeepAlive>> etcd::Client::leasekeepalive(int tt
   return pplx::task<std::shared_ptr<etcd::KeepAlive>>([this, ttl]()
   {
     etcdv3::ActionParameters params;
-    params.auth_token.assign(this->auth_token);
+    params.auth_token.assign(this->token_authenticator->renew_if_expired());
     params.ttl = ttl;
     params.lease_stub = stubs->leaseServiceStub.get();
     auto call = std::make_shared<etcdv3::AsyncLeaseGrantAction>(params);
@@ -812,7 +863,7 @@ pplx::task<std::shared_ptr<etcd::KeepAlive>> etcd::Client::leasekeepalive(int tt
 pplx::task<etcd::Response> etcd::Client::leaserevoke(int64_t lease_id)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.lease_id = lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> call(new etcdv3::AsyncLeaseRevokeAction(params));
@@ -822,7 +873,7 @@ pplx::task<etcd::Response> etcd::Client::leaserevoke(int64_t lease_id)
 pplx::task<etcd::Response> etcd::Client::leasetimetolive(int64_t lease_id)
 {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.lease_id = lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> call(new etcdv3::AsyncLeaseTimeToLiveAction(params));
@@ -849,7 +900,7 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key, int lease_
     }
 
     etcdv3::ActionParameters params;
-    params.auth_token.assign(this->auth_token);
+    params.auth_token.assign(this->token_authenticator->renew_if_expired());
     params.key = key;
     params.lease_id = lease_id;
     params.lock_stub = stubs->lockServiceStub.get();
@@ -871,7 +922,7 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key, int lease_
 pplx::task<etcd::Response> etcd::Client::lock_with_lease(std::string const &key,
                                               int64_t lease_id) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key = key;
   params.lease_id = lease_id;
   params.lock_stub = stubs->lockServiceStub.get();
@@ -882,7 +933,7 @@ pplx::task<etcd::Response> etcd::Client::lock_with_lease(std::string const &key,
 pplx::task<etcd::Response> etcd::Client::unlock(std::string const &lock_key) {
   // issue a "unlock" request
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.key = lock_key;
   params.lock_stub = stubs->lockServiceStub.get();
   std::shared_ptr<etcdv3::AsyncUnlockAction> call(new etcdv3::AsyncUnlockAction(params));
@@ -914,7 +965,7 @@ pplx::task<etcd::Response> etcd::Client::unlock(std::string const &lock_key) {
 
 pplx::task<etcd::Response> etcd::Client::txn(etcdv3::Transaction const &txn) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.kv_stub = stubs->kvServiceStub.get();
   std::shared_ptr<etcdv3::AsyncTxnAction> call(new etcdv3::AsyncTxnAction(params, txn));
   return Response::create(call);
@@ -923,7 +974,7 @@ pplx::task<etcd::Response> etcd::Client::txn(etcdv3::Transaction const &txn) {
 pplx::task<etcd::Response> etcd::Client::campaign(
     std::string const &name, int64_t lease_id, std::string const &value) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name = name;
   params.lease_id = lease_id;
   params.value = value;
@@ -936,7 +987,7 @@ pplx::task<etcd::Response> etcd::Client::proclaim(
     std::string const &name, int64_t lease_id,
     std::string const &key, int64_t revision, std::string const &value) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name = name;
   params.lease_id = lease_id;
   params.key = key;
@@ -949,7 +1000,7 @@ pplx::task<etcd::Response> etcd::Client::proclaim(
 
 pplx::task<etcd::Response> etcd::Client::leader(std::string const &name) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name = name;
   params.election_stub = stubs->electionServiceStub.get();
   std::shared_ptr<etcdv3::AsyncLeaderAction> call(new etcdv3::AsyncLeaderAction(params));
@@ -959,7 +1010,7 @@ pplx::task<etcd::Response> etcd::Client::leader(std::string const &name) {
 std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
     std::string const &name, const bool once) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name.assign(name);
   params.election_stub = stubs->electionServiceStub.get();
   std::shared_ptr<etcdv3::AsyncObserveAction> call(new etcdv3::AsyncObserveAction(params, once));
@@ -972,7 +1023,7 @@ std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
 std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
     std::string const &name, std::function<void(Response)> callback, const bool once) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name.assign(name);
   params.election_stub = stubs->electionServiceStub.get();
   std::shared_ptr<etcdv3::AsyncObserveAction> call(new etcdv3::AsyncObserveAction(params, once));
@@ -985,7 +1036,7 @@ std::unique_ptr<etcd::Client::Observer> etcd::Client::observe(
 pplx::task<etcd::Response> etcd::Client::resign(
     std::string const &name, int64_t lease_id, std::string const &key, int64_t revision) {
   etcdv3::ActionParameters params;
-  params.auth_token.assign(this->auth_token);
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.name = name;
   params.lease_id = lease_id;
   params.key = key;
@@ -993,6 +1044,10 @@ pplx::task<etcd::Response> etcd::Client::resign(
   params.election_stub = stubs->electionServiceStub.get();
   std::shared_ptr<etcdv3::AsyncResignAction> call(new etcdv3::AsyncResignAction(params));
   return Response::create(call);
+}
+
+const std::string &etcd::Client::current_auth_token() const {
+  return this->token_authenticator->renew_if_expired();
 }
 
 etcd::Client::Observer::~Observer() {
