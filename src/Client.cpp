@@ -195,7 +195,7 @@ class etcd::Client::TokenAuthenticator {
         return token_;
       }
       std::lock_guard<std::mutex> scoped_lock(mtx_);
-      if (!token_.empty()) {
+      if (force || (!token_.empty())) {
         auto tp = std::chrono::system_clock::now();
         if (force || std::chrono::duration_cast<std::chrono::seconds>(tp - updated_at).count()
           > std::max(1, ttl_ - 3)) {
