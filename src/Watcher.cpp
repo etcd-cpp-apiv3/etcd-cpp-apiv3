@@ -109,7 +109,7 @@ bool etcd::Watcher::Wait()
   return stubs->call->Cancelled();
 }
 
-void etcd::Watcher::Wait(std::function<void(bool)> callback)
+void etcd::Watcher::Wait(std::function<bool(bool)> callback)
 {
   if (wait_callback == nullptr) {
     wait_callback = callback;
@@ -118,10 +118,10 @@ void etcd::Watcher::Wait(std::function<void(bool)> callback)
   }
 }
 
-void etcd::Watcher::Cancel()
+bool etcd::Watcher::Cancel()
 {
   stubs->call->CancelWatch();
-  this->Wait();
+  return this->Wait();
 }
 
 void etcd::Watcher::doWatch(std::string const & key,
@@ -141,11 +141,19 @@ void etcd::Watcher::doWatch(std::string const & key,
 
   stubs->call.reset(new etcdv3::AsyncWatchAction(params));
 
-  task_ = std::thread([this, callback]() {
-    stubs->call->waitForResponse(callback);
-    if (wait_callback != nullptr) {
-      wait_callback(stubs->call->Cancelled());
-    }
+  task_ = std::thread([this, params, callback]() {
+    bool continue_watch = false;  // Loop should iterate only once when no 'wait_callback' (to preserve previous behaviour).
+    do
+    {
+      stubs->call->waitForResponse(callback);
+      if (wait_callback != nullptr) {
+        continue_watch = wait_callback(stubs->call->Cancelled());
+        if (continue_watch)
+            stubs->call.reset(new etcdv3::AsyncWatchAction(params));
+      }
+    } while (continue_watch);
+
+    stubs->call->CancelWatch();
   });
   cancelled.store(false);
 }
