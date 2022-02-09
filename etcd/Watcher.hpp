@@ -70,13 +70,17 @@ namespace etcd
      * An async wait, the callback will be called when the task has been stopped.
      *
      * The callback parameter would be true if the watch is been normally cancalled.
+     * If callback returns true, will reactivate the watcher and continue receiving 
+     * watch events, otherwise the watcher ends (default behaviour).
      */
-    void Wait(std::function<void(bool)> callback);
+    void Wait(std::function<bool(bool)> callback);
 
     /**
      * Stop the watching action.
+     * 
+     * Returns true if the watcher has been cancelled, otherwise false.
      */
-    void Cancel();
+    bool Cancel();
 
     ~Watcher();
 
@@ -88,7 +92,7 @@ namespace etcd
 
     int index;
     std::function<void(Response)> callback;
-    std::function<void(bool)> wait_callback;
+    std::function<bool(bool)> wait_callback;
 
     // Don't use `pplx::task` to avoid sharing thread pool with other actions on the client
     // to avoid any potential blocking, which may block the keepalive loop and evict the lease.
