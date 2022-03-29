@@ -1,0 +1,133 @@
+name: Build & Test on CentOS Latest
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    container:
+      image: centos:latest
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        etcd: [v3.4.13]
+    steps:
+      - name: Get time
+        run: |
+          date +'%Y-%m' > snapshot.txt
+
+      - name: Install dependencies for Linux
+        run: |
+          # switch to centos stream
+          dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+          dnf -y update
+
+          # install required dependencies
+          yum -y group install "Development Tools"
+          yum -y install boost-devel \
+                         cmake \
+                         git \
+                         openssl-devel \
+                         wget
+
+          # install screen fetch
+          wget -O screenfetch-dev https://git.io/vaHfR
+          chmod +x screenfetch-dev
+          mv ./screenfetch-dev /usr/bin/screenfetch
+
+
+      # the checkout action require new version of git
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install grpc v1.27.x for CentOS latest
+        run: |
+          # We simply keep the same version with Ubuntu 18.04
+          #
+          git clone https://github.com/grpc/grpc.git --depth 1 --branch v1.27.x
+          cd grpc/
+          git submodule update --init
+          mkdir cmake-build
+          cd cmake-build/
+          cmake .. -DBUILD_SHARED_LIBS=ON \
+            -DgRPC_INSTALL=ON \
+            -DgRPC_BUILD_TESTS=OFF \
+            -DgRPC_BUILD_CSHARP_EXT=OFF \
+            -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF \
+            -DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
+            -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
+            -DgRPC_ZLIB_PROVIDER=package \
+            -DgRPC_SSL_PROVIDER=package
+          make -j`nproc`
+          make install
+
+      - name: Screen fetch
+        run: |
+          screenfetch
+
+      - name: Install etcd for Linux
+        run: |
+          # install etcd
+          wget https://github.com/etcd-io/etcd/releases/download/${{ matrix.etcd }}/etcd-${{ matrix.etcd }}-linux-amd64.tar.gz
+          tar zxvf etcd-${{ matrix.etcd }}-linux-amd64.tar.gz
+          mv etcd-${{ matrix.etcd }}-linux-amd64/etcd /usr/local/bin/
+          mv etcd-${{ matrix.etcd }}-linux-amd64/etcdctl /usr/local/bin/
+
+      - name: Install cpprestsdk
+        run: |
+          mkdir -p build
+          cd build
+          git clone https://github.com/microsoft/cpprestsdk.git
+          mkdir -p cpprestsdk/build
+          cd cpprestsdk/build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DBUILD_TESTS=OFF \
+                   -DBUILD_SAMPLES=OFF \
+                   -DCPPREST_EXCLUDE_WEBSOCKETS=ON
+          make -j`nproc`
+          make install
+
+      - name: Build
+        run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64
+
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_CXX_STANDARD=17 \
+                   -DCMAKE_CXX_STANDARD_REQUIRED=TRUE \
+                   -DCMAKE_BUILD_TYPE=Debug \
+                   -DBUILD_ETCD_TESTS=ON
+          make -j`nproc`
+          make install
+
+      - name: Setup tmate session
+        if: false
+        uses: mxschmitt/action-tmate@v2
+
+      - name: Test
+        run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+
+          rm -rf default.etcd
+          /usr/local/bin/etcd &
+
+          sleep 5
+
+          # tests without auth
+          ./build/bin/EtcdSyncTest
+          ./build/bin/EtcdTest
+          ./build/bin/LockTest
+          ./build/bin/MemLeakTest
+          ./build/bin/WatcherTest
+          ./build/bin/ElectionTest
+
+          killall -TERM etcd
+          sleep 5
