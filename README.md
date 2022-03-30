@@ -9,8 +9,9 @@ i.e., `ETCDCTL_API=3`.
 ### Supported OS environments
 
 + **Linux**
-  - Ubuntu 18.04, requires upgrade gRPC libraries (has been tested with 1.27.x).
+  - Ubuntu 18.04, requires upgrade gRPC libraries (tested with 1.27.x).
   - Ubuntu 20.04
+  - CentOS 8 (tested with 1.27.x)
 
 + **MacOS**
   - MacOS 10.15

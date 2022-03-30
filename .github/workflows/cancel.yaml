@@ -8,6 +8,6 @@ jobs:
     steps:
       - uses: styfle/cancel-workflow-action@0.9.1
         with:
-          workflow_id: build-deb-package.yml,build-test.yml
+          workflow_id: build-deb-package.yml,build-test.yml,centos-latest.yml
           access_token: ${{ github.token }}
 
