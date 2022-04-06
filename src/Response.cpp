@@ -34,6 +34,11 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
 
   // duration
   _duration = duration;
+
+  // etcd head
+  _cluster_id = reply.get_cluster_id();
+  _member_id = reply.get_member_id();
+  _raft_term = reply.get_raft_term();
 }
 
 
@@ -129,4 +134,16 @@ std::vector<etcd::Event> const & etcd::Response::events() const {
 
 std::chrono::microseconds const& etcd::Response::duration() const {
   return this->_duration;
+}
+
+uint64_t etcd::Response::cluster_id() const {
+  return this->_cluster_id;
+}
+
+uint64_t etcd::Response::member_id() const {
+  return this->_member_id;
+}
+
+uint64_t etcd::Response::raft_term() const {
+  return this->_raft_term;
 }

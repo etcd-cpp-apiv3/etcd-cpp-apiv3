@@ -171,6 +171,21 @@ namespace etcd
      */
     std::chrono::microseconds const & duration() const;
 
+    /**
+     * Returns the current cluster id.
+     */
+    uint64_t cluster_id() const;
+
+    /**
+     * Returns the current member id.
+     */
+    uint64_t member_id() const;
+
+    /**
+     * Returns ther current raft term.
+     */
+    uint64_t raft_term() const;
+
   protected:
     Response(const etcdv3::V3Response& response, std::chrono::microseconds const& duration);
     Response(int error_code, char const * error_message);
@@ -189,6 +204,10 @@ namespace etcd
     std::vector<Event> _events; // for watch
     // execute duration (in microseconds), during the action created and response parsed
     std::chrono::microseconds _duration;
+
+    uint64_t    _cluster_id;
+    uint64_t    _member_id;
+    uint64_t    _raft_term;
 
     friend class Client;
     friend class SyncClient;
