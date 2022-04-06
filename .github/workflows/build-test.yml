@@ -129,7 +129,7 @@ jobs:
 
       - name: Build
         run: |
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           mkdir -p build
           cd build
@@ -148,7 +148,7 @@ jobs:
 
       - name: Test
         run: |
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           # use etcd v3 api
           export ETCDCTL_API="3"
@@ -171,7 +171,7 @@ jobs:
 
       - name: Authentication Test
         run: |
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           # use etcd v3 api
           export ETCDCTL_API="3"
@@ -212,7 +212,7 @@ jobs:
 
       - name: Transport Security and Authentication Test
         run: |
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           # use etcd v3 api
           export ETCDCTL_API="3"

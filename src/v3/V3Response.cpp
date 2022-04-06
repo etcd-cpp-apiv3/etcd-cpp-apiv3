@@ -85,3 +85,15 @@ std::string const & etcdv3::V3Response::get_name() const {
 std::vector<mvccpb::Event> const & etcdv3::V3Response::get_events() const {
   return this->events;
 }
+
+uint64_t etcdv3::V3Response::get_cluster_id() const {
+  return this->cluster_id;
+}
+
+uint64_t etcdv3::V3Response::get_member_id() const {
+  return this->member_id;
+}
+
+uint64_t etcdv3::V3Response::get_raft_term() const {
+  return this->raft_term;
+}

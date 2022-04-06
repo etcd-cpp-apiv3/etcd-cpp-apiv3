@@ -31,6 +31,9 @@ namespace etcdv3
     void set_name(std::string const &name);
     std::string const &get_name() const;
     std::vector<mvccpb::Event> const & get_events() const;
+    uint64_t get_cluster_id() const;
+    uint64_t get_member_id() const;
+    uint64_t get_raft_term() const;
   protected:
     int error_code;
     int64_t index;
@@ -44,6 +47,9 @@ namespace etcdv3
     std::string lock_key; // for lock
     std::string name;  // for campaign (in v3election)
     std::vector<mvccpb::Event> events; // for watch
+    uint64_t cluster_id;
+    uint64_t member_id;
+    uint64_t raft_term;
   };
 }
 #endif
