@@ -580,28 +580,28 @@ void wait_for_connection(etcd::Client &client) {
 
 // a loop for initialized a watcher with auto-restart capability
 void initialize_watcher(const std::string& endpoints,
-	                      const std::string& prefix,
-	                      std::function<void(etcd::Response)> callback,
-	                      std::shared_ptr<etcd::Watcher>& watcher) {
-	etcd::Client client(endpoints);
-	wait_for_connection(client);
+                        const std::string& prefix,
+                        std::function<void(etcd::Response)> callback,
+                        std::shared_ptr<etcd::Watcher>& watcher) {
+  etcd::Client client(endpoints);
+  wait_for_connection(client);
 
   // Check if the failed one has been cancelled first
   if (watcher && watcher->Cancelled()) {
     std::cout << "watcher's reconnect loop been cancelled" << std::endl;
     return;
   }
-	watcher.reset(new etcd::Watcher(client, prefix, callback, true));
+  watcher.reset(new etcd::Watcher(client, prefix, callback, true));
 
-	// Note that lambda requires `mutable`qualifier.
-	watcher->Wait([endpoints, prefix, callback,
-		  /* By reference for renewing */ &watcher](bool cancelled) mutable {
+  // Note that lambda requires `mutable`qualifier.
+  watcher->Wait([endpoints, prefix, callback,
+    /* By reference for renewing */ &watcher](bool cancelled) mutable {
     if (cancelled) {
       std::cout << "watcher's reconnect loop stopped as been cancelled" << std::endl;
       return;
     }
     initialize_watcher(endpoints, prefix, callback, watcher);
-	});
+  });
 }
 ```
 

@@ -13,7 +13,7 @@ etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(
     etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
-	LeaseGrantRequest leasegrant_request;
+  LeaseGrantRequest leasegrant_request;
   leasegrant_request.set_ttl(parameters.ttl);
   // If ID is set to 0, etcd will choose an ID.
   leasegrant_request.set_id(parameters.lease_id);
@@ -40,7 +40,7 @@ etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(
     etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
-	LeaseRevokeRequest leaserevoke_request;
+  LeaseRevokeRequest leaserevoke_request;
   leaserevoke_request.set_id(parameters.lease_id);
 
   response_reader = parameters.lease_stub->AsyncLeaseRevoke(&context, leaserevoke_request, &cq_);
@@ -162,7 +162,7 @@ etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(
     etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
-	LeaseTimeToLiveRequest leasetimetolive_request;
+  LeaseTimeToLiveRequest leasetimetolive_request;
   leasetimetolive_request.set_id(parameters.lease_id);
   // FIXME: unsupported parameters: "keys"
   // leasetimetolive_request.set_keys(parameters.keys);
@@ -189,7 +189,7 @@ etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(
     etcdv3::ActionParameters const &param)
   : etcdv3::Action(param)
 {
-	LeaseLeasesRequest leaseleases_request;
+  LeaseLeasesRequest leaseleases_request;
 
   response_reader = parameters.lease_stub->AsyncLeaseLeases(&context, leaseleases_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);

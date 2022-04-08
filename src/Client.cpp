@@ -146,9 +146,9 @@ static std::string read_from_file(std::string const &filename) {
   std::ifstream file(filename.c_str(), std::ios::in);
   if (file.is_open()) {
     std::stringstream ss;
-		ss << file.rdbuf ();
-		file.close ();
-		return ss.str ();
+    ss << file.rdbuf ();
+    file.close ();
+    return ss.str ();
   }
   return std::string{};
 }
