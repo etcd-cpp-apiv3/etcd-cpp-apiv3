@@ -108,7 +108,6 @@ void etcdv3::AsyncWatchAction::waitForResponse()
 
 void etcdv3::AsyncWatchAction::CancelWatch()
 {
-  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
   if (!isCancelled.exchange(true)) {
     stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
 

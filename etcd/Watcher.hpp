@@ -76,7 +76,12 @@ namespace etcd
     /**
      * Stop the watching action.
      */
-    void Cancel();
+    bool Cancel();
+
+    /**
+     * Whether the watcher has been cancelled.
+     */
+    bool Cancelled() const;
 
     ~Watcher();
 

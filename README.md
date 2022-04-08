@@ -570,30 +570,42 @@ to decide if a watcher should re-connect to the etcd server.
 Here is an example how users can make a watcher re-connect to server after disconnected.
 
 ```c++
-void wait_for_connection(Client &client) {
+// wait the client ready
+void wait_for_connection(etcd::Client &client) {
   // wait until the client connects to etcd server 
-  // `head` API is only available in version later than 0.2.1
   while (!client.head().get().is_ok()) {
     sleep(1);
   }
 }
 
-void initialize_watcher(const std::string &endpoints, 
-  const std::string &prefix,
-  std::function<void(Response)> callback, 
-  std::shared_ptr<etcd::Watcher> &watcher) {
-    Client client(endpoints);
-    wait_for_connection(client); 
-    watcher->reset(new etcd::Watcher(client, prefix, callback));
-    watcher->Wait([endpoints, prefix, callback,
-                   watcher_ref /* keep the shared_ptr alive */, &watcher](bool cancelled) {
-        if (cancelled) {
-            return;
-        }
-        initialize_watcher(endpoints, prefix, callback, watcher);
-    });
+// a loop for initialized a watcher with auto-restart capability
+void initialize_watcher(const std::string& endpoints,
+	                      const std::string& prefix,
+	                      std::function<void(etcd::Response)> callback,
+	                      std::shared_ptr<etcd::Watcher>& watcher) {
+	etcd::Client client(endpoints);
+	wait_for_connection(client);
+
+  // Check if the failed one has been cancelled first
+  if (watcher && watcher->Cancelled()) {
+    std::cout << "watcher's reconnect loop been cancelled" << std::endl;
+    return;
+  }
+	watcher.reset(new etcd::Watcher(client, prefix, callback, true));
+
+	// Note that lambda requires `mutable`qualifier.
+	watcher->Wait([endpoints, prefix, callback,
+		  /* By reference for renewing */ &watcher](bool cancelled) mutable {
+    if (cancelled) {
+      std::cout << "watcher's reconnect loop stopped as been cancelled" << std::endl;
+      return;
+    }
+    initialize_watcher(endpoints, prefix, callback, watcher);
+	});
 }
 ```
+
+The functionalities can be used as
 
 ```c++
 std::string endpoints = "http://127.0.0.1:2379";  
@@ -601,9 +613,11 @@ std::function<void(Response)> callback = printResponse;
 const std::string prefix = "/test/key"; 
 
 // the watcher initialized in this way will auto re-connect to etcd
-std::unique_ptr<etcd::Watcher> watcher;
+std::shared_ptr<etcd::Watcher> watcher;
 initialize_watcher(endpoints, prefix, callback, watcher);
 ```
+
+For a complete runnable example, see also [./tst/RewatchTest.cpp](./tst/RewatchTest.cpp).
 
 ### Requesting for lease
 

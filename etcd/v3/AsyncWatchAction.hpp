@@ -29,7 +29,6 @@ namespace etcdv3
       WatchResponse reply;
       std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;   
       std::atomic_bool isCancelled;
-      std::mutex protect_is_cancalled;
   };
 }
 

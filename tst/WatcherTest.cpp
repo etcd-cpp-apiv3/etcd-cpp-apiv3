@@ -17,8 +17,7 @@ void printResponse(etcd::Response const & resp)
   if (resp.error_code()) {
     std::cout << resp.error_code() << ": " << resp.error_message() << std::endl;
   }
-  else
-  {
+  else {
     std::cout << resp.action() << " " << resp.value().as_string() << std::endl;
     std::cout << "Previous value: " << resp.prev_value().as_string() << std::endl;
 
