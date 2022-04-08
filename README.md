@@ -586,14 +586,11 @@ void initialize_watcher(const std::string &endpoints,
     wait_for_connection(client); 
     watcher->reset(new etcd::Watcher(client, prefix, callback));
     watcher->Wait([endpoints, prefix, callback,
-                   /* watcher reference keep the shared_ptr alive */, &watcher](bool cancelled) -> bool {
+                   watcher_ref /* keep the shared_ptr alive */, &watcher](bool cancelled) {
         if (cancelled) {
-            return false;    // No reactivate watcher (default behaviour).
+            return;
         }
-        
-        etcd::Client client(endpoints);
-        wait_for_connection(client);
-        return true;    // Reactivate watcher.
+        initialize_watcher(endpoints, prefix, callback, watcher);
     });
 }
 ```
@@ -604,7 +601,7 @@ std::function<void(Response)> callback = printResponse;
 const std::string prefix = "/test/key"; 
 
 // the watcher initialized in this way will auto re-connect to etcd
-std::shared_ptr<etcd::Watcher> watcher;
+std::unique_ptr<etcd::Watcher> watcher;
 initialize_watcher(endpoints, prefix, callback, watcher);
 ```
 
