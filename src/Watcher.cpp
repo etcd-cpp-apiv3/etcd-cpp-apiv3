@@ -118,10 +118,15 @@ void etcd::Watcher::Wait(std::function<void(bool)> callback)
   }
 }
 
-void etcd::Watcher::Cancel()
+bool etcd::Watcher::Cancel()
 {
   stubs->call->CancelWatch();
-  this->Wait();
+  return this->Wait();
+}
+
+bool etcd::Watcher::Cancelled() const
+{
+  return cancelled.load() || stubs->call->Cancelled();
 }
 
 void etcd::Watcher::doWatch(std::string const & key,
@@ -144,7 +149,10 @@ void etcd::Watcher::doWatch(std::string const & key,
   task_ = std::thread([this, callback]() {
     stubs->call->waitForResponse(callback);
     if (wait_callback != nullptr) {
-      wait_callback(stubs->call->Cancelled());
+      // issue the callback in another thread to avoid deadlock, is ok to detach the pplx::task
+      pplx::task<void>([this]() -> void {
+        wait_callback(stubs->call->Cancelled());
+      });
     }
   });
   cancelled.store(false);
