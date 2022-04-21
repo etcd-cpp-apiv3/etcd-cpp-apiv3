@@ -23,7 +23,7 @@ etcd::Watcher::Watcher(Client const &client, std::string const & key,
     Watcher(client, key, range_end, -1, callback) {
 }
 
-etcd::Watcher::Watcher(Client const &client, std::string const & key, int fromIndex,
+etcd::Watcher::Watcher(Client const &client, std::string const & key, int64_t fromIndex,
                        std::function<void(Response)> callback, bool recursive):
     fromIndex(fromIndex), recursive(recursive) {
   stubs.reset(new EtcdServerStubs{});
@@ -32,7 +32,7 @@ etcd::Watcher::Watcher(Client const &client, std::string const & key, int fromIn
 }
 
 etcd::Watcher::Watcher(Client const &client, std::string const & key,
-                       std::string const &range_end, int fromIndex,
+                       std::string const &range_end, int64_t fromIndex,
                        std::function<void(Response)> callback):
     fromIndex(fromIndex), recursive(false) {
   stubs.reset(new EtcdServerStubs{});
@@ -51,13 +51,13 @@ etcd::Watcher::Watcher(std::string const & address, std::string const & key,
     Watcher(address, key, range_end, -1, callback) {
 }
 
-etcd::Watcher::Watcher(std::string const & address, std::string const & key, int fromIndex,
+etcd::Watcher::Watcher(std::string const & address, std::string const & key, int64_t fromIndex,
                        std::function<void(Response)> callback, bool recursive):
     Watcher(Client(address), key, fromIndex, callback, recursive) {
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key,
-                       std::string const & range_end, int fromIndex,
+                       std::string const & range_end, int64_t fromIndex,
                        std::function<void(Response)> callback):
     Watcher(Client(address), key, range_end, fromIndex, callback) {
 }
@@ -80,7 +80,7 @@ etcd::Watcher::Watcher(std::string const & address,
 
 etcd::Watcher::Watcher(std::string const & address,
             std::string const & username, std::string const & password,
-            std::string const & key, int fromIndex,
+            std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive,
             int const auth_token_ttl):
     Watcher(Client(address, username, password, auth_token_ttl), key, fromIndex, callback, recursive) {
@@ -88,7 +88,7 @@ etcd::Watcher::Watcher(std::string const & address,
 
 etcd::Watcher::Watcher(std::string const & address,
             std::string const & username, std::string const & password,
-            std::string const & key, std::string const & range_end, int fromIndex,
+            std::string const & key, std::string const & range_end, int64_t fromIndex,
             std::function<void(Response)> callback,
             int const auth_token_ttl):
     Watcher(Client(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback) {

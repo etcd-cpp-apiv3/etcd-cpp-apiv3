@@ -19,20 +19,20 @@ namespace etcd
     Watcher(Client const &client, std::string const & key,
             std::string const &range_end,
             std::function<void(Response)> callback);
-    Watcher(Client const &client, std::string const & key, int fromIndex,
+    Watcher(Client const &client, std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
     Watcher(Client const &client, std::string const & key,
-            std::string const &range_end, int fromIndex,
+            std::string const &range_end, int64_t fromIndex,
             std::function<void(Response)> callback);
     Watcher(std::string const & address, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
     Watcher(std::string const & address, std::string const & key,
             std::string const &range_end,
             std::function<void(Response)> callback);
-    Watcher(std::string const & address, std::string const & key, int fromIndex,
+    Watcher(std::string const & address, std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
     Watcher(std::string const & address, std::string const & key,
-            std::string const &range_end, int fromIndex,
+            std::string const &range_end, int64_t fromIndex,
             std::function<void(Response)> callback);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
@@ -46,12 +46,12 @@ namespace etcd
             int const auth_token_ttl = 300);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
-            std::string const & key, int fromIndex,
+            std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive=false,
             int const auth_token_ttl = 300);
     Watcher(std::string const & address,
             std::string const & username, std::string const & password,
-            std::string const & key, std::string const &range_end, int fromIndex,
+            std::string const & key, std::string const &range_end, int64_t fromIndex,
             std::function<void(Response)> callback,
             int const auth_token_ttl = 300);
 
@@ -91,7 +91,6 @@ namespace etcd
                  std::string const & auth_token,
                  std::function<void(Response)> callback);
 
-    int index;
     std::function<void(Response)> callback;
     std::function<void(bool)> wait_callback;
 
@@ -106,7 +105,7 @@ namespace etcd
     std::unique_ptr<EtcdServerStubs, EtcdServerStubsDeleter> stubs;
 
   private:
-    int fromIndex;
+    int64_t fromIndex;
     bool recursive;
     std::atomic_bool cancelled;
   };

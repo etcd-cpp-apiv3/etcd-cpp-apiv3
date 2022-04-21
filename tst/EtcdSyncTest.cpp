@@ -51,7 +51,7 @@ TEST_CASE("sync operations")
 
   // compare and swap
   etcd.set("/test/key1", "42");
-  int index = etcd.modify_if("/test/key1", "43", "42").index();
+  int64_t index = etcd.modify_if("/test/key1", "43", "42").index();
   CHECK(etcd::ERROR_COMPARE_FAILED == etcd.modify_if("/test/key1", "44", "42").error_code());
   REQUIRE(etcd.modify_if("/test/key1", "44", index).is_ok());
   CHECK(etcd::ERROR_COMPARE_FAILED == etcd.modify_if("/test/key1", "45", index).error_code());
@@ -158,7 +158,7 @@ TEST_CASE("watch changes in the past")
 {
   etcd::SyncClient etcd(etcd_uri);
 
-  auto index = etcd.set("/test/key1", "42").index();
+  int64_t index = etcd.set("/test/key1", "42").index();
 
   etcd.set("/test/key1", "43");
   etcd.set("/test/key1", "44");
