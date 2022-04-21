@@ -687,7 +687,7 @@ pplx::task<Response> campaign(std::string const &name, int64_t lease_id,
                               std::string const &value);
 
 pplx::task<Response> proclaim(std::string const &name, int64_t lease_id,
-                              std::string const &key, , int revision,
+                              std::string const &key, int64_t revision,
                               std::string const &value);
 
 pplx::task<Response> leader(std::string const &name);
@@ -697,7 +697,7 @@ std::unique_ptr<Observer> observe(std::string const &name,
                                   const bool once = false);
 
 pplx::task<Response> resign(std::string const &name, int64_t lease_id,
-                            std::string const &key, int revision);
+                            std::string const &key, int64_t revision);
 ```
 
 for more details, please refer to [etcd/Client.hpp](./etcd/Client.hpp).

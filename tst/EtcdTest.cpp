@@ -115,10 +115,10 @@ TEST_CASE("delete a value")
   CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
   CHECK("Key not found" == resp.error_message());
 
-  int index = etcd.get("/test/key1").get().index();
-  int create_index = etcd.get("/test/key1").get().value().created_index();
-  int modify_index = etcd.get("/test/key1").get().value().modified_index();
-  int version = etcd.get("/test/key1").get().value().version();
+  int64_t index = etcd.get("/test/key1").get().index();
+  int64_t create_index = etcd.get("/test/key1").get().value().created_index();
+  int64_t modify_index = etcd.get("/test/key1").get().value().modified_index();
+  int64_t version = etcd.get("/test/key1").get().value().version();
 
   std::cerr << "index = " << index
             << ", create index = " << create_index
@@ -161,7 +161,7 @@ TEST_CASE("atomic compare-and-delete based on prevValue")
 TEST_CASE("atomic compare-and-delete based on prevIndex")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
-  int index = etcd.set("/test/key1", "42").get().index();
+  int64_t index = etcd.set("/test/key1", "42").get().index();
 
   etcd::Response res = etcd.rm_if("/test/key1", index - 1).get();
   CHECK(!res.is_ok());
@@ -182,7 +182,7 @@ TEST_CASE("deep atomic compare-and-swap")
 
   // modify success
   etcd::Response res = etcd.modify_if("/test/key1", "43", "42").get();
-  int index = res.index();
+  int64_t index = res.index();
   REQUIRE(res.is_ok());
   CHECK("compareAndSwap" == res.action());
   CHECK("43" == res.value().as_string());
@@ -379,13 +379,13 @@ TEST_CASE("watch changes in the past")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
-  auto index = etcd.set("/test/key1", "42").get().index();
+  int64_t index = etcd.set("/test/key1", "42").get().index();
 
   etcd.set("/test/key1", "43").wait();
   etcd.set("/test/key1", "44").wait();
   etcd.set("/test/key1", "45").wait();
 
-  auto head_index = etcd.head().get().index();
+  int64_t head_index = etcd.head().get().index();
   CHECK(index + 3 == head_index);
 
   etcd::Response res = etcd.watch("/test/key1", ++index).get();
@@ -406,14 +406,14 @@ TEST_CASE("watch range changes in the past")
 {
   etcd::Client etcd("http://127.0.0.1:2379");
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
-  int index = etcd.set("/test/key1", "42").get().index();
+  int64_t index = etcd.set("/test/key1", "42").get().index();
 
   etcd.set("/test/key1", "43").wait();
   etcd.set("/test/key2", "44").wait();
   etcd.set("/test/key3", "45").wait();
   etcd.set("/test/key4", "45").wait();
 
-  int head_index = etcd.head().get().index();
+  int64_t head_index = etcd.head().get().index();
   CHECK(index + 4 == head_index);
 
   etcd::Response res;
@@ -431,7 +431,7 @@ TEST_CASE("watch range changes in the past")
 TEST_CASE("watch multiple keys and use promise") {
   etcd::Client etcd("http://127.0.0.1:2379");
 
-  int start_index = etcd.set("/test/key1", "value1").get().index();
+  int64_t start_index = etcd.set("/test/key1", "value1").get().index();
   etcd.set("/test/key2", "value2").get();
 
   pplx::task<size_t> res = etcd.watch("/test", start_index, true)
@@ -484,7 +484,7 @@ TEST_CASE("lease grant")
   CHECK("etcdserver: requested lease not found" == res.error_message());
 
   res = etcd.modify_if("/test/key1", "45", "44", leaseid).get();
-  int index = res.index();
+  int64_t index = res.index();
   REQUIRE(res.is_ok());
   CHECK("compareAndSwap" == res.action());
   CHECK("45" == res.value().as_string());
