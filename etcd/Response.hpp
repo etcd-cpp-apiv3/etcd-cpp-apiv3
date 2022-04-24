@@ -85,6 +85,8 @@ namespace etcd
 
     Response();
 
+    Response(const Response &);
+
     /**
      * Returns true if this is a successful response
      */
@@ -192,13 +194,13 @@ namespace etcd
 
     int         _error_code;
     std::string _error_message;
-    int64_t         _index;
+    int64_t     _index;
     std::string _action;
     Value       _value;
     Value       _prev_value;
     Values      _values;
     Keys        _keys;
-    int64_t         _compact_revision = -1; // for watch
+    int64_t     _compact_revision = -1; // for watch
     std::string _lock_key; // for lock
     std::string _name;  // for campaign (in v3election)
     std::vector<Event> _events; // for watch

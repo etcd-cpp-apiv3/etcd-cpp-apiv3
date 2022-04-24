@@ -3,6 +3,32 @@
 
 #include <iostream>
 
+etcd::Response::Response()
+  : _error_code(0),
+    _index(0)
+{
+}
+
+etcd::Response::Response(const etcd::Response & response) {
+  this->_error_code = response._error_code;
+  this->_error_message = response._error_message;
+  this->_index = response._index;
+  this->_action = response._action;
+  this->_value = response._value;
+  this->_prev_value = response._prev_value;
+  this->_values = response._values;
+  this->_keys = response._keys;
+  this->_compact_revision = response._compact_revision;
+  this->_lock_key = response._lock_key;
+  this->_name = response._name; 
+  this->_events = response._events;
+  this->_duration = response._duration;
+
+  this->_cluster_id = response._cluster_id;
+  this->_member_id = response._member_id;
+  this->_raft_term = response._raft_term;
+}
+
 etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseconds const& duration)
 {
   _index = reply.get_index();
@@ -39,13 +65,6 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _cluster_id = reply.get_cluster_id();
   _member_id = reply.get_member_id();
   _raft_term = reply.get_raft_term();
-}
-
-
-etcd::Response::Response()
-  : _error_code(0),
-    _index(0)
-{
 }
 
 etcd::Response::Response(int error_code, char const * error_message)
