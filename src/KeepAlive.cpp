@@ -141,7 +141,7 @@ void etcd::KeepAlive::refresh()
 #endif
     } else {
       if (this->continue_next.load()) {
-        auto resp = this->stubs->call->Refresh();
+        auto resp = this->stubs->call->Refresh(ttl);
         if (!resp.is_ok()) {
           throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
                                    ", message: " + resp.error_message());

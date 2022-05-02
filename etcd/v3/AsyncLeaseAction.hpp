@@ -46,7 +46,7 @@ namespace etcdv3
       AsyncLeaseKeepAliveAction(etcdv3::ActionParameters const &param);
       AsyncLeaseKeepAliveResponse ParseResponse();
 
-      etcd::Response Refresh();
+      etcd::Response Refresh(int ttl);
       void CancelKeepAlive();
       bool Cancelled() const;
 

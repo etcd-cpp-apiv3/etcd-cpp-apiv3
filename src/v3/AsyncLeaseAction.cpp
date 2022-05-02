@@ -91,7 +91,7 @@ etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::ParseResp
   return lease_resp;
 }
 
-etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
+etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh(int ttl)
 {
   std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
 
@@ -108,16 +108,19 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
 
   void *got_tag = nullptr;
   bool ok = false;
+  auto deadline = std::chrono::system_clock::now()  + std::chrono::seconds(ttl);
 
   stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
   // wait write finish
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
+  if (cq_.AsyncNext(&got_tag, &ok, deadline) == CompletionQueue::NextStatus::GOT_EVENT && 
+      ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
     stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
     // wait read finish
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
+    if (cq_.AsyncNext(&got_tag, &ok, deadline) == CompletionQueue::NextStatus::GOT_EVENT && 
+        ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
       auto resp = ParseResponse();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - start_timepoint);
+                      std::chrono::high_resolution_clock::now() - start_timepoint);
       return etcd::Response(resp, duration);
     }
   }
