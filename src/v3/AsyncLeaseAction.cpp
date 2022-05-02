@@ -120,7 +120,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh(int ttl)
         ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
       auto resp = ParseResponse();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                      std::chrono::high_resolution_clock::now() - start_timepoint);
+            std::chrono::high_resolution_clock::now() - start_timepoint);
       return etcd::Response(resp, duration);
     }
   }
