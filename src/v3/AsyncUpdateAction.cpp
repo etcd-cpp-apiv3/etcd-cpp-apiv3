@@ -11,8 +11,8 @@ using etcdserverpb::ResponseOp;
 using etcdserverpb::TxnRequest;
 
 etcdv3::AsyncUpdateAction::AsyncUpdateAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param) 
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params)) 
 {
   etcdv3::Transaction transaction(parameters.key);
   transaction.init_compare(CompareResult::GREATER,

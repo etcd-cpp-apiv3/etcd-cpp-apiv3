@@ -61,11 +61,12 @@ TEST_CASE("double lock will fail")
     REQUIRE(0 == resp3.error_code());
 
     // create a duration
-    first_lock_release = true;
     // using a duration longer than default lease TTL for lock (see: DEFAULT_LEASE_TTL_FOR_LOCK)
     std::this_thread::sleep_for(std::chrono::seconds(15));
 
     // unlock the first lock
+    first_lock_release = true;
+
     etcd::Response resp4 = etcd.unlock(lock_key).get();
     CHECK("unlock" == resp4.action());
     REQUIRE(resp4.is_ok());
@@ -171,18 +172,18 @@ TEST_CASE("concurrent lock & unlock")
   etcd::Client etcd("http://127.0.0.1:2379");
   std::string const lock_key = "/test/test_key";
 
-  constexpr size_t trials = 128;
+  constexpr size_t trials = 192;
 
   std::function<void(std::string const &, const size_t)> locker = [&etcd](std::string const &key, const size_t index) {
-    std::cout << "start lock for " << index << std::endl;
     auto resp = etcd.lock(key).get();
-    std::cout << "lock for " << index << " is ok, start sleep: ..." << resp.error_message() << std::endl;
+    std::cout << "lock for " << index << " is ok, starts sleeping: ..." << resp.error_message() << std::endl << std::flush;
     REQUIRE(resp.is_ok());
     std::srand(index);
     size_t time_to_sleep = 1;
     std::this_thread::sleep_for(std::chrono::seconds(time_to_sleep));
+    std::cout << "lock for " << index << " resumes from sleep: ..." << resp.error_message() << std::endl << std::flush;
     REQUIRE(etcd.unlock(resp.lock_key()).get().is_ok());
-    std::cout << "thread " << index << " been unlocked" << std::endl;
+    std::cout << "thread " << index << " been unlocked" << std::endl << std::flush;
   };
 
   std::vector<std::thread> locks(trials);

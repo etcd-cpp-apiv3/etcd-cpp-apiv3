@@ -50,7 +50,7 @@ public:
     void setup_put(std::string const &key, std::string const &value);
     void setup_delete(std::string const &key);
 
-    std::unique_ptr<etcdserverpb::TxnRequest> txn_request;
+    std::shared_ptr<etcdserverpb::TxnRequest> txn_request;
   private:
     std::string key;
 };

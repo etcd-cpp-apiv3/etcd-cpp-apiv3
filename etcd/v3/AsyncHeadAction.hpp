@@ -15,7 +15,7 @@ namespace etcdv3
   class AsyncHeadAction : public etcdv3::Action
   {
     public:
-      AsyncHeadAction(etcdv3::ActionParameters const &param);
+      AsyncHeadAction(etcdv3::ActionParameters && params);
       AsyncHeadResponse ParseResponse();
     private:
       RangeResponse reply;

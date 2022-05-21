@@ -1,4 +1,5 @@
 #include "etcd/v3/AsyncElectionAction.hpp"
+#include <grpcpp/support/status.h>
 
 #include "etcd/v3/action_constants.hpp"
 
@@ -14,13 +15,13 @@ using v3electionpb::ResignRequest;
 using v3electionpb::ResignResponse;
 
 etcdv3::AsyncCampaignAction::AsyncCampaignAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   CampaignRequest campaign_request;
-  campaign_request.set_name(param.name);
-  campaign_request.set_lease(param.lease_id);
-  campaign_request.set_value(param.value);
+  campaign_request.set_name(parameters.name);
+  campaign_request.set_lease(parameters.lease_id);
+  campaign_request.set_value(parameters.value);
 
   response_reader = parameters.election_stub->AsyncCampaign(&context, campaign_request, &cq_);
   response_reader->Finish(&reply, &status, (void *)this);
@@ -42,18 +43,18 @@ etcdv3::AsyncCampaignResponse etcdv3::AsyncCampaignAction::ParseResponse()
 }
 
 etcdv3::AsyncProclaimAction::AsyncProclaimAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   auto leader = new LeaderKey();
-  leader->set_name(param.name);
-  leader->set_key(param.key);
-  leader->set_rev(param.revision);
-  leader->set_lease(param.lease_id);
+  leader->set_name(parameters.name);
+  leader->set_key(parameters.key);
+  leader->set_rev(parameters.revision);
+  leader->set_lease(parameters.lease_id);
 
   ProclaimRequest proclaim_request;
   proclaim_request.set_allocated_leader(leader);
-  proclaim_request.set_value(param.value);
+  proclaim_request.set_value(parameters.value);
 
   response_reader = parameters.election_stub->AsyncProclaim(&context, proclaim_request, &cq_);
   response_reader->Finish(&reply, &status, (void *)this);
@@ -75,11 +76,11 @@ etcdv3::AsyncProclaimResponse etcdv3::AsyncProclaimAction::ParseResponse()
 }
 
 etcdv3::AsyncLeaderAction::AsyncLeaderAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaderRequest leader_request;
-  leader_request.set_name(param.name);
+  leader_request.set_name(parameters.name);
 
   response_reader = parameters.election_stub->AsyncLeader(&context, leader_request, &cq_);
   response_reader->Finish(&reply, &status, (void *)this);
@@ -100,89 +101,47 @@ etcdv3::AsyncLeaderResponse etcdv3::AsyncLeaderAction::ParseResponse()
   return leader_resp;
 }
 
-etcdv3::AsyncObserveAction::AsyncObserveAction(
-    etcdv3::ActionParameters const &param, const bool once)
-  : etcdv3::Action(param), once(once)
+etcdv3::AsyncObserveAction::AsyncObserveAction(etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaderRequest leader_request;
-  leader_request.set_name(param.name);
+  leader_request.set_name(parameters.name);
 
   response_reader = parameters.election_stub->AsyncObserve(&context, leader_request, &cq_, (void *)etcdv3::ELECTION_OBSERVE_CREATE);
 
   void *got_tag;
   bool ok = false;
   if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::ELECTION_OBSERVE_CREATE) {
-    response_reader->Read(&reply, (void *)this);
+    // n.b.: leave the issue of `Read` to the `waitForResponse`
   } else {
     throw std::runtime_error("failed to create a observe connection");
   }
 }
 
-void etcdv3::AsyncObserveAction::waitForResponse() 
+void etcdv3::AsyncObserveAction::waitForResponse()
 {
   void* got_tag;
   bool ok = false;
 
-  while(cq_.Next(&got_tag, &ok))
-  {
-    if (isCancelled.load()) {
-      break;
-    }
-    if(ok == false)
-    {
-      break;
-    }
-    if(got_tag == (void*)this) // read tag
-    {
-      auto resp = ParseResponse();
-      if (resp.get_error_code() != 0) {
-        CancelObserve();
-        break;
-      }
-    }
-    if(isCancelled.load()) {
-      break;
-    }
-    if (once) {
-      break;
-    }
-    response_reader->Read(&reply, (void *)this);
+  if (isCancelled.load()) {
+    status = grpc::Status::CANCELLED;
   }
-}
+  if (!status.ok()) {
+    return;
+  }
 
-void etcdv3::AsyncObserveAction::waitForResponse(std::function<void(etcd::Response)> callback)
-{
-  void* got_tag;
-  bool ok = false;
-
-  while(cq_.Next(&got_tag, &ok))
-  {
-    if(ok == false)
-    {
-      break;
+  response_reader->Read(&reply, (void *)this);
+  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void*)this) {
+    auto response = ParseResponse();
+    if (response.get_error_code() == 0) {
+      // issue the next read
+      response_reader->Read(&reply, (void *)this);
+    } else {
+      this->CancelObserve();
     }
-    if (isCancelled.load()) {
-      break;
-    }
-    if(got_tag == (void*)this) // read tag
-    {
-      auto resp = ParseResponse();
-      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now() - start_timepoint);
-      callback(etcd::Response(resp, duration));
-      if (resp.get_error_code() != 0) {
-        CancelObserve();
-        break;
-      }
-      start_timepoint = std::chrono::high_resolution_clock::now();
-    }
-    if(isCancelled.load()) {
-      break;
-    }
-    if (once) {
-      break;
-    }
-    response_reader->Read(&reply, (void *)this);
+  } else {
+    this->CancelObserve();
+    status = grpc::Status::CANCELLED;
   }
 }
 
@@ -223,14 +182,14 @@ etcdv3::AsyncObserveResponse etcdv3::AsyncObserveAction::ParseResponse()
 }
 
 etcdv3::AsyncResignAction::AsyncResignAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   auto leader = new LeaderKey();
-  leader->set_name(param.name);
-  leader->set_key(param.key);
-  leader->set_rev(param.revision);
-  leader->set_lease(param.lease_id);
+  leader->set_name(parameters.name);
+  leader->set_key(parameters.key);
+  leader->set_rev(parameters.revision);
+  leader->set_lease(parameters.lease_id);
 
   ResignRequest resign_request;
   resign_request.set_allocated_leader(leader);

@@ -26,8 +26,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     )
 endif()
 
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_ETCD_TESTS "Build test cases" OFF)
+option(BUILD_SHARED_LIBS "Build etcd-cpp-apiv3 shared libraries" ON)
+option(BUILD_ETCD_TESTS "Build etcd-cpp-apiv3 test cases" OFF)
+option(CMAKE_POSITION_INDEPENDENT_CODE "Build etcd-cpp-apiv3 with -fPIC" ON)
+option(ETCD_W_STRICT "Build etcd-cpp-apiv3 with -Werror" ON)
 
 # reference: https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling#always-full-rpath
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
@@ -98,7 +100,10 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR}
                            ${OPENSSL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Werror -Wno-string-compare")
+    if(ETCD_W_STRICT)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wno-string-compare")
 endif()
 
 check_cxx_compiler_flag(-Wno-c++17-extensions W_NO_CPP17_EXTENSIONS)

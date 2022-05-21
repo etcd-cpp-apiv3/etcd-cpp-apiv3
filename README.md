@@ -79,6 +79,33 @@ dependencies have been successfully installed:
 The _etcd-cpp-apiv3_ should work well with etcd > 3.0. Feel free to issue an issue to us on
 Github when you encounter problems when working with etcd 3.x releases.
 
+## Sync vs. Async runtime
+
+There are various discussion about whether to support a user-transparent multi-thread executor in
+the background, or, leaving the burden of thread management to the user (e.g., see
+[issue#100](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/issues/100) for more discussion about
+the implementation of underlying thread model).
+
+The _etcd-cpp-apiv3_ library supports both synchronous and asynchronous runtime, in two separate
+library as follows:
+
+- etcd-cpp-api-core: the synchronous runtime, provides a blocking-style API and the users are responsible
+  for handling dispatch the request into separate thread to avoid been blocked by waiting for response.
+  - target found by cmake: `ETCD_CPP_CORE_LIBRARIES`
+
+- etcd-cpp-api: the asynchronous runtime backed by the `pplx` library from
+  [cpprestsdk](https://github.com/microsoft/cpprestsdk), where a `boost::asio::io_context` and a pool
+  of threads is used to run the asynchronous operations in the background. By default the number of
+  threads in the thread pool equals to `std::thread::hardware_concurrency()`.
+  - target found by cmake: `ETCD_CPP_LIBRARIES`
+
+We encourage the users to use the asynchronous runtime by default, as it provides more flexibility
+and convenient APIs and less possibilities for errors that block the main thread. However, please note
+that the asynchronous runtime will setup a thread pool in the background.
+
+Note that `etcd-cpp-api-core` and `etcd-cpp-api` are two separate target and don't depends on each other.
+You should depends on either of them in your program.
+
 ## Usage
 
 ```c++

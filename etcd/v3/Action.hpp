@@ -2,6 +2,7 @@
 #define __V3_ACTION_HPP__
 
 #include <chrono>
+#include <ostream>
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
@@ -20,7 +21,7 @@ using v3electionpb::Election;
 
 namespace etcdv3
 {
-  enum AtomicityType
+  enum class AtomicityType
   {
     PREV_INDEX = 0,
     PREV_VALUE = 1
@@ -46,12 +47,15 @@ namespace etcdv3
     Lease::Stub* lease_stub;
     Lock::Stub* lock_stub;
     Election::Stub* election_stub;
+
+    void dump(std::ostream &os) const;
   };
 
   class Action
   {
   public:
     Action(etcdv3::ActionParameters const &params);
+    Action(etcdv3::ActionParameters && params);
     void waitForResponse();
     const std::chrono::high_resolution_clock::time_point startTimepoint();
   protected:
@@ -60,6 +64,9 @@ namespace etcdv3
     CompletionQueue cq_;
     etcdv3::ActionParameters parameters;
     std::chrono::high_resolution_clock::time_point start_timepoint;
+  private:
+    // Init things like auth token, etc.
+    void InitAction();
   };
 
   namespace detail {

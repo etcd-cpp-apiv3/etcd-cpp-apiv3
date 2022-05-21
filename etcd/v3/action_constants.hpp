@@ -44,6 +44,7 @@ namespace etcdv3
   extern const int ERROR_KEY_NOT_FOUND;
   extern const int ERROR_COMPARE_FAILED;
   extern const int ERROR_KEY_ALREADY_EXISTS;
+  extern const int ERROR_ACTION_CANCELLED;
 }
 
 #endif

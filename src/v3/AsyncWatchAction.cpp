@@ -7,8 +7,8 @@ using etcdserverpb::RangeResponse;
 using etcdserverpb::WatchCreateRequest;
 
 etcdv3::AsyncWatchAction::AsyncWatchAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param) 
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params)) 
 {
   isCancelled.store(false);
   stream = parameters.watch_stub->AsyncWatch(&context,&cq_,(void*)etcdv3::WATCH_CREATE);

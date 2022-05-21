@@ -24,7 +24,7 @@ namespace etcdv3
   class AsyncCampaignAction : public etcdv3::Action
   {
     public:
-      AsyncCampaignAction(etcdv3::ActionParameters const &param);
+      AsyncCampaignAction(etcdv3::ActionParameters && params);
       AsyncCampaignResponse ParseResponse();
     private:
       CampaignResponse reply;
@@ -34,7 +34,7 @@ namespace etcdv3
   class AsyncProclaimAction : public etcdv3::Action
   {
     public:
-      AsyncProclaimAction(etcdv3::ActionParameters const &param);
+      AsyncProclaimAction(etcdv3::ActionParameters && params);
       AsyncProclaimResponse ParseResponse();
     private:
       ProclaimResponse reply;
@@ -44,7 +44,7 @@ namespace etcdv3
   class AsyncLeaderAction : public etcdv3::Action
   {
     public:
-      AsyncLeaderAction(etcdv3::ActionParameters const &param);
+      AsyncLeaderAction(etcdv3::ActionParameters && params);
       AsyncLeaderResponse ParseResponse();
     private:
       LeaderResponse reply;
@@ -54,14 +54,12 @@ namespace etcdv3
   class AsyncObserveAction : public etcdv3::Action
   {
     public:
-      AsyncObserveAction(etcdv3::ActionParameters const &param, const bool once=false);
+      AsyncObserveAction(etcdv3::ActionParameters && params);
       AsyncObserveResponse ParseResponse();
       void waitForResponse();
-      void waitForResponse(std::function<void(etcd::Response)> callback); 
       void CancelObserve();
       bool Cancelled() const;
     private:
-      bool once;
       LeaderResponse reply;
       std::unique_ptr<ClientAsyncReader<LeaderResponse>> response_reader;
       std::atomic_bool isCancelled;
@@ -71,7 +69,7 @@ namespace etcdv3
   class AsyncResignAction : public etcdv3::Action
   {
     public:
-      AsyncResignAction(etcdv3::ActionParameters const &param);
+      AsyncResignAction(etcdv3::ActionParameters && params);
       AsyncResignResponse ParseResponse();
     private:
       ResignResponse reply;

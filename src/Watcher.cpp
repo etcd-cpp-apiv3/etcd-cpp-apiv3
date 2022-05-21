@@ -12,18 +12,18 @@ void etcd::Watcher::EtcdServerStubsDeleter::operator()(etcd::Watcher::EtcdServer
   }
 }
 
-etcd::Watcher::Watcher(Client const &client, std::string const & key,
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
                        std::function<void(Response)> callback, bool recursive):
     Watcher(client, key, -1, callback, recursive) {
 }
 
-etcd::Watcher::Watcher(Client const &client, std::string const & key,
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
                        std::string const &range_end,
                        std::function<void(Response)> callback):
     Watcher(client, key, range_end, -1, callback) {
 }
 
-etcd::Watcher::Watcher(Client const &client, std::string const & key, int64_t fromIndex,
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key, int64_t fromIndex,
                        std::function<void(Response)> callback, bool recursive):
     fromIndex(fromIndex), recursive(recursive) {
   stubs.reset(new EtcdServerStubs{});
@@ -31,7 +31,7 @@ etcd::Watcher::Watcher(Client const &client, std::string const & key, int64_t fr
   doWatch(key, "", client.current_auth_token(), callback);
 }
 
-etcd::Watcher::Watcher(Client const &client, std::string const & key,
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
                        std::string const &range_end, int64_t fromIndex,
                        std::function<void(Response)> callback):
     fromIndex(fromIndex), recursive(false) {
@@ -53,13 +53,13 @@ etcd::Watcher::Watcher(std::string const & address, std::string const & key,
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key, int64_t fromIndex,
                        std::function<void(Response)> callback, bool recursive):
-    Watcher(Client(address), key, fromIndex, callback, recursive) {
+    Watcher(SyncClient(address), key, fromIndex, callback, recursive) {
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key,
                        std::string const & range_end, int64_t fromIndex,
                        std::function<void(Response)> callback):
-    Watcher(Client(address), key, range_end, fromIndex, callback) {
+    Watcher(SyncClient(address), key, range_end, fromIndex, callback) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
@@ -83,7 +83,7 @@ etcd::Watcher::Watcher(std::string const & address,
             std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive,
             int const auth_token_ttl):
-    Watcher(Client(address, username, password, auth_token_ttl), key, fromIndex, callback, recursive) {
+    Watcher(SyncClient(address, username, password, auth_token_ttl), key, fromIndex, callback, recursive) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
@@ -91,7 +91,7 @@ etcd::Watcher::Watcher(std::string const & address,
             std::string const & key, std::string const & range_end, int64_t fromIndex,
             std::function<void(Response)> callback,
             int const auth_token_ttl):
-    Watcher(Client(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback) {
+    Watcher(SyncClient(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback) {
 }
 
 etcd::Watcher::~Watcher()
@@ -144,15 +144,18 @@ void etcd::Watcher::doWatch(std::string const & key,
   params.withPrefix = recursive;
   params.watch_stub = stubs->watchServiceStub.get();
 
-  stubs->call.reset(new etcdv3::AsyncWatchAction(params));
+  stubs->call.reset(new etcdv3::AsyncWatchAction(std::move(params)));
 
   task_ = std::thread([this, callback]() {
     stubs->call->waitForResponse(callback);
     if (wait_callback != nullptr) {
-      // issue the callback in another thread to avoid deadlock, is ok to detach the pplx::task
-      pplx::task<void>([this]() -> void {
+      // issue the callback in another thread (detached) to avoid deadlock,
+      // it is ok to detach a pplx::task, but we cannot use the pplx::task
+      // in the core library
+      std::thread canceller([this]() {
         wait_callback(stubs->call->Cancelled());
       });
+      canceller.detach();
     }
   });
   cancelled.store(false);
