@@ -4,8 +4,8 @@
 using etcdserverpb::DeleteRangeRequest;
 
 etcdv3::AsyncDeleteAction::AsyncDeleteAction(
-    ActionParameters const &param)
-  : etcdv3::Action(param)
+    ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   DeleteRangeRequest del_request;
   del_request.set_key(parameters.key);

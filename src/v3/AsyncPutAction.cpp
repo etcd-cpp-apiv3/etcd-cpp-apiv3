@@ -4,8 +4,8 @@
 using etcdserverpb::PutRequest;
 
 etcdv3::AsyncPutAction::AsyncPutAction(
-    ActionParameters const &param)
-  : etcdv3::Action(param)
+    ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   PutRequest put_request;
   put_request.set_key(parameters.key);

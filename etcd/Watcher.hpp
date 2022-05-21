@@ -6,22 +6,35 @@
 #include <string>
 #include <thread>
 
-#include "etcd/Client.hpp"
+#include "etcd/SyncClient.hpp"
 #include "etcd/Response.hpp"
 
 namespace etcd
 {
+  // forward declaration to avoid header/library dependency
+  class Client;
+
   class Watcher
   {
   public:
     Watcher(Client const &client, std::string const & key,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(SyncClient const &client, std::string const & key,
+            std::function<void(Response)> callback, bool recursive=false);
     Watcher(Client const &client, std::string const & key,
+            std::string const &range_end,
+            std::function<void(Response)> callback);
+    Watcher(SyncClient const &client, std::string const & key,
             std::string const &range_end,
             std::function<void(Response)> callback);
     Watcher(Client const &client, std::string const & key, int64_t fromIndex,
             std::function<void(Response)> callback, bool recursive=false);
+    Watcher(SyncClient const &client, std::string const & key, int64_t fromIndex,
+            std::function<void(Response)> callback, bool recursive=false);
     Watcher(Client const &client, std::string const & key,
+            std::string const &range_end, int64_t fromIndex,
+            std::function<void(Response)> callback);
+    Watcher(SyncClient const &client, std::string const & key,
             std::string const &range_end, int64_t fromIndex,
             std::function<void(Response)> callback);
     Watcher(std::string const & address, std::string const & key,

@@ -43,3 +43,4 @@ char const * etcdv3::ELECTION_OBSERVE_CREATE = "observe create";
 const int etcdv3::ERROR_KEY_NOT_FOUND = 100;
 const int etcdv3::ERROR_COMPARE_FAILED = 101;
 const int etcdv3::ERROR_KEY_ALREADY_EXISTS = 105;
+const int etcdv3::ERROR_ACTION_CANCELLED = 106;

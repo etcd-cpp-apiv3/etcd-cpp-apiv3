@@ -5,8 +5,8 @@ using v3lockpb::LockRequest;
 using v3lockpb::UnlockRequest;
 
 etcdv3::AsyncLockAction::AsyncLockAction(
-    ActionParameters const &param)
-  : etcdv3::Action(param) 
+    ActionParameters && params)
+  : etcdv3::Action(std::move(params)) 
 {
   LockRequest lock_request;
   lock_request.set_name(parameters.key);
@@ -35,8 +35,8 @@ etcdv3::AsyncLockResponse etcdv3::AsyncLockAction::ParseResponse()
 }
 
 etcdv3::AsyncUnlockAction::AsyncUnlockAction(
-    ActionParameters const &param)
-  : etcdv3::Action(param) 
+    ActionParameters && params)
+  : etcdv3::Action(std::move(params)) 
 {
   UnlockRequest unlock_request;
   unlock_request.set_key(parameters.key);

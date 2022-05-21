@@ -7,7 +7,7 @@
 #include <string>
 #include <thread>
 
-#include "etcd/Client.hpp"
+#include "etcd/SyncClient.hpp"
 #include "etcd/Response.hpp"
 
 #include <boost/config.hpp>
@@ -20,6 +20,9 @@
 
 namespace etcd
 {
+  // forward declaration to avoid header/library dependency
+  class Client;
+
   /**
    * If ID is set to 0, the library will choose an ID, and can be accessed from ".Lease()".
    */
@@ -27,6 +30,8 @@ namespace etcd
   {
   public:
     KeepAlive(Client const &client,
+              int ttl, int64_t lease_id = 0);
+    KeepAlive(SyncClient const &client,
               int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,
               int ttl, int64_t lease_id = 0);
@@ -36,6 +41,9 @@ namespace etcd
               int const auth_token_ttl = 300);
 
     KeepAlive(Client const &client,
+              std::function<void (std::exception_ptr)> const &handler,
+              int ttl, int64_t lease_id = 0);
+    KeepAlive(SyncClient const &client,
               std::function<void (std::exception_ptr)> const &handler,
               int ttl, int64_t lease_id = 0);
     KeepAlive(std::string const & address,

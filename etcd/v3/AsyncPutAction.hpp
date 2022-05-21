@@ -15,7 +15,7 @@ namespace etcdv3
   class AsyncPutAction : public etcdv3::Action
   {
     public:
-      AsyncPutAction(etcdv3::ActionParameters const &param);
+      AsyncPutAction(etcdv3::ActionParameters && params);
       AsyncPutResponse ParseResponse();
     private:
       PutResponse reply;

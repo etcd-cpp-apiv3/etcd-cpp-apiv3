@@ -7,8 +7,8 @@
 using etcdserverpb::RangeRequest;
 
 etcdv3::AsyncRangeAction::AsyncRangeAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   RangeRequest get_request;
   if (parameters.key.empty()) {
@@ -16,7 +16,7 @@ etcdv3::AsyncRangeAction::AsyncRangeAction(
   } else {
     get_request.set_key(parameters.key);
   }
-  get_request.set_limit(param.limit);
+  get_request.set_limit(parameters.limit);
   if(parameters.withPrefix)
   {
     if (parameters.key.empty()) {

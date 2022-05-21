@@ -10,8 +10,8 @@ using etcdserverpb::ResponseOp;
 using etcdserverpb::TxnRequest;
 
 etcdv3::AsyncCompareAndDeleteAction::AsyncCompareAndDeleteAction(
-    etcdv3::ActionParameters const &param, etcdv3::AtomicityType type)
-  :etcdv3::Action(param)
+    etcdv3::ActionParameters && params, etcdv3::AtomicityType type)
+  :etcdv3::Action(std::move(params))
 {
   etcdv3::Transaction transaction(parameters.key);
   if(type == etcdv3::AtomicityType::PREV_VALUE)

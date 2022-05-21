@@ -4,8 +4,9 @@
 #include <chrono>
 #include <thread>
 
-#include "etcd/Watcher.hpp"
+#include "etcd/Client.hpp"
 #include "etcd/SyncClient.hpp"
+#include "etcd/Watcher.hpp"
 
 static std::string etcd_uri("http://127.0.0.1:2379");
 static int watcher_called = 0;

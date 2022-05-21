@@ -159,11 +159,23 @@ jobs:
           sleep 5
 
           # tests without auth
+
+          echo "Run the etcd sync test ........................."
           ./build/bin/EtcdSyncTest
+
+          echo "Run the etcd test ........................."
           ./build/bin/EtcdTest
+
+          echo "Run the etcd lock test ........................."
           ./build/bin/LockTest
+
+          echo "Run the etcd memory leak test ........................."
           ./build/bin/MemLeakTest
+
+          echo "Run the etcd watcher test ........................."
           ./build/bin/WatcherTest
+
+          echo "Run the etcd election test ........................."
           ./build/bin/ElectionTest
 
           killall -TERM etcd

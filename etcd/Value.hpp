@@ -22,6 +22,8 @@ namespace etcd
   class Value;
   class Event;
   class Response;
+  class Client;
+  class SyncClient;
 
   /**
    * Represents a value object received from the etcd server
@@ -68,6 +70,8 @@ namespace etcd
     int64_t lease() const;
 
   protected:
+    friend class Client;
+    friend class SyncClient;
     friend class Response;
     friend class BaseResponse; //deliberately done since Value class will be removed during full V3
     friend class DeleteRpcResponse;
@@ -81,9 +85,9 @@ namespace etcd
     std::string _key;
     bool        dir;
     std::string value;
-    int64_t         created;
-    int64_t         modified;
-    int64_t         _version;
+    int64_t     created;
+    int64_t     modified;
+    int64_t     _version;
     int         _ttl;
     int64_t     leaseId;
   };

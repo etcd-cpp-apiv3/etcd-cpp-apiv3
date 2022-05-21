@@ -5,6 +5,16 @@
 etcdv3::Action::Action(etcdv3::ActionParameters const &params)
 {
   parameters = params;
+  this->InitAction();
+}
+
+etcdv3::Action::Action(etcdv3::ActionParameters && params)
+{
+  parameters = std::move(params);
+  this->InitAction();
+}
+
+void etcdv3::Action::InitAction() {
   if (!parameters.auth_token.empty()) {
     // use `token` as the key, see:
     //
@@ -26,10 +36,26 @@ etcdv3::ActionParameters::ActionParameters()
   lease_stub = NULL;
 }
 
+void etcdv3::ActionParameters::dump(std::ostream &os) const {
+  os << "ActionParameters:" << std::endl;
+  os << "  withPrefix:    " << withPrefix << std::endl;
+  os << "  revision:      " << revision << std::endl;
+  os << "  old_revision:  " << old_revision << std::endl;
+  os << "  lease_id:      " << lease_id << std::endl;
+  os << "  ttl:           " << ttl << std::endl;
+  os << "  limit:         " << limit << std::endl;
+  os << "  name:          " << name << std::endl;
+  os << "  key:           " << key << std::endl;
+  os << "  range_end:     " << range_end << std::endl;
+  os << "  value:         " << value << std::endl;
+  os << "  old_value:     " << old_value << std::endl;
+  os << "  auth_token:    " << auth_token << std::endl;
+}
+
 void etcdv3::Action::waitForResponse() 
 {
   void* got_tag;
-  bool ok = false;    
+  bool ok = false;
 
   cq_.Next(&got_tag, &ok);
   GPR_ASSERT(got_tag == (void*)this);

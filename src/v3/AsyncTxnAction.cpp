@@ -4,8 +4,8 @@
 
 
 etcdv3::AsyncTxnAction::AsyncTxnAction(
-    etcdv3::ActionParameters const &param, etcdv3::Transaction const &tx)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params, etcdv3::Transaction const &tx)
+  : etcdv3::Action(std::move(params))
 {
   response_reader = parameters.kv_stub->AsyncTxn(&context, *tx.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void *)this);

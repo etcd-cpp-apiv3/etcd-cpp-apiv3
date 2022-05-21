@@ -16,7 +16,7 @@ namespace etcdv3
   class AsyncUpdateAction : public etcdv3::Action
   {
     public:
-      AsyncUpdateAction(etcdv3::ActionParameters const &param);
+      AsyncUpdateAction(etcdv3::ActionParameters && params);
       AsyncTxnResponse ParseResponse();
     private:
       TxnResponse reply;

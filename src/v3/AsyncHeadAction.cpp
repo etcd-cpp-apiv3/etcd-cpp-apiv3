@@ -7,8 +7,8 @@
 using etcdserverpb::RangeRequest;
 
 etcdv3::AsyncHeadAction::AsyncHeadAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   RangeRequest get_request;
   get_request.set_key(etcdv3::NUL);

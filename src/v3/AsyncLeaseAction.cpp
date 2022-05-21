@@ -10,8 +10,8 @@ using etcdserverpb::LeaseTimeToLiveRequest;
 using etcdserverpb::LeaseLeasesRequest;
 
 etcdv3::AsyncLeaseGrantAction::AsyncLeaseGrantAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaseGrantRequest leasegrant_request;
   leasegrant_request.set_ttl(parameters.ttl);
@@ -37,8 +37,8 @@ etcdv3::AsyncLeaseGrantResponse etcdv3::AsyncLeaseGrantAction::ParseResponse()
 }
 
 etcdv3::AsyncLeaseRevokeAction::AsyncLeaseRevokeAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaseRevokeRequest leaserevoke_request;
   leaserevoke_request.set_id(parameters.lease_id);
@@ -62,8 +62,8 @@ etcdv3::AsyncLeaseRevokeResponse etcdv3::AsyncLeaseRevokeAction::ParseResponse()
 }
 
 etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   isCancelled = false;
   stream = parameters.lease_stub->AsyncLeaseKeepAlive(&context, &cq_, (void*)etcdv3::KEEPALIVE_CREATE);
@@ -159,8 +159,8 @@ bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const
 }
 
 etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaseTimeToLiveRequest leasetimetolive_request;
   leasetimetolive_request.set_id(parameters.lease_id);
@@ -186,8 +186,8 @@ etcdv3::AsyncLeaseTimeToLiveResponse etcdv3::AsyncLeaseTimeToLiveAction::ParseRe
 }
 
 etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters && params)
+  : etcdv3::Action(std::move(params))
 {
   LeaseLeasesRequest leaseleases_request;
 

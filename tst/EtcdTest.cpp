@@ -120,11 +120,6 @@ TEST_CASE("delete a value")
   int64_t modify_index = etcd.get("/test/key1").get().value().modified_index();
   int64_t version = etcd.get("/test/key1").get().value().version();
 
-  std::cerr << "index = " << index
-            << ", create index = " << create_index
-            << ", modify index = " << modify_index
-            << std::endl;
-
   int head_index = etcd.head().get().index();
   CHECK(index == head_index);
 
@@ -173,7 +168,6 @@ TEST_CASE("atomic compare-and-delete based on prevIndex")
   CHECK("compareAndDelete" == res.action());
   CHECK("42" == res.prev_value().as_string());
 }
-
 
 TEST_CASE("deep atomic compare-and-swap")
 {

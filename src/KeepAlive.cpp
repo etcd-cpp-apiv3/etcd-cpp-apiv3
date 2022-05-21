@@ -21,10 +21,10 @@ void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(etcd::KeepAlive::EtcdSe
   }
 }
 
-etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
+etcd::KeepAlive::KeepAlive(SyncClient const &client, int ttl, int64_t lease_id):
     ttl(ttl), lease_id(lease_id), continue_next(true) {
   stubs.reset(new EtcdServerStubs{});
-  stubs->leaseServiceStub = Lease::NewStub(client.channel);
+  stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.current_auth_token());
@@ -33,7 +33,7 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
 
   continue_next.store(true);
 
-  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
   task_ = std::thread([this]() {
     try {
       // start refresh
@@ -47,28 +47,28 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
 }
 
 etcd::KeepAlive::KeepAlive(std::string const & address, int ttl, int64_t lease_id):
-    KeepAlive(Client(address), ttl, lease_id) {
+    KeepAlive(SyncClient(address), ttl, lease_id) {
 }
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
                            int ttl, int64_t lease_id, int const auth_token_ttl):
-    KeepAlive(Client(address, username, password, auth_token_ttl), ttl, lease_id) {
+    KeepAlive(SyncClient(address, username, password, auth_token_ttl), ttl, lease_id) {
 }
 
-etcd::KeepAlive::KeepAlive(Client const &client,
+etcd::KeepAlive::KeepAlive(SyncClient const &client,
                            std::function<void (std::exception_ptr)> const &handler,
                            int ttl, int64_t lease_id):
     handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true) {
   stubs.reset(new EtcdServerStubs{});
-  stubs->leaseServiceStub = Lease::NewStub(client.channel);
+  stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.current_auth_token());
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 
-  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
   task_ = std::thread([this]() {
     try {
       // start refresh
@@ -88,14 +88,14 @@ etcd::KeepAlive::KeepAlive(Client const &client,
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::function<void (std::exception_ptr)> const &handler,
                            int ttl, int64_t lease_id):
-    KeepAlive(Client(address), handler, ttl, lease_id) {
+    KeepAlive(SyncClient(address), handler, ttl, lease_id) {
 }
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
                            std::function<void (std::exception_ptr)> const &handler,
                            int ttl, int64_t lease_id, const int auth_token_ttl):
-    KeepAlive(Client(address, username, password, auth_token_ttl), handler, ttl, lease_id) {
+    KeepAlive(SyncClient(address, username, password, auth_token_ttl), handler, ttl, lease_id) {
 }
 
 etcd::KeepAlive::~KeepAlive()

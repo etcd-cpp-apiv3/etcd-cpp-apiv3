@@ -16,7 +16,7 @@ namespace etcdv3
   class AsyncCompareAndDeleteAction : public etcdv3::Action
   {
     public:
-      AsyncCompareAndDeleteAction(etcdv3::ActionParameters const &param, etcdv3::AtomicityType type);
+      AsyncCompareAndDeleteAction(etcdv3::ActionParameters && params, etcdv3::AtomicityType type);
       AsyncTxnResponse ParseResponse();
     private:
       TxnResponse reply;

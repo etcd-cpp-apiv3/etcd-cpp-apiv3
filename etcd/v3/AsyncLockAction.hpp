@@ -19,7 +19,7 @@ namespace etcdv3
   class AsyncLockAction : public etcdv3::Action
   {
     public:
-      AsyncLockAction(etcdv3::ActionParameters const &param);
+      AsyncLockAction(etcdv3::ActionParameters && params);
       AsyncLockResponse ParseResponse();
     private:
       LockResponse reply;
@@ -29,7 +29,7 @@ namespace etcdv3
   class AsyncUnlockAction : public etcdv3::Action
   {
     public:
-      AsyncUnlockAction(etcdv3::ActionParameters const &param);
+      AsyncUnlockAction(etcdv3::ActionParameters && params);
       AsyncUnlockResponse ParseResponse();
     private:
       UnlockResponse reply;

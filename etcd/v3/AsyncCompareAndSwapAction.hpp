@@ -16,7 +16,7 @@ namespace etcdv3
   class AsyncCompareAndSwapAction : public etcdv3::Action
   {
     public:
-      AsyncCompareAndSwapAction(etcdv3::ActionParameters const &param, etcdv3::AtomicityType type);
+      AsyncCompareAndSwapAction(etcdv3::ActionParameters && params, etcdv3::AtomicityType type);
       AsyncTxnResponse ParseResponse();
     private:
       TxnResponse reply;

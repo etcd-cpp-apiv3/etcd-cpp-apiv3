@@ -15,7 +15,7 @@ namespace etcdv3
   class AsyncDeleteAction : public etcdv3::Action
   {
     public:
-      AsyncDeleteAction(etcdv3::ActionParameters const &param);
+      AsyncDeleteAction(etcdv3::ActionParameters && params);
       AsyncDeleteResponse ParseResponse();
     private:
       DeleteRangeResponse reply;

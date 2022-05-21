@@ -5,56 +5,38 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <type_traits>
 
 #include "pplx/pplxtasks.h"
 
 #include "etcd/Response.hpp"
+#include "etcd/SyncClient.hpp"
 #include "etcd/v3/action_constants.hpp"
-
-namespace etcdv3 {
-  class Transaction;
-  class AsyncObserveAction;
-
-  namespace detail {
-    std::string string_plus_one(std::string const &value);
-  }
-}
-
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-namespace grpc {
-  class Channel;
-  class ChannelArguments;
-}
-#else
-namespace grpc_impl {
-  class Channel;
-  class ChannelArguments;
-}
-#endif
 
 namespace etcd
 {
-  using etcdv3::ERROR_KEY_NOT_FOUND;
-  using etcdv3::ERROR_COMPARE_FAILED;
-  using etcdv3::ERROR_KEY_ALREADY_EXISTS;
-
-  class KeepAlive;
-  class Watcher;
-
+  // FIXME
   /**
    * Client is responsible for maintaining a connection towards an etcd server.
    * Etcd operations can be reached via the methods of the client.
    */
   class Client
   {
-  private:
-    class TokenAuthenticator;
-    class TokenAuthenticatorDeleter {
-      public:
-        void operator()(TokenAuthenticator *authenticator);
-    };
-
   public:
+    /**
+     * Constructs an async etcd client object from an established synchronous client.
+     *
+     * @param sync_client The synchronous client to use for the async client.
+     */
+    Client(SyncClient *client);
+
+    /**
+     * Constructs an async etcd client object from an established synchronous client.
+     *
+     * @param sync_client The synchronous client to use for the async client.
+     */
+    static Client* WithClient(SyncClient *client);
+
     /**
      * Constructs an etcd client object.
      *
@@ -87,7 +69,7 @@ namespace etcd
      *                 or multiple url, seperated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
-    static etcd::Client *WithUrl(std::string const & etcd_url,
+    static Client *WithUrl(std::string const & etcd_url,
                                  std::string const & load_balancer = "round_robin");
 
     /**
@@ -97,7 +79,7 @@ namespace etcd
      *                 or multiple url, seperated by ',' or ';'.
      * @param arguments user provided grpc channel arguments.
      */
-    static etcd::Client *WithUrl(std::string const & etcd_url,
+    static Client *WithUrl(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
                                  grpc::ChannelArguments const & arguments
 #else
@@ -143,7 +125,6 @@ namespace etcd
 #endif
            );
 
-
     /**
      * Constructs an etcd client object.
      *
@@ -154,7 +135,7 @@ namespace etcd
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
      */
-    static etcd::Client *WithUser(std::string const & etcd_url,
+    static Client *WithUser(std::string const & etcd_url,
                                   std::string const & username,
                                   std::string const & password,
                                   int const auth_token_ttl = 300,
@@ -171,7 +152,7 @@ namespace etcd
      * @param auth_token_ttl TTL seconds for auth token, see also `--auth-token-ttl` flags of etcd.
      *                       Default value should be 300.
      */
-    static etcd::Client *WithUser(std::string const & etcd_url,
+    static Client *WithUser(std::string const & etcd_url,
                                   std::string const & username,
                                   std::string const & password,
                                   int const auth_token_ttl,
@@ -181,7 +162,6 @@ namespace etcd
                                   grpc_impl::ChannelArguments const & arguments
 #endif
                                   );
-
 
     /**
      * Constructs an etcd client object.
@@ -222,7 +202,6 @@ namespace etcd
 #endif
            );
 
-
     /**
      * Constructs an etcd client object.
      *
@@ -236,7 +215,7 @@ namespace etcd
      * SANS of your SSL certificate.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
-    static etcd::Client *WithSSL(std::string const & etcd_url,
+    static Client *WithSSL(std::string const & etcd_url,
                                  std::string const & ca,
                                  std::string const & cert = "",
                                  std::string const & key = "",
@@ -256,7 +235,7 @@ namespace etcd
      * SANS of your SSL certificate.
      * @param arguments user provided grpc channel arguments.
      */
-    static etcd::Client *WithSSL(std::string const & etcd_url,
+    static Client *WithSSL(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
                                  grpc::ChannelArguments const & arguments,
 #else
@@ -266,6 +245,8 @@ namespace etcd
                                  std::string const & cert = "",
                                  std::string const & key = "",
                                  std::string const & target_name_override = "");
+
+    ~Client();
 
     /**
      * Get the HEAD revision of the connected etcd server.
@@ -398,6 +379,30 @@ namespace etcd
      */
     pplx::task<Response> ls(std::string const & key);
 
+    /**
+     * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
+     * @param key is the directory to be created to be listed
+     * @param recursive if true then delete a whole subtree, otherwise deletes only an empty directory.
+     */
+    pplx::task<Response> rmdir(std::string const & key, bool recursive = false);
+
+    /**
+     * Removes multiple keys between [key, range_end).
+     *
+     * This overload for `const char *` is to avoid const char * to bool implicit casting.
+     *
+     * @param key is the directory to be created to be listed
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> rmdir(std::string const & key, const char *range_end);
+
+    /**
+     * Removes multiple keys between [key, range_end).
+     *
+     * @param key is the directory to be created to be listed
+     * @param range_end is the end of key range to be removed.
+     */
+    pplx::task<Response> rmdir(std::string const & key, std::string const &range_end);
 
     /**
      * Gets a directory listing of the directory identified by the key.
@@ -427,31 +432,6 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     pplx::task<Response> ls(std::string const & key, std::string const &range_end, size_t const limit);
-
-    /**
-     * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
-     * @param key is the directory to be created to be listed
-     * @param recursive if true then delete a whole subtree, otherwise deletes only an empty directory.
-     */
-    pplx::task<Response> rmdir(std::string const & key, bool recursive = false);
-
-    /**
-     * Removes multiple keys between [key, range_end).
-     *
-     * This overload for `const char *` is to avoid const char * to bool implicit casting.
-     *
-     * @param key is the directory to be created to be listed
-     * @param range_end is the end of key range to be removed.
-     */
-    pplx::task<Response> rmdir(std::string const & key, const char *range_end);
-
-    /**
-     * Removes multiple keys between [key, range_end).
-     *
-     * @param key is the directory to be created to be listed
-     * @param range_end is the end of key range to be removed.
-     */
-    pplx::task<Response> rmdir(std::string const & key, std::string const &range_end);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
@@ -597,19 +577,7 @@ namespace etcd
      */
     pplx::task<Response> leader(std::string const &name);
 
-    /**
-     * An observer that will cancel the associated election::observe request
-     * when being destruct.
-     */
-    class Observer {
-      public:
-        ~Observer();
-      private:
-        std::shared_ptr<etcdv3::AsyncObserveAction> action = nullptr;
-        pplx::task<etcd::Response> resp;
-
-        friend class Client;
-    };
+    using Observer = SyncClient::Observer;
 
     /**
      * Observe the leader change.
@@ -618,19 +586,7 @@ namespace etcd
      *
      * @returns an observer that holds that action and will cancel the request when being destructed.
      */
-    std::unique_ptr<Observer> observe(std::string const &name,
-                                      const bool once = false);
-
-    /**
-     * Observe the leader change.
-     *
-     * @param name is the names of election to watch.
-     *
-     * @returns an observer that holds that action and will cancel the request when being destructed.
-     */
-    std::unique_ptr<Observer> observe(std::string const &name,
-                                      std::function<void(Response)> callback,
-                                      const bool once = false);
+    std::unique_ptr<Observer> observe(std::string const &name);
 
     /**
      * Updates the value of election with a new value, with leader key returns by
@@ -649,27 +605,23 @@ namespace etcd
      */
     const std::string &current_auth_token() const;
 
-  private:
+    /**
+     * Obtain the underlying gRPC channel.
+     */
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-    std::shared_ptr<grpc::Channel> channel;
+    std::shared_ptr<grpc::Channel> grpc_channel() const;
 #else
-    std::shared_ptr<grpc_impl::Channel> channel;
+    std::shared_ptr<grpc_impl::Channel> grpc_channel() const;
 #endif
 
-    mutable std::unique_ptr<TokenAuthenticator, TokenAuthenticatorDeleter> token_authenticator;
+    /**
+     * Obtain the underlying synchronous client.
+     */
+    SyncClient* sync_client() const;
 
-    struct EtcdServerStubs;
-    struct EtcdServerStubsDeleter {
-      void operator()(EtcdServerStubs *stubs);
-    };
-    std::unique_ptr<EtcdServerStubs, EtcdServerStubsDeleter> stubs;
-
-    std::mutex mutex_for_keepalives;
-    std::map<std::string, int64_t> leases_for_locks;
-    std::map<int64_t, std::shared_ptr<KeepAlive>> keep_alive_for_locks;
-
-    friend class KeepAlive;
-    friend class Watcher;
+  private:
+    bool own_client = true;
+    SyncClient *client = nullptr;
 };
 
 }

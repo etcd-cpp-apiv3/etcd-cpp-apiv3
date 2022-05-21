@@ -25,7 +25,7 @@ namespace etcdv3
 {
   class AsyncLeaseGrantAction : public etcdv3::Action {
     public:
-      AsyncLeaseGrantAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseGrantAction(etcdv3::ActionParameters && params);
       AsyncLeaseGrantResponse ParseResponse();
     private:
       LeaseGrantResponse reply;
@@ -34,7 +34,7 @@ namespace etcdv3
 
   class AsyncLeaseRevokeAction: public etcdv3::Action {
     public:
-      AsyncLeaseRevokeAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseRevokeAction(etcdv3::ActionParameters && params);
       AsyncLeaseRevokeResponse ParseResponse();
     private:
       LeaseRevokeResponse reply;
@@ -43,7 +43,7 @@ namespace etcdv3
 
   class AsyncLeaseKeepAliveAction: public etcdv3::Action {
     public:
-      AsyncLeaseKeepAliveAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseKeepAliveAction(etcdv3::ActionParameters && params);
       AsyncLeaseKeepAliveResponse ParseResponse();
 
       etcd::Response Refresh();
@@ -61,7 +61,7 @@ namespace etcdv3
 
   class AsyncLeaseTimeToLiveAction: public etcdv3::Action {
     public:
-      AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters && params);
       AsyncLeaseTimeToLiveResponse ParseResponse();
     private:
       LeaseTimeToLiveResponse reply;
@@ -70,7 +70,7 @@ namespace etcdv3
 
   class AsyncLeaseLeasesAction: public etcdv3::Action {
     public:
-      AsyncLeaseLeasesAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseLeasesAction(etcdv3::ActionParameters && params);
       AsyncLeaseLeasesResponse ParseResponse();
     private:
       LeaseLeasesResponse reply;

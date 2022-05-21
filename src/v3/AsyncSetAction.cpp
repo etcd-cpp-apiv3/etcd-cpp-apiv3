@@ -4,8 +4,8 @@
 #include "etcd/v3/Transaction.hpp"
 
 etcdv3::AsyncSetAction::AsyncSetAction(
-    etcdv3::ActionParameters const &param, bool create)
-  : etcdv3::Action(param) 
+    etcdv3::ActionParameters && params, bool create)
+  : etcdv3::Action(std::move(params)) 
 {
   etcdv3::Transaction transaction(parameters.key);
   isCreate = create;
