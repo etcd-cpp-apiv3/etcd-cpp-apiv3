@@ -492,6 +492,7 @@ std::shared_ptr<etcdv3::AsyncHeadAction> etcd::SyncClient::head_internal()
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncHeadAction>(std::move(params));
 }
@@ -506,6 +507,7 @@ std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::get_internal(std::st
   params.key.assign(key);
   params.withPrefix = false;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
 }
@@ -540,6 +542,7 @@ std::shared_ptr<etcdv3::AsyncSetAction> etcd::SyncClient::set_internal(std::stri
   params.value.assign(value);
   params.lease_id = leaseid;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncSetAction>(std::move(params), false);
 }
@@ -574,6 +577,7 @@ std::shared_ptr<etcdv3::AsyncSetAction> etcd::SyncClient::add_internal(std::stri
   params.value.assign(value);
   params.lease_id = leaseid;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncSetAction>(std::move(params), true);
 }
@@ -587,6 +591,7 @@ std::shared_ptr<etcdv3::AsyncPutAction> etcd::SyncClient::put_internal(std::stri
   params.key.assign(key);
   params.value.assign(value);
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncPutAction>(std::move(params));
 }
@@ -621,6 +626,7 @@ std::shared_ptr<etcdv3::AsyncUpdateAction> etcd::SyncClient::modify_internal(std
   params.value.assign(value);
   params.lease_id = leaseid;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncUpdateAction>(std::move(params));
 }
@@ -681,6 +687,7 @@ std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> etcd::SyncClient::modify_if_i
   params.old_revision = old_index;
   params.old_value = old_value;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncCompareAndSwapAction>(std::move(params), atomicity_type);
 }
@@ -695,6 +702,7 @@ std::shared_ptr<etcdv3::AsyncDeleteAction> etcd::SyncClient::rm_internal(std::st
   params.key.assign(key);
   params.withPrefix = false;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncDeleteAction>(std::move(params));
 }
@@ -716,6 +724,7 @@ std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> etcd::SyncClient::rm_if_int
   params.old_revision = old_index;
   params.old_value = old_value;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncCompareAndDeleteAction>(std::move(params), atomicity_type);
 }
@@ -730,6 +739,7 @@ std::shared_ptr<etcdv3::AsyncDeleteAction> etcd::SyncClient::rmdir_internal(std:
   params.key.assign(key);
   params.withPrefix = recursive;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncDeleteAction>(std::move(params));
 }
@@ -750,6 +760,7 @@ std::shared_ptr<etcdv3::AsyncDeleteAction> etcd::SyncClient::rmdir_internal(std:
   params.range_end.assign(range_end);
   params.withPrefix = false;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncDeleteAction>(std::move(params));
 }
@@ -770,6 +781,7 @@ std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::str
   params.withPrefix = true;
   params.limit = limit;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
 }
@@ -791,6 +803,7 @@ std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::str
   params.withPrefix = false;
   params.limit = limit;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
 }
@@ -811,6 +824,7 @@ std::shared_ptr<etcdv3::AsyncWatchAction> etcd::SyncClient::watch_internal(std::
   params.withPrefix = recursive;
   params.revision = fromIndex;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.watch_stub = stubs->watchServiceStub.get();
   return std::make_shared<etcdv3::AsyncWatchAction>(std::move(params));
 }
@@ -837,6 +851,7 @@ std::shared_ptr<etcdv3::AsyncWatchAction> etcd::SyncClient::watch_internal(std::
   params.withPrefix = false;
   params.revision = fromIndex;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.watch_stub = stubs->watchServiceStub.get();
   return std::make_shared<etcdv3::AsyncWatchAction>(std::move(params));
 }
@@ -850,6 +865,7 @@ etcd::Response etcd::SyncClient::leasegrant(int ttl)
   return Response::create<etcdv3::AsyncLeaseGrantAction>([this, ttl]() {
     etcdv3::ActionParameters params;
     params.auth_token.assign(this->token_authenticator->renew_if_expired());
+    params.grpc_timeout = this->grpc_timeout;
     params.lease_stub = stubs->leaseServiceStub.get();
     params.ttl = ttl;
     return std::make_shared<etcdv3::AsyncLeaseGrantAction>(std::move(params));
@@ -860,6 +876,7 @@ std::shared_ptr<etcd::KeepAlive> etcd::SyncClient::leasekeepalive(int ttl) {
   etcdv3::ActionParameters params;
   params.ttl = ttl;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lease_stub = stubs->leaseServiceStub.get();
 
   // keep alive is synchronous in two folds:
@@ -881,6 +898,7 @@ std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> etcd::SyncClient::leaserevoke_in
   etcdv3::ActionParameters params;
   params.lease_id = lease_id;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lease_stub = stubs->leaseServiceStub.get();
   return std::make_shared<etcdv3::AsyncLeaseRevokeAction>(std::move(params));
 }
@@ -894,6 +912,7 @@ std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> etcd::SyncClient::leasetimet
   etcdv3::ActionParameters params;
   params.lease_id = lease_id;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lease_stub = stubs->leaseServiceStub.get();
   return std::make_shared<etcdv3::AsyncLeaseTimeToLiveAction>(std::move(params));
 }
@@ -916,6 +935,7 @@ etcd::Response etcd::SyncClient::lock_internal(std::string const &key, std::shar
   params.key = key;
   params.lease_id = keepalive->Lease();
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lock_stub = stubs->lockServiceStub.get();
 
   {
@@ -948,6 +968,7 @@ std::shared_ptr<etcdv3::AsyncLockAction> etcd::SyncClient::lock_with_lease_inter
   params.key = key;
   params.lease_id = lease_id;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lock_stub = stubs->lockServiceStub.get();
   return std::make_shared<etcdv3::AsyncLockAction>(std::move(params));
 }
@@ -960,6 +981,7 @@ std::shared_ptr<etcdv3::AsyncUnlockAction> etcd::SyncClient::unlock_internal(std
   etcdv3::ActionParameters params;
   params.key = lock_key;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.lock_stub = stubs->lockServiceStub.get();
 
   // issue a "unlock" request
@@ -1002,6 +1024,7 @@ etcd::Response etcd::SyncClient::txn(etcdv3::Transaction const &txn) {
 std::shared_ptr<etcdv3::AsyncTxnAction> etcd::SyncClient::txn_internal(etcdv3::Transaction const &txn) {
   etcdv3::ActionParameters params;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncTxnAction>(std::move(params), txn);
 }
@@ -1018,6 +1041,7 @@ std::shared_ptr<etcdv3::AsyncCampaignAction> etcd::SyncClient::campaign_internal
   params.lease_id = lease_id;
   params.value = value;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.election_stub = stubs->electionServiceStub.get();
   return std::make_shared<etcdv3::AsyncCampaignAction>(std::move(params));
 }
@@ -1038,6 +1062,7 @@ std::shared_ptr<etcdv3::AsyncProclaimAction> etcd::SyncClient::proclaim_internal
   params.revision = revision;
   params.value = value;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.election_stub = stubs->electionServiceStub.get();
   return std::make_shared<etcdv3::AsyncProclaimAction>(std::move(params));
 }
@@ -1050,6 +1075,7 @@ std::shared_ptr<etcdv3::AsyncLeaderAction> etcd::SyncClient::leader_internal(std
   etcdv3::ActionParameters params;
   params.name = name;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.election_stub = stubs->electionServiceStub.get();
   return std::make_shared<etcdv3::AsyncLeaderAction>(std::move(params));
 }
@@ -1059,6 +1085,7 @@ std::unique_ptr<etcd::SyncClient::Observer> etcd::SyncClient::observe(
   etcdv3::ActionParameters params;
   params.name.assign(name);
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.election_stub = stubs->electionServiceStub.get();
   std::unique_ptr<etcd::SyncClient::Observer> observer(new Observer());
   observer->action = std::make_shared<etcdv3::AsyncObserveAction>(std::move(params));
@@ -1078,6 +1105,7 @@ std::shared_ptr<etcdv3::AsyncResignAction> etcd::SyncClient::resign_internal(std
   params.key = key;
   params.revision = revision;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
   params.election_stub = stubs->electionServiceStub.get();
   return std::make_shared<etcdv3::AsyncResignAction>(std::move(params));
 }

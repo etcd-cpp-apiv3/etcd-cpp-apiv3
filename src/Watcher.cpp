@@ -136,6 +136,7 @@ void etcd::Watcher::doWatch(std::string const & key,
 {
   etcdv3::ActionParameters params;
   params.auth_token.assign(auth_token);
+  // n.b.: watch: no need for timeout
   params.key.assign(key);
   params.range_end.assign(range_end);
   if (fromIndex >= 0) {

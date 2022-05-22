@@ -65,6 +65,7 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client,
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.current_auth_token());
+  // n.b.: keepalive: no need for timeout
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 

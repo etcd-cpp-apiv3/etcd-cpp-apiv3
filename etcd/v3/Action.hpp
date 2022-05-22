@@ -19,6 +19,10 @@ using etcdserverpb::Lease;
 using v3lockpb::Lock;
 using v3electionpb::Election;
 
+namespace etcd {
+  class Response;
+}
+
 namespace etcdv3
 {
   enum class AtomicityType
@@ -42,11 +46,15 @@ namespace etcdv3
     std::string value;
     std::string old_value;
     std::string auth_token;
+    std::chrono::microseconds grpc_timeout = std::chrono::microseconds::zero();
     KV::Stub* kv_stub;
     Watch::Stub* watch_stub;
     Lease::Stub* lease_stub;
     Lock::Stub* lock_stub;
     Election::Stub* election_stub;
+
+    bool has_grpc_timeout() const;
+    std::chrono::system_clock::time_point grpc_deadline() const;
 
     void dump(std::ostream &os) const;
   };
@@ -67,6 +75,8 @@ namespace etcdv3
   private:
     // Init things like auth token, etc.
     void InitAction();
+
+    friend class etcd::Response;
   };
 
   namespace detail {

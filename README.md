@@ -300,7 +300,6 @@ And pass a `target_name_override` arguments to `WithSSL`,
   etcd::Client *etcd = etcd::Client::WithSSL(
                     "https://127.0.0.1:2379,https://127.0.0.2:2479",
                     "example.rootca.cert", "example.cert", "example.key", "etcd");
-
 ```
 
 For more discussion about this feature, see also [#87](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/issues/87),
@@ -335,6 +334,26 @@ which can be used for fine-grained control the gRPC settings, e.g.,
 ```
 
 For more motivation and discussion about the above design, please refer to [issue-103](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/issues/103).
+
+### gRPC timeout when waiting for responses
+
+gRPC Timeout is long-standing missing pieces in the etcd-cpp-apiv3 library. The timeout has been
+supported via a `set_grpc_timeout` interfaces on the client,
+
+```cpp
+  template <typename Rep = std::micro>
+  void set_grpc_timeout(std::chrono::duration<Rep> const &timeout)
+```
+
+Any `std::chrono::duration` value can be used to set the grpc timeout, e.g.,
+
+```cpp
+  etcd.set_grpc_timeout(std::chrono::seconds(5));
+```
+
+Note that the timeout value is the "timeout" when waiting for responses upon the gRPC channel, i.e., `CompletionQueue::AsyncNext`.
+It doesn't means the timeout between issuing a `.set()` method getting the `etcd::Response`, as in the async mode the such a time
+duration is unpredictable and the gRPC timeout should be enough to avoid deadly waiting (e.g., waiting for a `lock()`).
 
 ### Reading a value
 

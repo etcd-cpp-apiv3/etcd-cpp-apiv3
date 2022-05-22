@@ -108,6 +108,11 @@ namespace etcd
     int error_code() const;
 
     /**
+     * Check whether the response contains a grpc TIMEOUT error.
+     */
+    bool is_grpc_timeout() const;
+
+    /**
      * Returns the string representation of the error code
      */
     std::string const & error_message() const;

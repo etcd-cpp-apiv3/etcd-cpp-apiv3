@@ -615,6 +615,22 @@ namespace etcd
 #endif
 
     /**
+     * Set a timeout value for grpc operations.
+     */
+    template <typename Rep = std::micro>
+    void set_grpc_timeout(std::chrono::duration<Rep> const &timeout) {
+       this->client->set_grpc_timeout(timeout);
+    }
+
+    /**
+     * Get the current timeout value for grpc operations.
+     */
+    template <typename Rep = std::micro>
+    std::chrono::duration<Rep> get_grpc_timeout() const {
+       return this->client->get_grpc_timeout();
+    }
+
+    /**
      * Obtain the underlying synchronous client.
      */
     SyncClient* sync_client() const;
