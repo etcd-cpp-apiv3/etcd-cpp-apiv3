@@ -84,6 +84,11 @@ std::string const & etcd::Response::error_message() const
   return _error_message;
 }
 
+bool etcd::Response::is_grpc_timeout() const
+{
+  return _error_code == grpc::StatusCode::DEADLINE_EXCEEDED;
+}
+
 int64_t etcd::Response::index() const
 {
   return _index;

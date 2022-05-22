@@ -83,6 +83,35 @@ TEST_CASE("double lock will fail")
   REQUIRE(0 == resp5.error_code());
 }
 
+TEST_CASE("lock could be timeout")
+{
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  // setup the timeout
+  etcd.set_grpc_timeout(std::chrono::seconds(5));
+
+  // lock
+  etcd::Response resp1 = etcd.lock("/test/abcd").get();
+  CHECK("lock" == resp1.action());
+  REQUIRE(resp1.is_ok());
+  REQUIRE(0 == resp1.error_code());
+
+  auto lock_in_another_thread = std::thread([&](){
+    // lock again
+    etcd::Response resp2 = etcd.lock("/test/abcd").get();
+    CHECK("lock" == resp2.action());
+    REQUIRE(resp2.is_grpc_timeout());
+  });
+
+  lock_in_another_thread.join();
+
+  // cleanup: unlock the second lock
+  etcd::Response resp5 = etcd.unlock(resp1.lock_key()).get();
+  CHECK("unlock" == resp5.action());
+  REQUIRE(resp5.is_ok());
+  REQUIRE(0 == resp5.error_code());
+}
+
 TEST_CASE("lock using lease")
 {
   etcd::Client etcd("http://127.0.0.1:2379");

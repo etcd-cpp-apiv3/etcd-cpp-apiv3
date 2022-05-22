@@ -1,4 +1,5 @@
 #include <grpc/support/log.h>
+#include <grpcpp/support/status.h>
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Action.hpp"
 
@@ -36,6 +37,14 @@ etcdv3::ActionParameters::ActionParameters()
   lease_stub = NULL;
 }
 
+bool etcdv3::ActionParameters::has_grpc_timeout() const {
+  return this->grpc_timeout != std::chrono::microseconds::zero();
+}
+
+std::chrono::system_clock::time_point etcdv3::ActionParameters::grpc_deadline() const {
+  return std::chrono::system_clock::now() + this->grpc_timeout;
+}
+
 void etcdv3::ActionParameters::dump(std::ostream &os) const {
   os << "ActionParameters:" << std::endl;
   os << "  withPrefix:    " << withPrefix << std::endl;
@@ -50,6 +59,7 @@ void etcdv3::ActionParameters::dump(std::ostream &os) const {
   os << "  value:         " << value << std::endl;
   os << "  old_value:     " << old_value << std::endl;
   os << "  auth_token:    " << auth_token << std::endl;
+  os << "  grpc_timeout:  " << grpc_timeout.count() << "(ms)" << std::endl;
 }
 
 void etcdv3::Action::waitForResponse() 
@@ -57,8 +67,24 @@ void etcdv3::Action::waitForResponse()
   void* got_tag;
   bool ok = false;
 
-  cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(got_tag == (void*)this);
+  if (parameters.has_grpc_timeout()) {
+    switch (cq_.AsyncNext(&got_tag, &ok, parameters.grpc_deadline())) {
+      case CompletionQueue::NextStatus::TIMEOUT: {
+        status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout");
+        break;
+      }
+      case CompletionQueue::NextStatus::SHUTDOWN: {
+        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown");
+        break;
+      }
+      case CompletionQueue::NextStatus::GOT_EVENT: {
+        break;
+      }
+    }
+  } else {
+    cq_.Next(&got_tag, &ok);
+    GPR_ASSERT(got_tag == (void*)this);
+  }
 }
 
 const std::chrono::high_resolution_clock::time_point etcdv3::Action::startTimepoint() {

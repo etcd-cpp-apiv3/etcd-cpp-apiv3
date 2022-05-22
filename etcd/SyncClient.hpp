@@ -1,9 +1,11 @@
 #ifndef __ETCD_SYNC_CLIENT_HPP__
 #define __ETCD_SYNC_CLIENT_HPP__
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ratio>
 #include <string>
 
 #include "etcd/Response.hpp"
@@ -711,6 +713,22 @@ namespace etcd
     std::shared_ptr<grpc_impl::Channel> grpc_channel() const;
 #endif
 
+    /**
+     * Set a timeout value for grpc operations.
+     */
+    template <typename Rep = std::micro>
+    void set_grpc_timeout(std::chrono::duration<Rep> const &timeout) {
+      grpc_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
+    }
+
+    /**
+     * Get the current timeout value for grpc operations.
+     */
+    template <typename Rep = std::micro>
+    std::chrono::duration<Rep> get_grpc_timeout() const {
+      return std::chrono::duration_cast<std::chrono::duration<Rep>>(grpc_timeout);
+    }
+
   private:
 #if defined(WITH_GRPC_CHANNEL_CLASS)
     std::shared_ptr<grpc::Channel> channel;
@@ -719,6 +737,7 @@ namespace etcd
 #endif
 
     mutable std::unique_ptr<TokenAuthenticator, TokenAuthenticatorDeleter> token_authenticator;
+    mutable std::chrono::microseconds grpc_timeout = std::chrono::microseconds::zero();
 
     struct EtcdServerStubs;
     struct EtcdServerStubsDeleter {
