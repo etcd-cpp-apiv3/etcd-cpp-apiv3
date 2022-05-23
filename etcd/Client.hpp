@@ -1,6 +1,7 @@
 #ifndef __ETCD_CLIENT_HPP__
 #define __ETCD_CLIENT_HPP__
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -625,8 +626,7 @@ namespace etcd
     /**
      * Get the current timeout value for grpc operations.
      */
-    template <typename Rep = std::micro>
-    std::chrono::duration<Rep> get_grpc_timeout() const {
+    std::chrono::microseconds get_grpc_timeout() const {
        return this->client->get_grpc_timeout();
     }
 

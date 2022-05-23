@@ -21,6 +21,10 @@ using etcdserverpb::LeaseTimeToLiveResponse;
 using etcdserverpb::LeaseStatus;
 using etcdserverpb::LeaseLeasesResponse;
 
+namespace etcd {
+  class KeepAlive;
+}
+
 namespace etcdv3
 {
   class AsyncLeaseGrantAction : public etcdv3::Action {
@@ -51,12 +55,16 @@ namespace etcdv3
       bool Cancelled() const;
 
     private:
+      etcdv3::ActionParameters& mutable_parameters();
+
       LeaseKeepAliveResponse reply;
       std::unique_ptr<ClientAsyncReaderWriter<LeaseKeepAliveRequest, LeaseKeepAliveResponse>> stream;
 
       LeaseKeepAliveRequest req;
       bool isCancelled;
       std::mutex protect_is_cancelled;
+
+      friend class etcd::KeepAlive;
   };
 
   class AsyncLeaseTimeToLiveAction: public etcdv3::Action {
