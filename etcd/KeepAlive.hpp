@@ -2,6 +2,7 @@
 #define __ETCD_KEEPALIVE_HPP__
 
 #include <atomic>
+#include <chrono>
 #include <exception>
 #include <functional>
 #include <string>
@@ -72,6 +73,21 @@ namespace etcd
      */
     void Check();
 
+    /**
+     * Set a timeout value for grpc operations.
+     */
+    template <typename Rep = std::micro>
+    void set_grpc_timeout(std::chrono::duration<Rep> const &timeout) {
+      this->grpc_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
+    }
+
+    /**
+     * Get the current timeout value for grpc operations.
+     */
+    std::chrono::microseconds get_grpc_timeout() const {
+      return this->grpc_timeout;
+    }
+
     ~KeepAlive();
 
   protected:
@@ -95,6 +111,10 @@ namespace etcd
     int ttl;
     int64_t lease_id;
     std::atomic_bool continue_next;
+
+    // grpc timeout in `refresh()`
+    mutable std::chrono::microseconds grpc_timeout = std::chrono::microseconds::zero();
+
 #if BOOST_VERSION >= 106600
     boost::asio::io_context context;
 #else

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ratio>
 
 #include "etcd/KeepAlive.hpp"
 #include "etcd/v3/AsyncLeaseAction.hpp"
@@ -22,12 +23,14 @@ void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(etcd::KeepAlive::EtcdSe
 }
 
 etcd::KeepAlive::KeepAlive(SyncClient const &client, int ttl, int64_t lease_id):
-    ttl(ttl), lease_id(lease_id), continue_next(true) {
+    ttl(ttl), lease_id(lease_id), continue_next(true),
+    grpc_timeout(client.get_grpc_timeout()) {
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
   etcdv3::ActionParameters params;
   params.auth_token.assign(client.current_auth_token());
+  params.grpc_timeout = grpc_timeout;
   params.lease_id = this->lease_id;
   params.lease_stub = stubs->leaseServiceStub.get();
 
@@ -59,7 +62,8 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
 etcd::KeepAlive::KeepAlive(SyncClient const &client,
                            std::function<void (std::exception_ptr)> const &handler,
                            int ttl, int64_t lease_id):
-    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true) {
+    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true),
+    grpc_timeout(client.get_grpc_timeout()) {
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
@@ -133,8 +137,7 @@ void etcd::KeepAlive::refresh()
   }
   // minimal resolution: 1 second
   int keepalive_ttl = std::max(ttl - 1, 1);
-  keepalive_timer_.reset(new boost::asio::steady_timer(
-      context, std::chrono::seconds(keepalive_ttl)));
+  keepalive_timer_.reset(new boost::asio::steady_timer(context, std::chrono::seconds(keepalive_ttl)));
   keepalive_timer_->async_wait([this](const boost::system::error_code& error) {
     if (error) {
 #ifndef NDEBUG
@@ -142,6 +145,7 @@ void etcd::KeepAlive::refresh()
 #endif
     } else {
       if (this->continue_next.load()) {
+        this->stubs->call->mutable_parameters().grpc_timeout = this->grpc_timeout;
         auto resp = this->stubs->call->Refresh();
         if (!resp.is_ok()) {
           throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +

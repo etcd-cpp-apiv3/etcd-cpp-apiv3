@@ -1,6 +1,9 @@
 #include "etcd/v3/AsyncLeaseAction.hpp"
+
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Transaction.hpp"
+
+#include <grpcpp/support/status.h>
 
 using etcdserverpb::LeaseGrantRequest;
 using etcdserverpb::LeaseRevokeRequest;
@@ -97,10 +100,9 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
 
   auto start_timepoint = std::chrono::high_resolution_clock::now();
   if (isCancelled) {
-    auto resp = ParseResponse();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - start_timepoint);
-    return etcd::Response(resp, duration);
+    status = grpc::Status::CANCELLED;
+    return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - start_timepoint));
   }
 
   LeaseKeepAliveRequest leasekeepalive_request;
@@ -109,19 +111,62 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
   void *got_tag = nullptr;
   bool ok = false;
 
-  stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
-  // wait write finish
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
+  if (parameters.has_grpc_timeout()) {
+    stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
+    // wait write finish
+    switch (cq_.AsyncNext(&got_tag, &ok, parameters.grpc_deadline())) {
+      case CompletionQueue::NextStatus::TIMEOUT: {
+        status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout during keep alive write");
+        break;
+      }
+      case CompletionQueue::NextStatus::SHUTDOWN: {
+        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown during keep alive write");
+        break;
+      }
+      case CompletionQueue::NextStatus::GOT_EVENT: {
+        if (!ok || got_tag != (void *)etcdv3::KEEPALIVE_WRITE) {
+          return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: write not ok or invalid tag");
+        }
+      }
+    }
+    if (!status.ok()) {
+      return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now() - start_timepoint));
+    }
+
     stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
     // wait read finish
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
-      auto resp = ParseResponse();
-      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - start_timepoint);
-      return etcd::Response(resp, duration);
+    switch (cq_.AsyncNext(&got_tag, &ok, parameters.grpc_deadline())) {
+      case CompletionQueue::NextStatus::TIMEOUT: {
+        status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout during keep alive read");
+        break;
+      }
+      case CompletionQueue::NextStatus::SHUTDOWN: {
+        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown during keep alive read");
+        break;
+      }
+      case CompletionQueue::NextStatus::GOT_EVENT: {
+        if (!ok || got_tag != (void *)etcdv3::KEEPALIVE_READ) {
+          return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: read not ok or invalid tag");
+        }
+        break;
+      }
     }
+    return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - start_timepoint));
+  } else {
+    stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
+    // wait write finish
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
+      stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
+      // wait read finish
+      if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
+        return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - start_timepoint));
+      }
+    }
+    return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
   }
-  return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
 }
 
 void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
@@ -156,6 +201,10 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
 bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const
 {
   return isCancelled;
+}
+
+etcdv3::ActionParameters& etcdv3::AsyncLeaseKeepAliveAction::mutable_parameters() {
+  return this->parameters;
 }
 
 etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(

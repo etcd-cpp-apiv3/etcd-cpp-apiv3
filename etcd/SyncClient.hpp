@@ -724,9 +724,8 @@ namespace etcd
     /**
      * Get the current timeout value for grpc operations.
      */
-    template <typename Rep = std::micro>
-    std::chrono::duration<Rep> get_grpc_timeout() const {
-      return std::chrono::duration_cast<std::chrono::duration<Rep>>(grpc_timeout);
+    std::chrono::microseconds get_grpc_timeout() const {
+      return this->grpc_timeout;
     }
 
   private:
