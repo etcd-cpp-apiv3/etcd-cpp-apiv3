@@ -898,7 +898,14 @@ std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> etcd::SyncClient::leaserevoke_in
   etcdv3::ActionParameters params;
   params.lease_id = lease_id;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
-  params.grpc_timeout = this->grpc_timeout;
+  // leaserevoke: no timeout
+  //
+  // leaserevoke is special, as it calls `Finish()` inside the constructor, the timeout may
+  // trigger a "SIGABRT" error on Mac
+  //
+  //  https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/runs/6544444692?check_suite_focus=true
+  //
+  // params.grpc_timeout = this->grpc_timeout;
   params.lease_stub = stubs->leaseServiceStub.get();
   return std::make_shared<etcdv3::AsyncLeaseRevokeAction>(std::move(params));
 }
