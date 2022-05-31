@@ -18,6 +18,10 @@
 #endif
 #include <boost/asio/steady_timer.hpp>
 
+namespace etcdv3 {
+  class ActionParameters;
+}
+
 namespace etcd
 {
   /**
@@ -27,25 +31,25 @@ namespace etcd
   {
   public:
     KeepAlive(Client const &client,
-              int ttl, int64_t lease_id = 0);
+              int ttl, int64_t lease_id = 0, int _max_retry_attempts = 3);
     KeepAlive(std::string const & address,
-              int ttl, int64_t lease_id = 0);
+              int ttl, int64_t lease_id = 0, int _max_retry_attempts = 3);
     KeepAlive(std::string const & address,
               std::string const & username, std::string const & password,
               int ttl, int64_t lease_id = 0,
-              int const auth_token_ttl = 300);
+              int const auth_token_ttl = 300, int _max_retry_attempts = 3);
 
     KeepAlive(Client const &client,
               std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id = 0);
+              int ttl, int64_t lease_id = 0, int _max_retry_attempts = 3);
     KeepAlive(std::string const & address,
               std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id = 0);
+              int ttl, int64_t lease_id = 0, int _max_retry_attempts = 3);
     KeepAlive(std::string const & address,
               std::string const & username, std::string const & password,
               std::function<void (std::exception_ptr)> const &handler,
               int ttl, int64_t lease_id = 0,
-              int const auth_token_ttl = 300);
+              int const auth_token_ttl = 300, int _max_retry_attempts = 3);
 
     KeepAlive(KeepAlive const &) = delete;
     KeepAlive(KeepAlive &&) = delete;
@@ -87,6 +91,10 @@ namespace etcd
     int ttl;
     int64_t lease_id;
     std::atomic_bool continue_next;
+    int max_retry_attempts;
+    int retry_attempts;
+    int timer_interval;
+    std::unique_ptr<etcdv3::ActionParameters> params;
 #if BOOST_VERSION >= 106600
     boost::asio::io_context context;
 #else

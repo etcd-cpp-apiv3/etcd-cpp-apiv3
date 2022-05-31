@@ -21,19 +21,20 @@ void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(etcd::KeepAlive::EtcdSe
   }
 }
 
-etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
-    ttl(ttl), lease_id(lease_id), continue_next(true) {
+etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id, int _max_retry_attempts):
+    ttl(ttl), lease_id(lease_id), continue_next(true), max_retry_attempts(_max_retry_attempts), retry_attempts(0) {
+  timer_interval = std::max(ttl/max_retry_attempts, 1);
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.channel);
 
-  etcdv3::ActionParameters params;
-  params.auth_token.assign(client.current_auth_token());
-  params.lease_id = this->lease_id;
-  params.lease_stub = stubs->leaseServiceStub.get();
+  params.reset(new etcdv3::ActionParameters());
+  params->auth_token.assign(client.current_auth_token());
+  params->lease_id = this->lease_id;
+  params->lease_stub = stubs->leaseServiceStub.get();
 
   continue_next.store(true);
 
-  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(*params));
   task_ = std::thread([this]() {
     try {
       // start refresh
@@ -46,29 +47,30 @@ etcd::KeepAlive::KeepAlive(Client const &client, int ttl, int64_t lease_id):
   });
 }
 
-etcd::KeepAlive::KeepAlive(std::string const & address, int ttl, int64_t lease_id):
-    KeepAlive(Client(address), ttl, lease_id) {
+etcd::KeepAlive::KeepAlive(std::string const & address, int ttl, int64_t lease_id, int _max_retry_attempts):
+    KeepAlive(Client(address), ttl, lease_id, _max_retry_attempts) {
 }
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
-                           int ttl, int64_t lease_id, int const auth_token_ttl):
-    KeepAlive(Client(address, username, password, auth_token_ttl), ttl, lease_id) {
+                           int ttl, int64_t lease_id, int const auth_token_ttl, int _max_retry_attempts):
+    KeepAlive(Client(address, username, password, auth_token_ttl), ttl, lease_id, _max_retry_attempts) {
 }
 
 etcd::KeepAlive::KeepAlive(Client const &client,
                            std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id):
-    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true) {
+                           int ttl, int64_t lease_id, int _max_retry_attempts):
+    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true), max_retry_attempts(_max_retry_attempts), retry_attempts(0) {
+  timer_interval = std::max(ttl/max_retry_attempts, 1);
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.channel);
 
-  etcdv3::ActionParameters params;
-  params.auth_token.assign(client.current_auth_token());
-  params.lease_id = this->lease_id;
-  params.lease_stub = stubs->leaseServiceStub.get();
+  params.reset(new etcdv3::ActionParameters());
+  params->auth_token.assign(client.current_auth_token());
+  params->lease_id = this->lease_id;
+  params->lease_stub = stubs->leaseServiceStub.get();
 
-  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(params));
+  stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(*params));
   task_ = std::thread([this]() {
     try {
       // start refresh
@@ -87,15 +89,15 @@ etcd::KeepAlive::KeepAlive(Client const &client,
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id):
-    KeepAlive(Client(address), handler, ttl, lease_id) {
+                           int ttl, int64_t lease_id, int _max_retry_attempts):
+    KeepAlive(Client(address), handler, ttl, lease_id, _max_retry_attempts) {
 }
 
 etcd::KeepAlive::KeepAlive(std::string const & address,
                            std::string const & username, std::string const & password,
                            std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id, const int auth_token_ttl):
-    KeepAlive(Client(address, username, password, auth_token_ttl), handler, ttl, lease_id) {
+                           int ttl, int64_t lease_id, const int auth_token_ttl, int _max_retry_attempts):
+    KeepAlive(Client(address, username, password, auth_token_ttl), handler, ttl, lease_id, _max_retry_attempts) {
 }
 
 etcd::KeepAlive::~KeepAlive()
@@ -131,9 +133,8 @@ void etcd::KeepAlive::refresh()
     return;
   }
   // minimal resolution: 1 second
-  int keepalive_ttl = std::max(ttl - 1, 1);
   keepalive_timer_.reset(new boost::asio::steady_timer(
-      context, std::chrono::seconds(keepalive_ttl)));
+      context, std::chrono::seconds(timer_interval)));
   keepalive_timer_->async_wait([this](const boost::system::error_code& error) {
     if (error) {
 #ifndef NDEBUG
@@ -143,11 +144,19 @@ void etcd::KeepAlive::refresh()
       if (this->continue_next.load()) {
         auto resp = this->stubs->call->Refresh();
         if (!resp.is_ok()) {
-          throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
-                                   ", message: " + resp.error_message());
-        }
-        if (resp.value().ttl() == 0) {
+          ++retry_attempts;
+          if (retry_attempts >= max_retry_attempts) {
+            throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
+                                     ", message: " + resp.error_message());
+          }
+          // going to reset KeepAlive stream"
+          this->continue_next.store(true);
+          this->stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(*params));
+        } else if (resp.value().ttl() == 0) {
           throw std::out_of_range("Failed to refresh lease due to expiration: the new TTL is 0.");
+        } else {
+          // going to reset retry_attempts
+          retry_attempts = 0;
         }
         // trigger the next round;
         this->refresh();

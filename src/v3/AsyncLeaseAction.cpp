@@ -62,8 +62,8 @@ etcdv3::AsyncLeaseRevokeResponse etcdv3::AsyncLeaseRevokeAction::ParseResponse()
 }
 
 etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(
-    etcdv3::ActionParameters const &param)
-  : etcdv3::Action(param)
+    etcdv3::ActionParameters const &param, std::chrono::milliseconds _retryConnWait)
+  : etcdv3::Action(param), retryConnWait(_retryConnWait)
 {
   isCancelled = false;
   stream = parameters.lease_stub->AsyncLeaseKeepAlive(&context, &cq_, (void*)etcdv3::KEEPALIVE_CREATE);
@@ -109,19 +109,52 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
   void *got_tag = nullptr;
   bool ok = false;
 
+  auto deadline = std::chrono::system_clock::now()  + retryConnWait;
+
   stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
   // wait write finish
-  if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_WRITE) {
-    stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
-    // wait read finish
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
-      auto resp = ParseResponse();
-      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - start_timepoint);
-      return etcd::Response(resp, duration);
+  switch (cq_.AsyncNext(&got_tag, &ok, deadline)) {
+    case CompletionQueue::NextStatus::TIMEOUT: {
+      status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout during keep alive write");
+      break;
+    }
+    case CompletionQueue::NextStatus::SHUTDOWN: {
+      status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown during keep alive write");
+      break;
+    }
+    case CompletionQueue::NextStatus::GOT_EVENT: {
+      if (!ok || got_tag != (void *)etcdv3::KEEPALIVE_WRITE) {
+        status = grpc::Status(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: write not ok or invalid tag");
+      }
     }
   }
-  return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
+
+  if (!status.ok()) {
+    return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - start_timepoint));
+  }
+
+  stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
+  // wait read finish
+  switch (cq_.AsyncNext(&got_tag, &ok, deadline)) {
+    case CompletionQueue::NextStatus::TIMEOUT: {
+      status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout during keep alive read");
+      break;
+    }
+    case CompletionQueue::NextStatus::SHUTDOWN: {
+      status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown during keep alive read");
+      break;
+    }
+    case CompletionQueue::NextStatus::GOT_EVENT: {
+      if (!ok || got_tag != (void *)etcdv3::KEEPALIVE_READ) {
+        status = grpc::Status(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: read not ok or invalid tag");
+      }
+      break;
+    }
+  }
+
+  return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::high_resolution_clock::now() - start_timepoint));
 }
 
 void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
@@ -156,6 +189,10 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
 bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const
 {
   return isCancelled;
+}
+
+etcdv3::AsyncLeaseKeepAliveAction::~AsyncLeaseKeepAliveAction() {
+  //CancelKeepAlive();
 }
 
 etcdv3::AsyncLeaseTimeToLiveAction::AsyncLeaseTimeToLiveAction(

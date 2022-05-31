@@ -43,7 +43,9 @@ namespace etcdv3
 
   class AsyncLeaseKeepAliveAction: public etcdv3::Action {
     public:
-      AsyncLeaseKeepAliveAction(etcdv3::ActionParameters const &param);
+      AsyncLeaseKeepAliveAction(etcdv3::ActionParameters const &param, 
+                                std::chrono::milliseconds _retryConnWait = std::chrono::milliseconds(500));
+      ~AsyncLeaseKeepAliveAction();
       AsyncLeaseKeepAliveResponse ParseResponse();
 
       etcd::Response Refresh();
@@ -57,6 +59,7 @@ namespace etcdv3
       LeaseKeepAliveRequest req;
       bool isCancelled;
       std::mutex protect_is_cancelled;
+      std::chrono::milliseconds retryConnWait;
   };
 
   class AsyncLeaseTimeToLiveAction: public etcdv3::Action {
