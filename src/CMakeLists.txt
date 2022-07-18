@@ -19,7 +19,6 @@ file(GLOB_RECURSE CPP_CLIENT_CORE_SRC
 
 add_library(etcd-cpp-api-core-objects OBJECT ${CPP_CLIENT_CORE_SRC} ${PROTOBUF_GENERATES})
 add_dependencies(etcd-cpp-api-core-objects protobuf_generates)
-target_enable_sanitizer(etcd-cpp-api-core-objects PUBLIC)
 include_generated_protobuf_files(etcd-cpp-api-core-objects)
 
 # add the core library, includes the sycnhronous client only
@@ -30,7 +29,6 @@ target_link_libraries(etcd-cpp-api-core PUBLIC
                       ${OPENSSL_LIBRARIES}
                       ${GRPC_LIBRARIES}
 )
-target_enable_sanitizer(etcd-cpp-api-core PUBLIC)
 include_generated_protobuf_files(etcd-cpp-api-core)
 
 # add the client with asynchronus client
@@ -43,7 +41,6 @@ target_link_libraries(etcd-cpp-api PUBLIC
                       ${OPENSSL_LIBRARIES}
                       ${GRPC_LIBRARIES}
 )
-target_enable_sanitizer(etcd-cpp-api PUBLIC)
 include_generated_protobuf_files(etcd-cpp-api)
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.14")

@@ -136,7 +136,6 @@ jobs:
           cmake .. -DCMAKE_CXX_STANDARD=17 \
                    -DCMAKE_CXX_STANDARD_REQUIRED=TRUE \
                    -DCMAKE_BUILD_TYPE=Debug \
-                   -DETCD_USE_ASAN=ON \
                    -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
@@ -176,10 +175,13 @@ jobs:
           echo "Run the etcd election test ........................."
           ./build/bin/ElectionTest
 
+          killall -TERM etcd || true
+          sleep 5
+
       - name: Lock Test
         if: false
         run: |
-          killall -TERM etcd
+          killall -TERM etcd || true
           sleep 5
 
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
@@ -194,6 +196,9 @@ jobs:
 
           echo "Run the etcd lock test ........................."
           ./build/bin/LockTest
+
+          killall -TERM etcd || true
+          sleep 5
 
       - name: Lock Tests with Debug
         if: true
@@ -218,6 +223,9 @@ jobs:
 
             echo "Run the etcd lock test ........................."
             ./build/bin/LockTest
+
+            killall -TERM etcd || true
+            sleep 5
 
       - name: Authentication Test
         run: |
@@ -259,6 +267,9 @@ jobs:
           then
               /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
           fi
+
+          killall -TERM etcd || true
+          sleep 5
 
       - name: Transport Security and Authentication Test
         run: |

@@ -18,7 +18,6 @@ foreach(testfile ${TEST_FILES})
     else()
         add_executable(${test_name} EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/${testfile})
     endif()
-    target_enable_sanitizer(${test_name} PUBLIC)
     add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
 
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
