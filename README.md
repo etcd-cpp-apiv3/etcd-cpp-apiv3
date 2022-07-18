@@ -240,8 +240,8 @@ printf 'root\nroot\n' | /usr/local/bin/etcdctl user add root
 
 Etcd [transport security](https://etcd.io/docs/v3.4.0/op-guide/security/) and certificate based
 authentication have been supported as well. The `Client::Client` could accept arguments `ca` ,
-`cert` and `key` for CA cert, cert and private key files for the SSL/TLS transport and authentication.
-Note that the later arguments `cert` and `key` could be empty strings or omitted if you just need
+`cert` and `privkey` for CA cert, cert and private key files for the SSL/TLS transport and authentication.
+Note that the later arguments `cert` and `privkey` could be empty strings or omitted if you just need
 secure transport and don't enable certificate-based client authentication (using the `--client-cert-auth`
 arguments when launching etcd server).
 

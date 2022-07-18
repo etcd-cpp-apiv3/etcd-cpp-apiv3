@@ -80,9 +80,11 @@ jobs:
 
       - name: Install cpprestsdk
         run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64
+
           mkdir -p build
           cd build
-          git clone https://github.com/microsoft/cpprestsdk.git
+          git clone https://github.com/microsoft/cpprestsdk.git --depth=1
           mkdir -p cpprestsdk/build
           cd cpprestsdk/build
           cmake .. -DCMAKE_BUILD_TYPE=Debug \

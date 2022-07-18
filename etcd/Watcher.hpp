@@ -67,6 +67,20 @@ namespace etcd
             std::string const & key, std::string const &range_end, int64_t fromIndex,
             std::function<void(Response)> callback,
             int const auth_token_ttl = 300);
+    Watcher(std::string const & address,
+            std::string const & ca,
+            std::string const & cert,
+            std::string const & privkey,
+            std::string const & key, int64_t fromIndex,
+            std::function<void(Response)> callback, bool recursive=false,
+            std::string const & target_name_override = "");
+    Watcher(std::string const & address,
+            std::string const & ca,
+            std::string const & cert,
+            std::string const & privkey,
+            std::string const & key, std::string const &range_end, int64_t fromIndex,
+            std::function<void(Response)> callback,
+            std::string const & target_name_override = "");
 
     Watcher(Watcher const &) = delete;
     Watcher(Watcher &&) = delete;

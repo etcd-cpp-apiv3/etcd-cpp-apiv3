@@ -157,18 +157,18 @@ etcd::Client *etcd::Client::WithUser(std::string const & etcd_url,
 etcd::Client::Client(std::string const & address,
                      std::string const & ca,
                      std::string const & cert,
-                     std::string const & key,
+                     std::string const & privkey,
                      std::string const & target_name_override,
                      std::string const & load_balancer)
 {
   this->own_client = true;
-  this->client = new SyncClient(address, ca, cert, key, target_name_override, load_balancer);
+  this->client = new SyncClient(address, ca, cert, privkey, target_name_override, load_balancer);
 }
 
 etcd::Client::Client(std::string const & address,
                      std::string const & ca,
                      std::string const & cert,
-                     std::string const & key,
+                     std::string const & privkey,
                      std::string const & target_name_override,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
            grpc::ChannelArguments const & arguments
@@ -179,16 +179,16 @@ etcd::Client::Client(std::string const & address,
                      )
 {
   this->own_client = true;
-  this->client = new SyncClient(address, ca, cert, key, target_name_override, arguments);
+  this->client = new SyncClient(address, ca, cert, privkey, target_name_override, arguments);
 }
 
 etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
                                     std::string const & ca,
                                     std::string const & cert,
-                                    std::string const & key,
+                                    std::string const & privkey,
                                     std::string const & target_name_override,
                                     std::string const & load_balancer) {
-  return new etcd::Client(etcd_url, ca, cert, key, target_name_override, load_balancer);
+  return new etcd::Client(etcd_url, ca, cert, privkey, target_name_override, load_balancer);
 }
 
 etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
@@ -199,9 +199,9 @@ etcd::Client *etcd::Client::WithSSL(std::string const & etcd_url,
 #endif
                                     std::string const & ca,
                                     std::string const & cert,
-                                    std::string const & key,
+                                    std::string const & privkey,
                                     std::string const & target_name_override) {
-  return new etcd::Client(etcd_url, ca, cert, key, target_name_override, arguments);
+  return new etcd::Client(etcd_url, ca, cert, privkey, target_name_override, arguments);
 }
 
 etcd::Client::~Client() {
