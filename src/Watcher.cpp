@@ -94,6 +94,26 @@ etcd::Watcher::Watcher(std::string const & address,
     Watcher(SyncClient(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback) {
 }
 
+etcd::Watcher::Watcher(std::string const & address,
+            std::string const & ca,
+            std::string const & cert,
+            std::string const & privkey,
+            std::string const & key, int64_t fromIndex,
+            std::function<void(Response)> callback, bool recursive,
+            std::string const & target_name_override):
+    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, fromIndex, callback, recursive) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+            std::string const & ca,
+            std::string const & cert,
+            std::string const & privkey,
+            std::string const & key, std::string const & range_end, int64_t fromIndex,
+            std::function<void(Response)> callback,
+            std::string const & target_name_override):
+    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, range_end, fromIndex, callback) {
+}
+
 etcd::Watcher::~Watcher()
 {
   this->Cancel();

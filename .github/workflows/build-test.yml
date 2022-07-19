@@ -166,9 +166,6 @@ jobs:
           echo "Run the etcd test ........................."
           ./build/bin/EtcdTest
 
-          echo "Run the etcd lock test ........................."
-          ./build/bin/LockTest
-
           echo "Run the etcd memory leak test ........................."
           ./build/bin/MemLeakTest
 
@@ -178,11 +175,63 @@ jobs:
           echo "Run the etcd election test ........................."
           ./build/bin/ElectionTest
 
-          killall -TERM etcd
+          killall -TERM etcd || true
           sleep 5
+
+      - name: Lock Test
+        if: false
+        run: |
+          killall -TERM etcd || true
+          sleep 5
+
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+
+          rm -rf default.etcd
+          /usr/local/bin/etcd &
+
+          sleep 5
+
+          echo "Run the etcd lock test ........................."
+          ./build/bin/LockTest
+
+          killall -TERM etcd || true
+          sleep 5
+
+      - name: Lock Tests with Debug
+        if: true
+        uses: sighingnow/action-tmate@master
+        with:
+          script-to-run: |
+            killall -TERM etcd || true
+            sleep 5
+
+            # enable coredump for debugging
+            ulimit -c unlimited
+
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
+
+            # use etcd v3 api
+            export ETCDCTL_API="3"
+
+            rm -rf default.etcd
+            /usr/local/bin/etcd &
+
+            sleep 5
+
+            echo "Run the etcd lock test ........................."
+            ./build/bin/LockTest
+
+            killall -TERM etcd || true
+            sleep 5
 
       - name: Authentication Test
         run: |
+          killall -TERM etcd || true
+          sleep 5
+
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           # use etcd v3 api
@@ -219,11 +268,14 @@ jobs:
               /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
           fi
 
-          killall -TERM etcd
+          killall -TERM etcd || true
           sleep 5
 
       - name: Transport Security and Authentication Test
         run: |
+          killall -TERM etcd || true
+          sleep 5
+
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
           # use etcd v3 api

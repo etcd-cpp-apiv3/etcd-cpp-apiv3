@@ -59,6 +59,16 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
     KeepAlive(SyncClient(address, username, password, auth_token_ttl), ttl, lease_id) {
 }
 
+etcd::KeepAlive::KeepAlive(std::string const & address,
+              std::string const & ca,
+              std::string const & cert,
+              std::string const & privkey,
+              std::function<void (std::exception_ptr)> const &handler,
+              int ttl, int64_t lease_id,
+              std::string const & target_name_override):
+    KeepAlive(SyncClient(address, ca, cert, privkey, target_name_override), ttl, lease_id) {
+}
+
 etcd::KeepAlive::KeepAlive(SyncClient const &client,
                            std::function<void (std::exception_ptr)> const &handler,
                            int ttl, int64_t lease_id):

@@ -383,7 +383,7 @@ etcd::SyncClient *etcd::SyncClient::WithUser(std::string const & etcd_url,
 etcd::SyncClient::SyncClient(std::string const & address,
                      std::string const & ca,
                      std::string const & cert,
-                     std::string const & key,
+                     std::string const & privkey,
                      std::string const & target_name_override,
                      std::string const & load_balancer)
 {
@@ -393,7 +393,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
   grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
   grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(
-      etcd::detail::make_ssl_credentials(ca, cert, key));
+      etcd::detail::make_ssl_credentials(ca, cert, privkey));
   grpc_args.SetLoadBalancingPolicyName(load_balancer);
   if (!target_name_override.empty()) {
     grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
@@ -413,7 +413,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
 etcd::SyncClient::SyncClient(std::string const & address,
                      std::string const & ca,
                      std::string const & cert,
-                     std::string const & key,
+                     std::string const & privkey,
                      std::string const & target_name_override,
                      #if defined(WITH_GRPC_CHANNEL_CLASS)
            grpc::ChannelArguments const & arguments
@@ -429,7 +429,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
   grpc_args.SetMaxSendMessageSize(std::numeric_limits<int>::max());
   grpc_args.SetMaxReceiveMessageSize(std::numeric_limits<int>::max());
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(
-      etcd::detail::make_ssl_credentials(ca, cert, key));
+      etcd::detail::make_ssl_credentials(ca, cert, privkey));
   if (!target_name_override.empty()) {
     grpc_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name_override);
   }
@@ -448,10 +448,10 @@ etcd::SyncClient::SyncClient(std::string const & address,
 etcd::SyncClient *etcd::SyncClient::WithSSL(std::string const & etcd_url,
                                     std::string const & ca,
                                     std::string const & cert,
-                                    std::string const & key,
+                                    std::string const & privkey,
                                     std::string const & target_name_override,
                                     std::string const & load_balancer) {
-  return new etcd::SyncClient(etcd_url, ca, cert, key, target_name_override, load_balancer);
+  return new etcd::SyncClient(etcd_url, ca, cert, privkey, target_name_override, load_balancer);
 }
 
 etcd::SyncClient *etcd::SyncClient::WithSSL(std::string const & etcd_url,
@@ -462,9 +462,9 @@ etcd::SyncClient *etcd::SyncClient::WithSSL(std::string const & etcd_url,
 #endif
                                     std::string const & ca,
                                     std::string const & cert,
-                                    std::string const & key,
+                                    std::string const & privkey,
                                     std::string const & target_name_override) {
-  return new etcd::SyncClient(etcd_url, ca, cert, key, target_name_override, arguments);
+  return new etcd::SyncClient(etcd_url, ca, cert, privkey, target_name_override, arguments);
 }
 
 etcd::SyncClient::~SyncClient() {

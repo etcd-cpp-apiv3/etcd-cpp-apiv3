@@ -55,6 +55,13 @@ namespace etcd
               std::function<void (std::exception_ptr)> const &handler,
               int ttl, int64_t lease_id = 0,
               int const auth_token_ttl = 300);
+    KeepAlive(std::string const & address,
+              std::string const & ca,
+              std::string const & cert,
+              std::string const & privkey,
+              std::function<void (std::exception_ptr)> const &handler,
+              int ttl, int64_t lease_id = 0,
+              std::string const & target_name_override = "");
 
     KeepAlive(KeepAlive const &) = delete;
     KeepAlive(KeepAlive &&) = delete;
