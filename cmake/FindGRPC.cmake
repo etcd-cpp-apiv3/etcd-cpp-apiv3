@@ -67,6 +67,32 @@ set_target_properties(gRPC::grpc_cpp_plugin PROPERTIES
     IMPORTED_LOCATION ${GRPC_CPP_PLUGIN}
 )
 
+file(
+    WRITE "${CMAKE_BINARY_DIR}/get_gRPC_version.cc"
+[====[
+#include <grpc++/grpc++.h>
+#include <iostream>
+int main() {
+  std::cout << grpc::Version(); // no newline to simplify CMake module
+  return 0;
+}
+]====])
+
+try_run(
+    _gRPC_GET_VERSION_STATUS
+    _gRPC_GET_VERSION_COMPILE_STATUS
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_BINARY_DIR}/get_gRPC_version.cc"
+    LINK_LIBRARIES
+    gRPC::grpc++
+    gRPC::grpc
+    COMPILE_OUTPUT_VARIABLE _gRPC_GET_VERSION_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE gRPC_VERSION)
+
+file(REMOVE "${CMAKE_BINARY_DIR}/get_gRPC_version.cc")
+
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(gRPC DEFAULT_MSG
-    GPR_LIBRARY GRPC_LIBRARY GRPC_INCLUDE_DIR GRPC_GRPC++_REFLECTION_LIBRARY GRPC_CPP_PLUGIN)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(gRPC
+  FOUND_VAR gRPC_FOUND
+  REQUIRED_VARS GRPC_LIBRARY GPR_LIBRARY GRPC_INCLUDE_DIR GRPC_GRPC++_REFLECTION_LIBRARY GRPC_CPP_PLUGIN
+  VERSION_VAR gRPC_VERSION)
