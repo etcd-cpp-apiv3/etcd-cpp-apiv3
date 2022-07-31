@@ -41,6 +41,19 @@ if(MSVC)
     set(CMAKE_GNUtoMS ON)
 endif()
 
+macro(use_cxx11)
+  if(CMAKE_VERSION VERSION_LESS "3.1")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+    endif()
+  else()
+    set(CMAKE_CXX_STANDARD 11)
+  endif()
+endmacro(use_cxx11)
+
+# ensure C++11
+use_cxx11()
+
 find_package(Boost REQUIRED COMPONENTS system thread random)
 if(APPLE)
     # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
@@ -87,7 +100,8 @@ else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
-if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.13")
+# avoid use the apt-get installed libgrpc-dev (version v1.13) on Ubuntu 18.04
+if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
     message(FATAL_ERROR "gRPC '${gRPC_VERSION}' is not supported, please install a newer gRPC library "
                         "by following the example below"
                         "\n"
@@ -116,6 +130,7 @@ if(W_NO_CPP17_EXTENSIONS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
 endif()
 
+set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
 set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${GRPC_INCLUDE_DIR}")
 set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${GRPC_LIBRARIES}")
 set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")

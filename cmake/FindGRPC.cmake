@@ -83,6 +83,8 @@ try_run(
     _gRPC_GET_VERSION_COMPILE_STATUS
     "${CMAKE_BINARY_DIR}"
     "${CMAKE_BINARY_DIR}/get_gRPC_version.cc"
+    CMAKE_FLAGS
+    -DCMAKE_CXX_STANDARD=11
     LINK_LIBRARIES
     gRPC::grpc++
     gRPC::grpc

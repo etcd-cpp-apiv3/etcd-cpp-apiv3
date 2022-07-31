@@ -150,6 +150,10 @@ static std::string read_from_file(std::string const &filename) {
     ss << file.rdbuf ();
     file.close ();
     return ss.str ();
+  } else {
+    std::cerr << "[ERROR] failed to load given file '" << filename << "', "
+              << strerror(errno)
+              << std::endl;
   }
   return std::string{};
 }
