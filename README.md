@@ -61,7 +61,7 @@ i.e., `ETCDCTL_API=3`.
         cd cpprestsdk
         mkdir build && cd build
         cmake .. -DCPPREST_EXCLUDE_WEBSOCKETS=ON
-        make -j && make install
+        make -j$(nproc) && make install
 
 ## Build and install
 
@@ -72,7 +72,7 @@ dependencies have been successfully installed:
     cd etcd-cpp-apiv3
     mkdir build && cd build
     cmake ..
-    make -j && make install
+    make -j$(nproc) && make install
 
 ## Compatible etcd version
 
