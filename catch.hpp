@@ -1,3 +1,8 @@
+#if defined(_WIN32)
+// see also: https://stackoverflow.com/questions/2561368/illegal-token-on-right-side-of
+#define NOMINMAX
+#endif
+
 /*
  *  Catch v2.13.6
  *  Generated: 2021-04-16 18:23:38.044268

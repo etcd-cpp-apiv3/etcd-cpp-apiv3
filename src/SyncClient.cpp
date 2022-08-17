@@ -1,3 +1,8 @@
+#if defined(_WIN32)
+// see also: https://stackoverflow.com/questions/2561368/illegal-token-on-right-side-of
+#define NOMINMAX
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
