@@ -413,7 +413,7 @@ what was the previous value that this operation was overwritten. You can do that
     else
       std::cout << "operation failed, details: " << response.error_message();
   }
-  catch (std::ecxeption const & ex)
+  catch (std::exception const & ex)
   {
     std::cerr << "communication problem, details: " << ex.what();
   }
