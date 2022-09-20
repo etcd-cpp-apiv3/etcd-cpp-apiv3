@@ -41,18 +41,35 @@ if(MSVC)
     set(CMAKE_GNUtoMS ON)
 endif()
 
-macro(use_cxx11)
-  if(CMAKE_VERSION VERSION_LESS "3.1")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-    endif()
-  else()
-    set(CMAKE_CXX_STANDARD 11)
-  endif()
-endmacro(use_cxx11)
+if(NOT (CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache") AND NOT (CMAKE_C_COMPILER_LAUNCHER MATCHES "ccache"))
+    find_program(ccache_EXECUTABLE ccache)
+    if(ccache_EXECUTABLE)
+        set(CMAKE_C_COMPILER_LAUNCHER ${ccache_EXECUTABLE})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${ccache_EXECUTABLE})
+        add_custom_target(ccache-stats
+            COMMAND ${ccache_EXECUTABLE} --show-stats
+        )
+    else()
+        add_custom_target(ccache-stats
+            COMMAND echo "ccache not found."
+        )
+    endif(ccache_EXECUTABLE)
+endif()
 
-# ensure C++11
-use_cxx11()
+macro(use_cxx11 target)
+    if(CMAKE_VERSION VERSION_LESS "3.1")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            target_compile_options(${target} PRIVATE "-std=gnu++11")
+        else()
+            target_compile_options(${target} PRIVATE "-std=c++11")
+        endif()
+    else()
+        set_target_properties(${target} PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED ON
+        )
+    endif()
+endmacro(use_cxx11)
 
 find_package(Boost REQUIRED COMPONENTS system thread random)
 if(APPLE)
