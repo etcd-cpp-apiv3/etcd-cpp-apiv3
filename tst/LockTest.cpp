@@ -224,3 +224,30 @@ TEST_CASE("concurrent lock & unlock")
     locks[index].join();
   }
 }
+
+TEST_CASE("concurrent lock & unlock with a put in between") {
+  etcd::Client etcd("http://127.0.0.1:2379");
+  std::string const lock_key = "/test/test_key";
+
+  constexpr size_t trials = 128;
+
+  std::function<void(std::string const &, const size_t)> locker = [&etcd](std::string const &key, const size_t index) {
+    std::cout << "start lock for " << index << std::endl;
+    auto resp = etcd.lock(key, true).get();
+    std::cout << "lock for " << index << " is ok, start put and unlock: ..." << resp.error_message() << std::endl;
+    REQUIRE(resp.is_ok());
+    auto put_resp = etcd.put("/test/test_put", "hello" + std::to_string(index)).get();
+    REQUIRE(put_resp.is_ok());
+    REQUIRE(etcd.unlock(resp.lock_key()).get().is_ok());
+    std::cout << "thread " << index << " been unlocked" << std::endl;
+  };
+
+  std::vector<std::thread> locks(trials);
+  for (size_t index = 0; index < trials; ++index) {
+    locks[index] = std::thread(locker, lock_key, index);
+  }
+
+  for (size_t index = 0; index < trials; ++index) {
+    locks[index].join();
+  }
+}

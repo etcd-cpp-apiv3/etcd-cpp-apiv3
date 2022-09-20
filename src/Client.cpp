@@ -554,7 +554,14 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
   return this->lock(key, DEFAULT_LEASE_TTL_FOR_LOCK);
 }
 
-pplx::task<etcd::Response> etcd::Client::lock(std::string const &key, int lease_ttl) {
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key,
+                                              const bool sync) {
+  static const int DEFAULT_LEASE_TTL_FOR_LOCK = 10;  // see also etcd::SyncClient::lock
+  return this->lock(key, DEFAULT_LEASE_TTL_FOR_LOCK, sync);
+}
+
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key,
+                                              int lease_ttl) {
   // See Note [lease with TTL and issue the actual request]
   // See also SyncClient::lock
   //
@@ -566,11 +573,35 @@ pplx::task<etcd::Response> etcd::Client::lock(std::string const &key, int lease_
   });
 }
 
+pplx::task<etcd::Response> etcd::Client::lock(std::string const &key,
+                                              int lease_ttl,
+                                              const bool sync) {
+  if (sync) {
+    pplx::task_completion_event<etcd::Response> event;
+    event.set(this->client->lock(key, lease_ttl));
+    return pplx::task<etcd::Response>(event);
+  } else {
+    return this->lock(key, lease_ttl);
+  }
+}
+
 pplx::task<etcd::Response> etcd::Client::lock_with_lease(std::string const &key,
                                                          int64_t lease_id) {
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncLockAction>>(Response::create),
       this->client->lock_with_lease_internal(key, lease_id));
+}
+
+pplx::task<etcd::Response> etcd::Client::lock_with_lease(std::string const &key,
+                                                         int64_t lease_id,
+                                                         const bool sync) {
+  if (sync) {
+    pplx::task_completion_event<etcd::Response> event;
+    event.set(this->client->lock_with_lease(key, lease_id));
+    return pplx::task<etcd::Response>(event);
+  } else {
+    return this->lock_with_lease(key, lease_id);
+  }
 }
 
 pplx::task<etcd::Response> etcd::Client::unlock(std::string const &lock_key) {

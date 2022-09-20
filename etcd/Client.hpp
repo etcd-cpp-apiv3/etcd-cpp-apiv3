@@ -513,6 +513,21 @@ namespace etcd
     pplx::task<Response> lock(std::string const &key);
 
     /**
+     * Lock is special, as waiting for lock may cause the thread resources (in the pplx thread pool) to
+     * be exhausted. So we need to provide a way to let the user to issue a lock without taking the a
+     * shared thread.
+     *
+     * This works like what we have in the sync client, but we can issue such method from the async client
+     * directly.
+     *
+     * That would be useful when use already issue the lock from a controlled thread. See more discussion
+     * about the target scenario in https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/issues/139
+     *
+     * @param key is the key to be used to request the lock.
+     */
+    pplx::task<Response> lock(std::string const &key, const bool sync);
+
+    /**
      * Gains a lock at a key, using a default created lease, using the specified lease TTL (in seconds), with
      * keeping alive has already been taken care of by the library.
      * @param key is the key to be used to request the lock.
@@ -521,11 +536,21 @@ namespace etcd
     pplx::task<Response> lock(std::string const &key, int lease_ttl);
 
     /**
+     * Lock, but the sync version.
+     */
+    pplx::task<Response> lock(std::string const &key, int lease_ttl, const bool sync);
+
+    /**
      * Gains a lock at a key, using a user-provided lease, the lifetime of the lease won't be taken care
      * of by the library.
      * @param key is the key to be used to request the lock.
      */
     pplx::task<Response> lock_with_lease(std::string const &key, int64_t lease_id);
+
+    /**
+     * Lock, but the sync version.
+     */
+    pplx::task<Response> lock_with_lease(std::string const &key, int64_t lease_id, const bool sync);
 
     /**
      * Releases a lock at a key.
