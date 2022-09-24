@@ -38,8 +38,7 @@ i.e., `ETCDCTL_API=3`.
 
          brew install boost openssl
 
-2. protobuf
-3. gRPC
+2. protobuf & gRPC
 
    + On Ubuntu, above requirements related to protobuf and gRPC can be installed as:
 
@@ -50,11 +49,14 @@ i.e., `ETCDCTL_API=3`.
         
    + On MacOS, above requirements related to protobuf and gRPC can be installed as:
 
-
          brew install grpc protobuf
 
+   + When building grpc from source code (e.g., on [Ubuntu 18.04][https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/build-test.yml#L73]
+     and on [CentOS](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/centos-latest.yml#L44-L67)),
+     if the system-installed openssl is preferred, you need to add `-DgRPC_SSL_PROVIDER=package`
+     when building gRPC with CMake.
 
-4. [cpprestsdk](https://github.com/microsoft/cpprestsdk), the latest version of master branch
+3. [cpprestsdk](https://github.com/microsoft/cpprestsdk), the latest version of master branch
    on github should work, you can build and install this dependency using cmake with:
 
         git clone https://github.com/microsoft/cpprestsdk.git
@@ -62,6 +64,13 @@ i.e., `ETCDCTL_API=3`.
         mkdir build && cd build
         cmake .. -DCPPREST_EXCLUDE_WEBSOCKETS=ON
         make -j$(nproc) && make install
+
+## API documentation
+
+The _etcd-cpp-apiv3_ doesn't maintain a website for documentation, for detail usage of the
+etcd APIs, please refer to [the "etcd operations" section](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3#etcd-operations)
+in README, and see the detail C++ interfaces in [Client.hpp](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/etcd/Client.hpp)
+and [SyncClient.hpp](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/etcd/SyncClient.hpp).
 
 ## Build and install
 
@@ -89,11 +98,11 @@ the implementation of underlying thread model).
 The _etcd-cpp-apiv3_ library supports both synchronous and asynchronous runtime, in two separate
 library as follows:
 
-- etcd-cpp-api-core: the synchronous runtime, provides a blocking-style API and the users are responsible
+- **etcd-cpp-api-core**: the synchronous runtime, provides a blocking-style API and the users are responsible
   for handling dispatch the request into separate thread to avoid been blocked by waiting for response.
   - target found by cmake: `ETCD_CPP_CORE_LIBRARIES`
 
-- etcd-cpp-api: the asynchronous runtime backed by the `pplx` library from
+- **etcd-cpp-api**: the asynchronous runtime backed by the `pplx` library from
   [cpprestsdk](https://github.com/microsoft/cpprestsdk), where a `boost::asio::io_context` and a pool
   of threads is used to run the asynchronous operations in the background. By default the number of
   threads in the thread pool equals to `std::thread::hardware_concurrency()`.
@@ -540,6 +549,19 @@ Users can also feed their own lease directory for lock:
 ```c++
   etcd::Client etcd("http://127.0.0.1:2379");
   etcd.lock_with_lease("/test/lock", lease_id);
+```
+
+Note that the arguments for `unlock()` is the the same key that used for `lock()`, but the
+`response.lock_key()` that return by `lock()`:
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:2379");
+
+  // lock
+  auto response = etcd.lock("/test/lock").get();
+
+  // unlock
+  auto _ = etcd.unlock(response.lock_key()).get();
 ```
 
 ### Watching for changes
