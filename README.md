@@ -734,6 +734,35 @@ is constructed.
 Without handler, the internal state can be checked via `KeepAlive::Check()` and it will rethrow
 the async exception when there are errors during keeping the lease alive.
 
+### Etcd transactions
+
+Etcd v3's [Transaction APIs](https://etcd.io/docs/v3.4/learning/api/#transaction) is supported via the
+`etcdv3::Transaction` interfaces. A set of convenient APIs are use to add operations to a transaction, e.g.,
+
+```cpp
+  etcdv3::Transaction txn;
+  txn.setup_put("/test/x1", "1");
+  txn.setup_put("/test/x2", "2");
+  txn.setup_put("/test/x3", "3");
+  etcd::Response resp = etcd.txn(txn).get();
+```
+
+Transactions in etcd supports set a set of comparison targets to specify the condition of transaction, e.g.,
+
+```cpp
+  etcdv3::Transaction txn;
+
+  // setup the conditions
+  txn.reset_key("/test/x1");
+  txn.init_compare("1", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+
+  txn.reset_key("/test/x2");
+  txn.init_compare("2", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+```
+
+See full example of the usages of transaction APIs, please refer to [./tst/TransactionTest.cpp](./tst/TransactionTest.cpp),
+for full list of the transaction operation APIs, see [./etcd/v3/Transaction.hpp](./etcd/v3/Transaction.hpp).
+
 ### Election API
 
 Etcd v3's [election APIs](https://github.com/etcd-io/etcd/blob/main/server/etcdserver/api/v3election/v3electionpb/v3election.proto)
