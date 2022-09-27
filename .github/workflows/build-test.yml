@@ -172,6 +172,9 @@ jobs:
           echo "Run the etcd watcher test ........................."
           ./build/bin/WatcherTest
 
+          echo "Run the etcd transaction test ........................."
+          ./build/bin/TransactionTest
+
           echo "Run the etcd election test ........................."
           ./build/bin/ElectionTest
 
