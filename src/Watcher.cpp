@@ -1,4 +1,7 @@
 #include "etcd/Watcher.hpp"
+
+#include "etcd/SyncClient.hpp"
+
 #include "etcd/v3/AsyncWatchAction.hpp"
 
 struct etcd::Watcher::EtcdServerStubs {
@@ -13,19 +16,24 @@ void etcd::Watcher::EtcdServerStubsDeleter::operator()(etcd::Watcher::EtcdServer
 }
 
 etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
-                       std::function<void(Response)> callback, bool recursive):
-    Watcher(client, key, -1, callback, recursive) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    Watcher(client, key, -1, callback, wait_callback, recursive) {
 }
 
 etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
                        std::string const &range_end,
-                       std::function<void(Response)> callback):
-    Watcher(client, key, range_end, -1, callback) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    Watcher(client, key, range_end, -1, callback, wait_callback) {
 }
 
 etcd::Watcher::Watcher(SyncClient const &client, std::string const & key, int64_t fromIndex,
-                       std::function<void(Response)> callback, bool recursive):
-    fromIndex(fromIndex), recursive(recursive) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    wait_callback(wait_callback), fromIndex(fromIndex), recursive(recursive) {
   stubs.reset(new EtcdServerStubs{});
   stubs->watchServiceStub = Watch::NewStub(client.channel);
   doWatch(key, "", client.current_auth_token(), callback);
@@ -33,85 +41,204 @@ etcd::Watcher::Watcher(SyncClient const &client, std::string const & key, int64_
 
 etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
                        std::string const &range_end, int64_t fromIndex,
-                       std::function<void(Response)> callback):
-    fromIndex(fromIndex), recursive(false) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    wait_callback(wait_callback), fromIndex(fromIndex), recursive(false) {
   stubs.reset(new EtcdServerStubs{});
   stubs->watchServiceStub = Watch::NewStub(client.channel);
   doWatch(key, range_end, client.current_auth_token(), callback);
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key,
-                       std::function<void(Response)> callback, bool recursive):
-    Watcher(address, key, -1, callback, recursive) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    Watcher(address, key, -1, callback, wait_callback, recursive) {
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key,
                        std::string const & range_end,
-                       std::function<void(Response)> callback):
-    Watcher(address, key, range_end, -1, callback) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    Watcher(address, key, range_end, -1, callback, wait_callback) {
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key, int64_t fromIndex,
-                       std::function<void(Response)> callback, bool recursive):
-    Watcher(SyncClient(address), key, fromIndex, callback, recursive) {
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    Watcher(SyncClient(address), key, fromIndex, callback, wait_callback, recursive) {
 }
 
 etcd::Watcher::Watcher(std::string const & address, std::string const & key,
                        std::string const & range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    Watcher(SyncClient(address), key, range_end, fromIndex, callback, wait_callback) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & username, std::string const & password,
+                       std::string const & key,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, -1, callback, wait_callback, recursive, auth_token_ttl) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & username, std::string const & password,
+                       std::string const & key, std::string const & range_end,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, range_end, -1, callback, wait_callback, auth_token_ttl) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & username, std::string const & password,
+                       std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive,
+                       int const auth_token_ttl):
+    Watcher(SyncClient(address, username, password, auth_token_ttl), key, fromIndex, callback, wait_callback, recursive) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & username, std::string const & password,
+                       std::string const & key, std::string const & range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       int const auth_token_ttl):
+    Watcher(SyncClient(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback, wait_callback) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & ca,
+                       std::string const & cert,
+                       std::string const & privkey,
+                       std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive,
+                       std::string const & target_name_override):
+    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, fromIndex, callback, wait_callback, recursive) {
+}
+
+etcd::Watcher::Watcher(std::string const & address,
+                       std::string const & ca,
+                       std::string const & cert,
+                       std::string const & privkey,
+                       std::string const & key, std::string const & range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       std::string const & target_name_override):
+    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, range_end, fromIndex, callback, wait_callback) {
+}
+
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
+                       std::function<void(Response)> callback,
+                       bool recursive):
+    Watcher(client, key, callback, nullptr, recursive) {
+}
+
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
+                       std::string const &range_end,
                        std::function<void(Response)> callback):
-    Watcher(SyncClient(address), key, range_end, fromIndex, callback) {
+    Watcher(client, key, range_end, callback, nullptr) {
+}
+
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       bool recursive):
+    Watcher(client, key, fromIndex, callback, nullptr, recursive) {
+}
+
+etcd::Watcher::Watcher(SyncClient const &client, std::string const & key,
+                       std::string const &range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback):
+    Watcher(client, key, range_end, fromIndex, callback, nullptr) {
+}
+
+etcd::Watcher::Watcher(std::string const & address, std::string const & key,
+                       std::function<void(Response)> callback,
+                       bool recursive):
+    Watcher(address, key, callback, nullptr, recursive) {
+}
+
+etcd::Watcher::Watcher(std::string const & address, std::string const & key,
+                       std::string const &range_end,
+                       std::function<void(Response)> callback):
+    Watcher(address, key, range_end, callback, nullptr) {
+}
+
+etcd::Watcher::Watcher(std::string const & address, std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       bool recursive):
+    Watcher(address, key, fromIndex, callback, nullptr, recursive) {
+}
+
+etcd::Watcher::Watcher(std::string const & address, std::string const & key,
+                       std::string const &range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback):
+    Watcher(address, key, range_end, fromIndex, callback, nullptr) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & username, std::string const & password,
-            std::string const & key,
-            std::function<void(Response)> callback, bool recursive,
-            int const auth_token_ttl):
-    Watcher(address, username, password, key, -1, callback, recursive, auth_token_ttl) {
+                       std::string const & username, std::string const & password,
+                       std::string const & key,
+                       std::function<void(Response)> callback,
+                       bool recursive,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, callback, nullptr, recursive, auth_token_ttl) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & username, std::string const & password,
-            std::string const & key, std::string const & range_end,
-            std::function<void(Response)> callback,
-            int const auth_token_ttl):
-    Watcher(address, username, password, key, range_end, -1, callback, auth_token_ttl) {
+                       std::string const & username, std::string const & password,
+                       std::string const & key, std::string const &range_end,
+                       std::function<void(Response)> callback,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, range_end, callback, nullptr, auth_token_ttl) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & username, std::string const & password,
-            std::string const & key, int64_t fromIndex,
-            std::function<void(Response)> callback, bool recursive,
-            int const auth_token_ttl):
-    Watcher(SyncClient(address, username, password, auth_token_ttl), key, fromIndex, callback, recursive) {
+                       std::string const & username, std::string const & password,
+                       std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       bool recursive,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, fromIndex, callback, nullptr, recursive, auth_token_ttl) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & username, std::string const & password,
-            std::string const & key, std::string const & range_end, int64_t fromIndex,
-            std::function<void(Response)> callback,
-            int const auth_token_ttl):
-    Watcher(SyncClient(address, username, password, auth_token_ttl), key, range_end, fromIndex, callback) {
+                       std::string const & username, std::string const & password,
+                       std::string const & key, std::string const &range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       int const auth_token_ttl):
+    Watcher(address, username, password, key, range_end, fromIndex, callback, nullptr, auth_token_ttl) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & ca,
-            std::string const & cert,
-            std::string const & privkey,
-            std::string const & key, int64_t fromIndex,
-            std::function<void(Response)> callback, bool recursive,
-            std::string const & target_name_override):
-    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, fromIndex, callback, recursive) {
+                       std::string const & ca,
+                       std::string const & cert,
+                       std::string const & privkey,
+                       std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       bool recursive,
+                       std::string const & target_name_override):
+    Watcher(address, ca, cert, privkey, key, fromIndex, callback, nullptr, recursive, target_name_override) {
 }
 
 etcd::Watcher::Watcher(std::string const & address,
-            std::string const & ca,
-            std::string const & cert,
-            std::string const & privkey,
-            std::string const & key, std::string const & range_end, int64_t fromIndex,
-            std::function<void(Response)> callback,
-            std::string const & target_name_override):
-    Watcher(SyncClient(address, ca, cert, privkey, target_name_override), key, range_end, fromIndex, callback) {
+                       std::string const & ca,
+                       std::string const & cert,
+                       std::string const & privkey,
+                       std::string const & key, std::string const &range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::string const & target_name_override):
+    Watcher(address, ca, cert, privkey, key, range_end, fromIndex, callback, nullptr, target_name_override) {
 }
 
 etcd::Watcher::~Watcher()

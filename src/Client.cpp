@@ -663,7 +663,36 @@ etcd::SyncClient* etcd::Client::sync_client() const {
 // watchers from the async client
 
 etcd::Watcher::Watcher(Client const &client, std::string const & key,
-                       std::function<void(Response)> callback, bool recursive):
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    Watcher(*client.sync_client(), key, callback, wait_callback, recursive) {
+}
+
+etcd::Watcher::Watcher(Client const &client, std::string const & key,
+                       std::string const &range_end,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    Watcher(*client.sync_client(), key, range_end, callback, wait_callback) {
+}
+
+etcd::Watcher::Watcher(Client const &client, std::string const & key, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback,
+                       bool recursive):
+    Watcher(*client.sync_client(), key, fromIndex, callback, wait_callback, recursive) {
+}
+
+etcd::Watcher::Watcher(Client const &client, std::string const & key,
+                       std::string const &range_end, int64_t fromIndex,
+                       std::function<void(Response)> callback,
+                       std::function<void(bool)> wait_callback):
+    Watcher(*client.sync_client(), key, range_end, fromIndex, callback, wait_callback) {
+}
+
+etcd::Watcher::Watcher(Client const &client, std::string const & key,
+                       std::function<void(Response)> callback,
+                       bool recursive):
     Watcher(*client.sync_client(), key, callback, recursive) {
 }
 
@@ -674,7 +703,8 @@ etcd::Watcher::Watcher(Client const &client, std::string const & key,
 }
 
 etcd::Watcher::Watcher(Client const &client, std::string const & key, int64_t fromIndex,
-                       std::function<void(Response)> callback, bool recursive):
+                       std::function<void(Response)> callback,
+                       bool recursive):
     Watcher(*client.sync_client(), key, fromIndex, callback, recursive) {
 }
 
