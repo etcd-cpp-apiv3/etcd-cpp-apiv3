@@ -51,7 +51,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndDeleteAction::ParseResponse()
     if(!reply.succeeded())
     {
       txn_resp.set_error_code(ERROR_COMPARE_FAILED);
-      txn_resp.set_error_message("Compare failed");
+      txn_resp.set_error_message("etcd-cpp-apiv3: compare failed");
     } 
   }
     

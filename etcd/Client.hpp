@@ -16,7 +16,6 @@
 
 namespace etcd
 {
-  // FIXME
   /**
    * Client is responsible for maintaining a connection towards an etcd server.
    * Etcd operations can be reached via the methods of the client.

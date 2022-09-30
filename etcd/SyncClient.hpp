@@ -68,7 +68,6 @@ namespace etcd
   class Watcher;
   class Client;
 
-  // FIXME
   /**
    * Client is responsible for maintaining a connection towards an etcd server.
    * Etcd operations can be reached via the methods of the client.

@@ -67,6 +67,13 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _raft_term = reply.get_raft_term();
 }
 
+etcd::Response::Response(int error_code, std::string const& error_message)
+  : _error_code(error_code),
+    _error_message(error_message),
+    _index(0)
+{
+}
+
 etcd::Response::Response(int error_code, char const * error_message)
   : _error_code(error_code),
     _error_message(error_message),
@@ -84,21 +91,6 @@ std::string const & etcd::Response::error_message() const
   return _error_message;
 }
 
-bool etcd::Response::is_grpc_timeout() const
-{
-  return _error_code == grpc::StatusCode::DEADLINE_EXCEEDED;
-}
-
-int64_t etcd::Response::index() const
-{
-  return _index;
-}
-
-std::string const & etcd::Response::action() const
-{
-  return _action;
-}
-
 bool etcd::Response::is_ok() const
 {
   return error_code() == 0;
@@ -107,6 +99,21 @@ bool etcd::Response::is_ok() const
 bool etcd::Response::is_network_unavailable() const
 {
   return error_code() == ::grpc::StatusCode::UNAVAILABLE;
+}
+
+bool etcd::Response::is_grpc_timeout() const
+{
+  return _error_code == grpc::StatusCode::DEADLINE_EXCEEDED;
+}
+
+std::string const & etcd::Response::action() const
+{
+  return _action;
+}
+
+int64_t etcd::Response::index() const
+{
+  return _index;
 }
 
 etcd::Value const & etcd::Response::value() const

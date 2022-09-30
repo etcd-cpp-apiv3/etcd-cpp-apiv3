@@ -181,8 +181,6 @@ this case since the response has been already arrived (we are inside the callbac
   // ... your code can continue here without any delay
 ```
 
-## etcd operations
-
 ### Multiple endpoints
 
 Connecting to multiple endpoints is supported:
@@ -364,6 +362,46 @@ Note that the timeout value is the "timeout" when waiting for responses upon the
 It doesn't means the timeout between issuing a `.set()` method getting the `etcd::Response`, as in the async mode the such a time
 duration is unpredictable and the gRPC timeout should be enough to avoid deadly waiting (e.g., waiting for a `lock()`).
 
+### Error code in responses
+
+The `class etcd::Response` may yield an error code and error message when error occurs,
+
+```cpp
+  int error_code() const;
+  std::string const & error_message() const;
+
+  bool is_ok() const;
+```
+
+The error code would be `0` when succeed, otherwise the error code might be
+
+```cpp
+  extern const int ERROR_GRPC_OK;
+  extern const int ERROR_GRPC_CANCELLED;
+  extern const int ERROR_GRPC_UNKNOWN;
+  extern const int ERROR_GRPC_INVALID_ARGUMENT;
+  extern const int ERROR_GRPC_DEADLINE_EXCEEDED;
+  extern const int ERROR_GRPC_NOT_FOUND;
+  extern const int ERROR_GRPC_ALREADY_EXISTS;
+  extern const int ERROR_GRPC_PERMISSION_DENIED;
+  extern const int ERROR_GRPC_UNAUTHENTICATED;
+  extern const int ERROR_GRPC_RESOURCE_EXHAUSTED;
+  extern const int ERROR_GRPC_FAILED_PRECONDITION;
+  extern const int ERROR_GRPC_ABORTED;
+  extern const int ERROR_GRPC_OUT_OF_RANGE;
+  extern const int ERROR_GRPC_UNIMPLEMENTED;
+  extern const int ERROR_GRPC_INTERNAL;
+  extern const int ERROR_GRPC_UNAVAILABLE;
+  extern const int ERROR_GRPC_DATA_LOSS;
+
+  extern const int ERROR_KEY_NOT_FOUND;
+  extern const int ERROR_COMPARE_FAILED;
+  extern const int ERROR_KEY_ALREADY_EXISTS;
+  extern const int ERROR_ACTION_CANCELLED;
+```
+
+## Etcd operations
+
 ### Reading a value
 
 You can read a value with the `get()` method of the client instance. The only parameter is the
@@ -434,7 +472,7 @@ some specific conditions.
 
 * `add(key, value)` creates a new value if it's key does not exists and returns a "Key
   already exists" error otherwise (error code `ERROR_KEY_ALREADY_EXISTS`)
-* `modify(key, value)` modifies an already existing value or returns a "Key not found" error
+* `modify(key, value)` modifies an already existing value or returns a "etcd-cpp-apiv3: key not found" error
   otherwise (error code `KEY_NOT_FOUND`)
 * `modify_if(key, value, old_value)` modifies an already existing value but only if the previous
   value equals with old_value. If the values does not match returns with "Compare failed" error
