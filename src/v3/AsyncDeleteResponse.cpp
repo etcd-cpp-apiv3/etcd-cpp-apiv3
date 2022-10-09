@@ -9,7 +9,7 @@ void etcdv3::AsyncDeleteResponse::ParseResponse(std::string const& key, bool pre
   if(resp.prev_kvs_size() == 0)
   {
     error_code = etcdv3::ERROR_KEY_NOT_FOUND;
-    error_message = "Key not found";
+    error_message = "etcd-cpp-apiv3: key not found";
   }
   else
   {

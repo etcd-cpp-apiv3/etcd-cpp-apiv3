@@ -29,7 +29,7 @@ TEST_CASE("add a new key after authenticate")
   CHECK(0 < resp.index());
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd->add("/test/key1", "43").get().error_code()); // Key already exists
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd->add("/test/key1", "42").get().error_code()); // Key already exists
-  CHECK("Key already exists" == etcd->add("/test/key1", "42").get().error_message());
+  CHECK("etcd-cpp-apiv3: key already exists" == etcd->add("/test/key1", "42").get().error_message());
 }
 
 TEST_CASE("read a value from etcd")

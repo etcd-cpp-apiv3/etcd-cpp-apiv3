@@ -8,7 +8,7 @@ void etcdv3::AsyncRangeResponse::ParseResponse(RangeResponse& resp, bool prefix)
   if(resp.kvs_size() == 0 && !prefix)
   {
     error_code = etcdv3::ERROR_KEY_NOT_FOUND;
-    error_message = "Key not found";
+    error_message = "etcd-cpp-apiv3: key not found";
     return;
   }
   else

@@ -43,7 +43,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse()
     else
     {
       txn_resp.set_error_code(etcdv3::ERROR_KEY_NOT_FOUND);
-      txn_resp.set_error_message("Key not found");
+      txn_resp.set_error_message("etcd-cpp-apiv3: key not found");
     }
   }
   return txn_resp;

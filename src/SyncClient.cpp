@@ -530,7 +530,7 @@ etcd::Response etcd::SyncClient::set(std::string const & key, std::string const 
     auto res = this->leasegrant(ttl);
     if(!res.is_ok()) 
     {
-      return etcd::Response(res.error_code(), res.error_message().c_str());    
+      return etcd::Response(res.error_code(), res.error_message());
     }
     else
     {
@@ -565,7 +565,7 @@ etcd::Response etcd::SyncClient::add(std::string const & key, std::string const 
     auto res = this->leasegrant(ttl);
     if(!res.is_ok()) 
     {
-      return etcd::Response(res.error_code(), res.error_message().c_str());    
+      return etcd::Response(res.error_code(), res.error_message());
     }
     else
     {
@@ -614,7 +614,7 @@ etcd::Response etcd::SyncClient::modify(std::string const & key, std::string con
     auto res = leasegrant(ttl);
     if(!res.is_ok()) 
     {
-        return etcd::Response(res.error_code(), res.error_message().c_str());    
+        return etcd::Response(res.error_code(), res.error_message());
     }
     else
     {
@@ -649,7 +649,7 @@ etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string 
     auto res = leasegrant(ttl);
     if(!res.is_ok()) 
     {
-        return etcd::Response(res.error_code(), res.error_message().c_str());    
+        return etcd::Response(res.error_code(), res.error_message());
     }
     else
     {
@@ -673,7 +673,7 @@ etcd::Response etcd::SyncClient::modify_if(std::string const & key, std::string 
     auto res = leasegrant(ttl);
     if(!res.is_ok()) 
     {
-        return etcd::Response(res.error_code(), res.error_message().c_str());    
+        return etcd::Response(res.error_code(), res.error_message());
     }
     else
     {

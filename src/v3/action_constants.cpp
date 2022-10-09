@@ -40,6 +40,24 @@ char const * etcdv3::WATCH_WRITES_DONE = "watch writes done";
 
 char const * etcdv3::ELECTION_OBSERVE_CREATE = "observe create";
 
+const int etcdv3::ERROR_GRPC_OK = 0;
+const int etcdv3::ERROR_GRPC_CANCELLED = 1;
+const int etcdv3::ERROR_GRPC_UNKNOWN = 2;
+const int etcdv3::ERROR_GRPC_INVALID_ARGUMENT = 3;
+const int etcdv3::ERROR_GRPC_DEADLINE_EXCEEDED = 4;
+const int etcdv3::ERROR_GRPC_NOT_FOUND = 5;
+const int etcdv3::ERROR_GRPC_ALREADY_EXISTS = 6;
+const int etcdv3::ERROR_GRPC_PERMISSION_DENIED = 7;
+const int etcdv3::ERROR_GRPC_UNAUTHENTICATED = 16;
+const int etcdv3::ERROR_GRPC_RESOURCE_EXHAUSTED = 8;
+const int etcdv3::ERROR_GRPC_FAILED_PRECONDITION = 9;
+const int etcdv3::ERROR_GRPC_ABORTED = 10;
+const int etcdv3::ERROR_GRPC_OUT_OF_RANGE = 11;
+const int etcdv3::ERROR_GRPC_UNIMPLEMENTED = 12;
+const int etcdv3::ERROR_GRPC_INTERNAL = 13;
+const int etcdv3::ERROR_GRPC_UNAVAILABLE = 14;
+const int etcdv3::ERROR_GRPC_DATA_LOSS = 15;
+
 const int etcdv3::ERROR_KEY_NOT_FOUND = 100;
 const int etcdv3::ERROR_COMPARE_FAILED = 101;
 const int etcdv3::ERROR_KEY_ALREADY_EXISTS = 105;

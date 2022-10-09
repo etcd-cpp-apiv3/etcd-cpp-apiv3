@@ -63,9 +63,9 @@ namespace etcd
     }
 
     template <typename T>
-    static etcd::Response create(std::function<std::unique_ptr<T>()> callfn)
+    static etcd::Response create(std::function<std::unique_ptr<T>()> fn)
     {
-        auto call = callfn();
+        auto call = fn();
 
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
@@ -76,9 +76,9 @@ namespace etcd
     }
 
     template <typename T>
-    static etcd::Response create(std::function<std::shared_ptr<T>()> callfn)
+    static etcd::Response create(std::function<std::shared_ptr<T>()> fn)
     {
-        auto call = callfn();
+        auto call = fn();
 
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
@@ -93,6 +93,16 @@ namespace etcd
     Response(const Response &);
 
     /**
+     * Returns the error code received from the etcd server. In case of success the error code is 0.
+     */
+    int error_code() const;
+
+    /**
+     * Returns the string representation of the error code
+     */
+    std::string const & error_message() const;
+
+    /**
      * Returns true if this is a successful response
      */
     bool is_ok() const;
@@ -103,19 +113,9 @@ namespace etcd
     bool is_network_unavailable() const;
 
     /**
-     * Returns the error code received from the etcd server. In case of success the error code is 0.
-     */
-    int error_code() const;
-
-    /**
      * Check whether the response contains a grpc TIMEOUT error.
      */
     bool is_grpc_timeout() const;
-
-    /**
-     * Returns the string representation of the error code
-     */
-    std::string const & error_message() const;
 
     /**
      * Returns the action type of the operation that this response belongs to.
@@ -200,6 +200,7 @@ namespace etcd
 
   protected:
     Response(const etcdv3::V3Response& response, std::chrono::microseconds const& duration);
+    Response(int error_code, std::string const& error_message);
     Response(int error_code, char const * error_message);
 
     int         _error_code;

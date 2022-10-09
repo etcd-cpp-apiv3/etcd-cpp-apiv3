@@ -44,7 +44,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncSetAction::ParseResponse()
     if(!reply.succeeded() && isCreate)
     {
       txn_resp.set_error_code(etcdv3::ERROR_KEY_ALREADY_EXISTS);
-      txn_resp.set_error_message("Key already exists");
+      txn_resp.set_error_message("etcd-cpp-apiv3: key already exists");
     } 
   }
   return txn_resp;
