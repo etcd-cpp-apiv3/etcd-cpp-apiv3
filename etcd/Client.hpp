@@ -41,7 +41,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     Client(std::string const & etcd_url,
@@ -51,7 +51,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param arguments user provided grpc channel arguments.
      */
     Client(std::string const & etcd_url,
@@ -66,7 +66,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
      */
     static Client *WithUrl(std::string const & etcd_url,
@@ -76,7 +76,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param arguments user provided grpc channel arguments.
      */
     static Client *WithUrl(std::string const & etcd_url,
@@ -91,7 +91,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
@@ -107,7 +107,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param arguments user provided grpc channel arguments.
@@ -129,7 +129,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param load_balancer is the load balance strategy, can be one of round_robin/pick_first/grpclb/xds.
@@ -145,7 +145,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param username username of etcd auth
      * @param password password of etcd auth
      * @param arguments user provided grpc channel arguments.
@@ -167,7 +167,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param ca      root CA file for SSL/TLS connection.
      * @param cert    cert chain file for SSL/TLS authentication, could be empty string.
      * @param privkey private key file for SSL/TLS authentication, could be empty string.
@@ -184,7 +184,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param ca      root CA file for SSL/TLS connection.
      * @param cert    cert chain file for SSL/TLS authentication, could be empty string.
      * @param privkey private key file for SSL/TLS authentication, could be empty string.
@@ -206,7 +206,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param ca      root CA file for SSL/TLS connection.
      * @param cert    cert chain file for SSL/TLS authentication, could be empty string.
      * @param privkey private key file for SSL/TLS authentication, could be empty string.
@@ -226,7 +226,7 @@ namespace etcd
      * Constructs an etcd client object.
      *
      * @param etcd_url is the url of the etcd server to connect to, like "http://127.0.0.1:2379",
-     *                 or multiple url, seperated by ',' or ';'.
+     *                 or multiple url, separated by ',' or ';'.
      * @param ca      root CA file for SSL/TLS connection.
      * @param cert    cert chain file for SSL/TLS authentication, could be empty string.
      * @param privkey private key file for SSL/TLS authentication, could be empty string.
