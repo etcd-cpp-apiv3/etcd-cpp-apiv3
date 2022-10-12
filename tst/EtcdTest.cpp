@@ -524,6 +524,7 @@ TEST_CASE("lease list")
   int64_t leaseid = res.value().lease();
 
   etcd::Response leasesresp = etcd.leases().get();
+  std::cout << "leasesresp: " << leasesresp.error_code() << ": " << leasesresp.error_message() << std::endl;
   REQUIRE(leasesresp.is_ok());
   auto const &leases = leasesresp.leases();
   REQUIRE(leases.size() > 0);
