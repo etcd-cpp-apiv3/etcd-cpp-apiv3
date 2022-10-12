@@ -8,16 +8,17 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
+static const std::string etcd_url("http://127.0.0.1:2379");
 
 TEST_CASE("setup")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 }
 
 TEST_CASE("campaign and resign")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
 
   auto keepalive = etcd.leasekeepalive(60).get();
   auto lease_id = keepalive->Lease();
@@ -56,6 +57,6 @@ TEST_CASE("campaign and resign")
 
 TEST_CASE("cleanup")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).get();
 }

@@ -10,10 +10,11 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
+static const std::string etcd_url("http://127.0.0.1:2379");
 
 TEST_CASE("lock and unlock")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
 
   // lock
   etcd::Response resp1 = etcd.lock("/test/abcd").get();
@@ -30,7 +31,7 @@ TEST_CASE("lock and unlock")
 
 TEST_CASE("double lock will fail")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
 
   // lock
   etcd::Response resp1 = etcd.lock("/test/abcd").get();
@@ -85,7 +86,7 @@ TEST_CASE("double lock will fail")
 
 TEST_CASE("lock could be timeout")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
 
   // setup the timeout
   etcd.set_grpc_timeout(std::chrono::seconds(5));
@@ -114,7 +115,7 @@ TEST_CASE("lock could be timeout")
 
 TEST_CASE("lock using lease")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
 
   bool failed = false;
 
@@ -198,7 +199,7 @@ TEST_CASE("lock using lease")
 
 TEST_CASE("concurrent lock & unlock")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   std::string const lock_key = "/test/test_key";
 
   constexpr size_t trials = 192;
@@ -226,7 +227,7 @@ TEST_CASE("concurrent lock & unlock")
 }
 
 TEST_CASE("concurrent lock & unlock with a put in between") {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   std::string const lock_key = "/test/test_key";
 
   constexpr size_t trials = 128;

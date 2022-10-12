@@ -9,15 +9,17 @@ static std::string ca = "security-config/certs/ca.crt";
 static std::string cert = "security-config/certs/etcd0.example.com.crt";
 static std::string key = "security-config/private/etcd0.example.com.key";
 
+static const std::string etcd_url("https://127.0.0.1:2379");
+
 TEST_CASE("setup with auth")
 {
-  etcd::Client *etcd = etcd::Client::WithSSL("https://127.0.0.1:2379", ca, cert, key);
+  etcd::Client *etcd = etcd::Client::WithSSL(etcd_url, ca, cert, key);
   etcd->rmdir("/test", true).wait();
 }
 
 TEST_CASE("add a new key after authenticate")
 {
-  etcd::Client *etcd = etcd::Client::WithSSL("https://127.0.0.1:2379", ca, cert, key);
+  etcd::Client *etcd = etcd::Client::WithSSL(etcd_url, ca, cert, key);
   etcd->rmdir("/test", true).wait();
   etcd::Response resp = etcd->add("/test/key1", "42").get();
   REQUIRE(0 == resp.error_code());
@@ -37,7 +39,7 @@ TEST_CASE("add a new key after authenticate")
 
 TEST_CASE("read a value from etcd")
 {
-  etcd::Client *etcd = etcd::Client::WithSSL("https://127.0.0.1:2379", ca, cert, key);
+  etcd::Client *etcd = etcd::Client::WithSSL(etcd_url, ca, cert, key);
   etcd::Response resp = etcd->get("/test/key1").get();
   CHECK("get" == resp.action());
   REQUIRE(resp.is_ok());
@@ -48,6 +50,6 @@ TEST_CASE("read a value from etcd")
 
 TEST_CASE("cleanup")
 {
-  etcd::Client *etcd = etcd::Client::WithSSL("https://127.0.0.1:2379", ca, cert, key);
+  etcd::Client *etcd = etcd::Client::WithSSL(etcd_url, ca, cert, key);
   REQUIRE(0 == etcd->rmdir("/test", true).get().error_code());
 }

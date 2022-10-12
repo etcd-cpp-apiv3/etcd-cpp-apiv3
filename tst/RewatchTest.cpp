@@ -8,7 +8,8 @@
 #include "etcd/SyncClient.hpp"
 #include "etcd/Watcher.hpp"
 
-static std::string etcd_uri("http://127.0.0.1:2379");
+static const std::string etcd_url("http://127.0.0.1:2379");
+
 static int watcher_called = 0;
 
 void print_response(etcd::Response const & resp)
@@ -70,13 +71,14 @@ TEST_CASE("watch should can be re-established")
 
   // the watcher initialized in this way will auto re-connect to etcd
   std::shared_ptr<etcd::Watcher> watcher;
-  initialize_watcher(etcd_uri, my_prefix, print_response, watcher);
+  initialize_watcher(etcd_url, my_prefix, print_response, watcher);
 
   // issue some changes to see if the watcher works
-  for (int round = 0; round < 10; ++round) {
+  for (int round = 0; round < 100000; ++round) {
     try {
-      etcd::Client client(etcd_uri);
-      auto response = client.set(my_prefix + "/foo", "bar-" + std::to_string(round)).get();
+      etcd::Client client(etcd_url);
+      auto response = client.set(
+        my_prefix + "/foo", "bar-" + std::to_string(round)).get();
     } catch (...) {
       // pass
     }
@@ -90,8 +92,9 @@ TEST_CASE("watch should can be re-established")
   // the watcher has been cancelled and shouldn't work anymore
   for (int round = 10; round < 20; ++round) {
     try {
-      etcd::Client client(etcd_uri);
-      auto response = client.set(my_prefix + "/foo", "bar-" + std::to_string(round)).get();
+      etcd::Client client(etcd_url);
+      auto response = client.set(
+        my_prefix + "/foo", "bar-" + std::to_string(round)).get();
     } catch (...) {
       // pass
     }

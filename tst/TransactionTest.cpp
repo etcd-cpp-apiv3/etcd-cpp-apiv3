@@ -8,16 +8,17 @@
 #include "etcd/Client.hpp"
 #include "etcd/v3/Transaction.hpp"
 
+static const std::string etcd_url("http://127.0.0.1:2379");
 
 TEST_CASE("setup")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 }
 
 TEST_CASE("add a new key")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 
   // do some put using txn
@@ -84,6 +85,6 @@ TEST_CASE("add a new key")
 
 TEST_CASE("cleanup")
 {
-  etcd::Client etcd("http://127.0.0.1:2379");
+  etcd::Client etcd(etcd_url);
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
 }

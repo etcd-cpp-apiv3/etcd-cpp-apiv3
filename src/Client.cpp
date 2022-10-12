@@ -549,6 +549,13 @@ pplx::task<etcd::Response> etcd::Client::leasetimetolive(int64_t lease_id)
       this->client->leasetimetolive_internal(lease_id));
 }
 
+pplx::task<etcd::Response> etcd::Client::leases()
+{
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncLeaseLeasesAction>>(Response::create),
+      this->client->leases_internal());
+}
+
 pplx::task<etcd::Response> etcd::Client::lock(std::string const &key) {
   static const int DEFAULT_LEASE_TTL_FOR_LOCK = 10;  // see also etcd::SyncClient::lock
   return this->lock(key, DEFAULT_LEASE_TTL_FOR_LOCK);
