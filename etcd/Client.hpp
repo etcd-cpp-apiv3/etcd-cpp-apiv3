@@ -505,6 +505,11 @@ namespace etcd
     pplx::task<Response> leasetimetolive(int64_t lease_id);
 
     /**
+     * List all alive leases, equivalent to `etcdctl lease list`.
+     */
+    pplx::task<Response> leases();
+
+    /**
      * Gains a lock at a key, using a default created lease, using the default lease (10 seconds), with
      * keeping alive has already been taken care of by the library.
      * @param key is the key to be used to request the lock.

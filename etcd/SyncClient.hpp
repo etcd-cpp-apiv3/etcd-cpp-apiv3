@@ -559,6 +559,11 @@ namespace etcd
     Response leasetimetolive(int64_t lease_id);
 
     /**
+     * List all alive leases, equivalent to `etcdctl lease list`.
+     */
+    Response leases();
+
+    /**
      * Gains a lock at a key, using a default created lease, using the default lease (10 seconds), with
      * keeping alive has already been taken care of by the library.
      * @param key is the key to be used to request the lock.
@@ -685,6 +690,7 @@ namespace etcd
     std::shared_ptr<etcdv3::AsyncWatchAction> watch_internal(std::string const & key, std::string const &range_end, int64_t fromIndex);
     std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> leaserevoke_internal(int64_t lease_id);
     std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> leasetimetolive_internal(int64_t lease_id);
+    std::shared_ptr<etcdv3::AsyncLeaseLeasesAction> leases_internal();
     Response lock_internal(std::string const &key, std::shared_ptr<etcd::KeepAlive> const &keepalive);
     std::shared_ptr<etcdv3::AsyncLockAction> lock_with_lease_internal(std::string const &key, int64_t lease_id);
     std::shared_ptr<etcdv3::AsyncUnlockAction> unlock_internal(std::string const &lock_key);

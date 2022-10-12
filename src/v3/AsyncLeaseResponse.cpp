@@ -28,8 +28,7 @@ void etcdv3::AsyncLeaseTimeToLiveResponse::ParseResponse(LeaseTimeToLiveResponse
 
 void etcdv3::AsyncLeaseLeasesResponse::ParseResponse(LeaseLeasesResponse& resp) {
   index = resp.header().revision();
-  // FIXME: only the first leases is recorded.
-  if (resp.leases_size() > 0) {
-    value.kvs.set_lease(resp.leases(0).id());
+  for (auto lease : resp.leases()) {
+    leases.emplace_back(lease.id());
   }
 }

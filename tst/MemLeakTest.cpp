@@ -6,6 +6,8 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
+static const std::string etcd_url("http://127.0.0.1:2379");
+
 class DistributedLock {
 public:
     DistributedLock(const std::string &lock_name,
@@ -23,7 +25,7 @@ private:
 
 DistributedLock::DistributedLock(const std::string &lock_name,
                                  uint timeout) {
-  _etcd_client = std::unique_ptr<etcd::Client>(new etcd::Client("localhost:2379"));
+  _etcd_client = std::unique_ptr<etcd::Client>(new etcd::Client(etcd_url));
 
   try {
     if (timeout == 0) {

@@ -97,3 +97,7 @@ uint64_t etcdv3::V3Response::get_member_id() const {
 uint64_t etcdv3::V3Response::get_raft_term() const {
   return this->raft_term;
 }
+
+std::vector<int64_t> const & etcdv3::V3Response::get_leases() const {
+  return this->leases;
+}

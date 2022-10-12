@@ -198,6 +198,11 @@ namespace etcd
      */
     uint64_t raft_term() const;
 
+    /**
+     * Returns ther current raft term.
+     */
+    std::vector<int64_t> const & leases() const;
+
   protected:
     Response(const etcdv3::V3Response& response, std::chrono::microseconds const& duration);
     Response(int error_code, std::string const& error_message);
@@ -218,9 +223,13 @@ namespace etcd
     // execute duration (in microseconds), during the action created and response parsed
     std::chrono::microseconds _duration;
 
+    // cluster metadata
     uint64_t    _cluster_id;
     uint64_t    _member_id;
     uint64_t    _raft_term;
+
+    // for lease list
+    std::vector<int64_t> _leases;
 
     friend class Client;
     friend class SyncClient;

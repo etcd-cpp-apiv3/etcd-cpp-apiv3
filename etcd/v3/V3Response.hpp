@@ -34,6 +34,7 @@ namespace etcdv3
     uint64_t get_cluster_id() const;
     uint64_t get_member_id() const;
     uint64_t get_raft_term() const;
+    std::vector<int64_t> const &get_leases() const;
   protected:
     int error_code;
     int64_t index;
@@ -47,9 +48,14 @@ namespace etcdv3
     std::string lock_key; // for lock
     std::string name;  // for campaign (in v3election)
     std::vector<mvccpb::Event> events; // for watch
+
+    // cluster metadata
     uint64_t cluster_id;
     uint64_t member_id;
     uint64_t raft_term;
+
+    // for lease list
+    std::vector<int64_t> leases;
   };
 }
 #endif

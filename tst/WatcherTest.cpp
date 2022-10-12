@@ -7,7 +7,8 @@
 #include "etcd/Watcher.hpp"
 #include "etcd/SyncClient.hpp"
 
-static std::string etcd_uri("http://127.0.0.1:2379");
+static const std::string etcd_url("http://127.0.0.1:2379");
+
 static int watcher_called = 0;
 
 void printResponse(etcd::Response const & resp)
@@ -34,11 +35,11 @@ void printResponse(etcd::Response const & resp)
 TEST_CASE("create watcher with cancel")
 {
   
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
-  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+  etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   std::this_thread::sleep_for(std::chrono::seconds(3));
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
@@ -57,11 +58,11 @@ TEST_CASE("create watcher with cancel")
 
 TEST_CASE("create watcher on ranges with cancel")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
-  etcd::Watcher watcher(etcd_uri, "/test/key1", "/test/key5", printResponse);
+  etcd::Watcher watcher(etcd_url, "/test/key1", "/test/key5", printResponse);
   std::this_thread::sleep_for(std::chrono::seconds(3));
   etcd.set("/test/key1", "42");
   etcd.set("/test/key2", "43");
@@ -80,12 +81,12 @@ TEST_CASE("create watcher on ranges with cancel")
 
 TEST_CASE("create watcher")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
   {
-    etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+    etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
     std::this_thread::sleep_for(std::chrono::seconds(3));
     etcd.set("/test/key", "42");
     std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -99,14 +100,14 @@ TEST_CASE("create watcher")
 TEST_CASE("watch should exit normally")
 {
   // cancal immediately after start watch.
-  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+  etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   watcher.Cancel();
 }
 
 TEST_CASE("watch should can be cancelled repeatedly")
 {
   // cancal immediately after start watch.
-  etcd::Watcher watcher(etcd_uri, "/test", printResponse, true);
+  etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   std::vector<std::thread> threads(10);
   for (size_t i = 0; i < 10; ++i) {
     threads[i] = std::thread([&]() {
@@ -120,7 +121,7 @@ TEST_CASE("watch should can be cancelled repeatedly")
 
 // TEST_CASE("request cancellation")
 // {
-//   etcd::Client etcd(etcd_uri);
+//   etcd::Client etcd(etcd_url);
 //   etcd.set("/test/key1", "42").wait();
 
 //   pplx::task<etcd::Response> res = etcd.watch("/test/key1");

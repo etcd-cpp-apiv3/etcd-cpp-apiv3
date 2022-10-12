@@ -27,6 +27,8 @@ etcd::Response::Response(const etcd::Response & response) {
   this->_cluster_id = response._cluster_id;
   this->_member_id = response._member_id;
   this->_raft_term = response._raft_term;
+
+  this->_leases = response._leases;
 }
 
 etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseconds const& duration)
@@ -65,6 +67,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _cluster_id = reply.get_cluster_id();
   _member_id = reply.get_member_id();
   _raft_term = reply.get_raft_term();
+
+  // lease list
+  this->_leases = reply.get_leases();
 }
 
 etcd::Response::Response(int error_code, std::string const& error_message)
@@ -177,4 +182,8 @@ uint64_t etcd::Response::member_id() const {
 
 uint64_t etcd::Response::raft_term() const {
   return this->_raft_term;
+}
+
+std::vector<int64_t> const & etcd::Response::leases() const {
+  return this->_leases;
 }

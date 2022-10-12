@@ -933,6 +933,19 @@ std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> etcd::SyncClient::leasetimet
   return std::make_shared<etcdv3::AsyncLeaseTimeToLiveAction>(std::move(params));
 }
 
+etcd::Response etcd::SyncClient::leases()
+{
+  return Response::create(this->leases_internal());
+}
+
+std::shared_ptr<etcdv3::AsyncLeaseLeasesAction> etcd::SyncClient::leases_internal() {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
+  params.lease_stub = stubs->leaseServiceStub.get();
+  return std::make_shared<etcdv3::AsyncLeaseLeasesAction>(std::move(params));
+}
+
 etcd::Response etcd::SyncClient::lock(std::string const &key) {
   // routines in lock usually will be fast, less than 10 seconds.
   //

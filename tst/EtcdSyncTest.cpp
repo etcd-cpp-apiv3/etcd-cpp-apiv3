@@ -5,11 +5,11 @@
 
 #include "etcd/SyncClient.hpp"
 
-static std::string etcd_uri("http://127.0.0.1:2379");
+static const std::string etcd_url("http://127.0.0.1:2379");
 
 TEST_CASE("sync operations")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
   // add
@@ -111,7 +111,7 @@ TEST_CASE("sync operations")
 
 TEST_CASE("wait for a value change")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
   etcd.set("/test/key1", "42");
 
   std::thread watch_thrd([&]() {
@@ -129,7 +129,7 @@ TEST_CASE("wait for a value change")
 
 TEST_CASE("wait for a directory change")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
 
   std::thread watch_thrd1([&]() {
     etcd::Response res = etcd.watch("/test", true);
@@ -156,7 +156,7 @@ TEST_CASE("wait for a directory change")
 
 TEST_CASE("watch changes in the past")
 {
-  etcd::SyncClient etcd(etcd_uri);
+  etcd::SyncClient etcd(etcd_url);
 
   int64_t index = etcd.set("/test/key1", "42").index();
 
@@ -181,7 +181,7 @@ TEST_CASE("watch changes in the past")
 
 // TEST_CASE("request cancellation")
 // {
-//   etcd::Client etcd(etcd_uri);
+//   etcd::Client etcd(etcd_url);
 //   etcd.set("/test/key1", "42").wait();
 
 //   pplx::task<etcd::Response> res = etcd.watch("/test/key1");
