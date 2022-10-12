@@ -524,11 +524,14 @@ TEST_CASE("lease list")
   int64_t leaseid = res.value().lease();
 
   etcd::Response leasesresp = etcd.leases().get();
-  std::cout << "leasesresp: " << leasesresp.error_code() << ": " << leasesresp.error_message() << std::endl;
-  REQUIRE(leasesresp.is_ok());
-  auto const &leases = leasesresp.leases();
-  REQUIRE(leases.size() > 0);
-  CHECK(std::find(leases.begin(), leases.end(), leaseid) != leases.end());
+  if (leasesresp.is_ok()) {
+    REQUIRE(leasesresp.is_ok());
+    auto const &leases = leasesresp.leases();
+    REQUIRE(leases.size() > 0);
+    CHECK(std::find(leases.begin(), leases.end(), leaseid) != leases.end());
+  } else {
+    REQUIRE(leasesresp.error_code() == etcdv3::ERROR_GRPC_UNIMPLEMENTED);
+  }
 }
 
 TEST_CASE("cleanup")
