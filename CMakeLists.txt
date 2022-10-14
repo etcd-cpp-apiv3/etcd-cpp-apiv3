@@ -46,13 +46,17 @@ if(NOT (CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache") AND NOT (CMAKE_C_COMPILER_
     if(ccache_EXECUTABLE)
         set(CMAKE_C_COMPILER_LAUNCHER ${ccache_EXECUTABLE})
         set(CMAKE_CXX_COMPILER_LAUNCHER ${ccache_EXECUTABLE})
-        add_custom_target(ccache-stats
-            COMMAND ${ccache_EXECUTABLE} --show-stats
-        )
+        if (NOT TARGET ccache-stats)
+            add_custom_target(ccache-stats
+                COMMAND ${ccache_EXECUTABLE} --show-stats
+            )
+        endif()
     else()
-        add_custom_target(ccache-stats
-            COMMAND echo "ccache not found."
-        )
+        if (NOT TARGET ccache-stats)
+            add_custom_target(ccache-stats
+                COMMAND echo "ccache not found."
+            )
+        endif()
     endif(ccache_EXECUTABLE)
 endif()
 
