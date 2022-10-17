@@ -721,8 +721,8 @@ namespace etcd
     /**
      * Set a timeout value for grpc operations.
      */
-    template <typename Rep = std::micro>
-    void set_grpc_timeout(std::chrono::duration<Rep> const &timeout) {
+    template <typename Period = std::micro>
+    void set_grpc_timeout(std::chrono::duration<std::chrono::microseconds::rep, Period> const &timeout) {
       grpc_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
     }
 

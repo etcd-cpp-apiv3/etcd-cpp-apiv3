@@ -21,6 +21,19 @@ namespace etcd
 {
   typedef std::vector<std::string> Keys;
 
+  namespace detail {
+      // Compute the duration between given start time point and now
+    inline const std::chrono::microseconds duration_till_now(
+        std::chrono::high_resolution_clock::time_point const & start_timepoint) {
+      return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - start_timepoint);
+    }
+  }
+
+  // forward declaration
+  class KeepAlive;
+  class Watcher;
+
   /**
    * The Reponse object received for the requests of etcd::Client
    */
@@ -33,10 +46,7 @@ namespace etcd
     {
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        return etcd::Response(v3resp, duration);
+        return etcd::Response(v3resp, detail::duration_till_now(call->startTimepoint()));
     }
 
     template <typename T>
@@ -44,10 +54,7 @@ namespace etcd
     {
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        return etcd::Response(v3resp, duration);
+        return etcd::Response(v3resp, detail::duration_till_now(call->startTimepoint()));
     }
 
     template <typename T>
@@ -56,10 +63,7 @@ namespace etcd
     {
         call->waitForResponse(callback);
         auto v3resp = call->ParseResponse();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        return etcd::Response(v3resp, duration);
+        return etcd::Response(v3resp, detail::duration_till_now(call->startTimepoint()));
     }
 
     template <typename T>
@@ -69,10 +73,7 @@ namespace etcd
 
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        return etcd::Response(v3resp, duration);
+        return etcd::Response(v3resp, detail::duration_till_now(call->startTimepoint()));
     }
 
     template <typename T>
@@ -82,10 +83,7 @@ namespace etcd
 
         call->waitForResponse();
         auto v3resp = call->ParseResponse();
-
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - call->startTimepoint());
-        return etcd::Response(v3resp, duration);
+        return etcd::Response(v3resp, detail::duration_till_now(call->startTimepoint()));
     }
 
     Response();
@@ -233,6 +231,9 @@ namespace etcd
 
     friend class Client;
     friend class SyncClient;
+    friend class KeepAlive;
+    friend class Watcher;
+
     friend class etcdv3::AsyncWatchAction;
     friend class etcdv3::AsyncLeaseKeepAliveAction;
     friend class etcdv3::AsyncObserveAction;
