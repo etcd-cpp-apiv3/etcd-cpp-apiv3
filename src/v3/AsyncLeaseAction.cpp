@@ -1,5 +1,6 @@
 #include "etcd/v3/AsyncLeaseAction.hpp"
 
+#include "etcd/Response.hpp"
 #include "etcd/v3/action_constants.hpp"
 #include "etcd/v3/Transaction.hpp"
 
@@ -101,8 +102,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
   auto start_timepoint = std::chrono::high_resolution_clock::now();
   if (isCancelled) {
     status = grpc::Status::CANCELLED;
-    return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::high_resolution_clock::now() - start_timepoint));
+    return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
   }
 
   LeaseKeepAliveRequest leasekeepalive_request;
@@ -130,8 +130,8 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
       }
     }
     if (!status.ok()) {
-      return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now() - start_timepoint));
+      this->CancelKeepAlive();
+      return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
     }
 
     stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
@@ -152,8 +152,8 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
         break;
       }
     }
-    return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::high_resolution_clock::now() - start_timepoint));
+    this->CancelKeepAlive();
+    return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
   } else {
     stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
     // wait write finish
@@ -161,10 +161,10 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
       stream->Read(&reply, (void*)etcdv3::KEEPALIVE_READ);
       // wait read finish
       if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
-        return etcd::Response(ParseResponse(), std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::high_resolution_clock::now() - start_timepoint));
+        return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
       }
     }
+    this->CancelKeepAlive();
     return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
   }
 }

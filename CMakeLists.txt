@@ -117,6 +117,7 @@ find_package(gRPC QUIET)
 if(gRPC_FOUND)
     set(GRPC_LIBRARIES gRPC::gpr gRPC::grpc gRPC::grpc++)
     get_target_property(GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin LOCATION)
+    get_target_property(GRPC_INCLUDE_DIR gRPC::grpc INTERFACE_INCLUDE_DIRECTORIES)
 else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
@@ -137,6 +138,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR}
                            ${CPPREST_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
+                           ${GRPC_INCLUDE_DIR}
                            ${OPENSSL_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")

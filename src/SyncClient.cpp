@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <cstddef>
+#include <ratio>
+
 #include "etcd/Value.hpp"
 
 #if defined(_WIN32)
@@ -31,6 +33,8 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc++/security/credentials.h>
+#include <grpc++/support/status_code_enum.h>
+
 #include "proto/rpc.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
 #include "proto/v3election.grpc.pb.h"
@@ -163,9 +167,8 @@ static std::string read_from_file(std::string const &filename) {
   return std::string{};
 }
 
-static grpc::SslCredentialsOptions make_ssl_credentials(std::string const &ca,
-                                                      std::string const &cert,
-                                                      std::string const &key) {
+static grpc::SslCredentialsOptions make_ssl_credentials(
+    std::string const &ca, std::string const &cert, std::string const &key) {
   grpc::SslCredentialsOptions options;
   options.pem_root_certs = read_from_file(ca);
   options.pem_cert_chain = read_from_file(cert);
