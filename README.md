@@ -438,6 +438,16 @@ the `created_index()` and the `modified_index()` methods.
   }
 ```
 
+### Put a value
+
+You can put a key-value pair to etcd with the the `put()` method of the client instance. The only
+parameter is the key and value to be put
+
+```c++
+  etcd::Client etcd("http://127.0.0.1:2379");
+  pplx::task<etcd::Response> response_task = etcd.put("foo", "bar");
+```
+
 ### Modifying a value
 
 Setting the value of a key can be done with the `set()` method of the client. You simply pass
@@ -569,6 +579,21 @@ prefix will be deleted. All deleted keys will be placed in `response.values()` a
 
 However, if recursive parameter is false, functionality will be the same as just deleting a key.
 The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
+
+### Using binary data as key and value
+
+Etcd itself support using arbitrary binary data as the key and value, i.e., the key and value
+can contain `\NUL` (`\0`) and not necessary NUL-terminated strings. `std::string` in C++ supports
+embed `\0` as well, but please note that when constructing `std::string` from a C-style string
+the string will be terminated by the first `\0` character. Rather, you need to use the constructor
+with the `count` parameter explicitly. When unpack a `std::string` that contains `\0`, you need
+`.data()`, and `.c_str()` won't work.
+
+```c++
+  std::string key = "key-foo\0bar";
+  std::string value = "value-foo\0bar";
+  etcd.put(key, value).wait();
+```
 
 ### Lock
 
