@@ -587,7 +587,7 @@ can contain `\NUL` (`\0`) and not necessary NUL-terminated strings. `std::string
 embed `\0` as well, but please note that when constructing `std::string` from a C-style string
 the string will be terminated by the first `\0` character. Rather, you need to use the constructor
 with the `count` parameter explicitly. When unpack a `std::string` that contains `\0`, you need
-`.data()`, and `.c_str()` won't work.
+`.data()`,
 
 ```c++
   std::string key = "key-foo\0bar";

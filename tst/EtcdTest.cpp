@@ -46,59 +46,6 @@ TEST_CASE("read a value from etcd")
   CHECK("" == etcd.get("/test").get().value().as_string()); // key points to a directory
 }
 
-TEST_CASE("using binary keys and values, raw char pointer doesn't work")
-{
-  etcd::Client etcd(etcd_url);
-  etcd.rmdir("/test", true).wait();
-  {
-    etcd::Response resp = etcd.put("/test/key1\0xyz", "42\0foo").get();
-    REQUIRE(resp.is_ok());
-  }
-  {
-    // should not exist
-    etcd::Response resp = etcd.get(std::string("/test/key1\0xyz", 14)).get();
-    CHECK(!resp.is_ok());
-    CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
-  }
-  {
-    // should exist
-    etcd::Response resp = etcd.get(std::string("/test/key1", 10)).get();
-    REQUIRE(resp.is_ok());
-    CHECK(std::string("42") == resp.value().as_string());
-    CHECK(std::string("42\0foo", 6) != resp.value().as_string());
-  }
-  {
-    // should exist
-    etcd::Response resp = etcd.get("/test/key1\0xyz").get();
-    REQUIRE(resp.is_ok());
-    CHECK(std::string("42") == resp.value().as_string());
-    CHECK(std::string("42\0foo", 6) != resp.value().as_string());
-  }
-}
-
-TEST_CASE("using binary keys and values, std::string is ok for \\0")
-{
-  etcd::Client etcd(etcd_url);
-  etcd.rmdir("/test", true).wait();
-  {
-    etcd::Response resp = etcd.put(std::string("/test/key1\0xyz", 14), std::string("42\0foo", 6)).get();
-    REQUIRE(resp.is_ok());
-  }
-  {
-    // should not exist
-    etcd::Response resp = etcd.get("/test/key1").get();
-    CHECK(!resp.is_ok());
-    CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
-  }
-  {
-    // should exist
-    etcd::Response resp = etcd.get(std::string("/test/key1\0xyz", 14)).get();
-    REQUIRE(resp.is_ok());
-    CHECK(std::string("42") != resp.value().as_string());
-    CHECK(std::string("42\0foo", 6) == resp.value().as_string());
-  }
-}
-
 TEST_CASE("simplified read")
 {
   etcd::Client etcd(etcd_url);
@@ -252,6 +199,59 @@ TEST_CASE("deep atomic compare-and-swap")
   CHECK(!res.is_ok());
   CHECK(etcd::ERROR_COMPARE_FAILED == res.error_code());
   CHECK("etcd-cpp-apiv3: compare failed" == res.error_message());
+}
+
+TEST_CASE("using binary keys and values, raw char pointer doesn't work")
+{
+  etcd::Client etcd(etcd_url);
+  etcd.rmdir("/test", true).wait();
+  {
+    etcd::Response resp = etcd.put("/test/key1\0xyz", "42\0foo").get();
+    REQUIRE(resp.is_ok());
+  }
+  {
+    // should not exist
+    etcd::Response resp = etcd.get(std::string("/test/key1\0xyz", 14)).get();
+    CHECK(!resp.is_ok());
+    CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
+  }
+  {
+    // should exist
+    etcd::Response resp = etcd.get(std::string("/test/key1", 10)).get();
+    REQUIRE(resp.is_ok());
+    CHECK(std::string("42") == resp.value().as_string());
+    CHECK(std::string("42\0foo", 6) != resp.value().as_string());
+  }
+  {
+    // should exist
+    etcd::Response resp = etcd.get("/test/key1\0xyz").get();
+    REQUIRE(resp.is_ok());
+    CHECK(std::string("42") == resp.value().as_string());
+    CHECK(std::string("42\0foo", 6) != resp.value().as_string());
+  }
+}
+
+TEST_CASE("using binary keys and values, std::string is ok for \\0")
+{
+  etcd::Client etcd(etcd_url);
+  etcd.rmdir("/test", true).wait();
+  {
+    etcd::Response resp = etcd.put(std::string("/test/key1\0xyz", 14), std::string("42\0foo", 6)).get();
+    REQUIRE(resp.is_ok());
+  }
+  {
+    // should not exist
+    etcd::Response resp = etcd.get("/test/key1").get();
+    CHECK(!resp.is_ok());
+    CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
+  }
+  {
+    // should exist
+    etcd::Response resp = etcd.get(std::string("/test/key1\0xyz", 14)).get();
+    REQUIRE(resp.is_ok());
+    CHECK(std::string("42") != resp.value().as_string());
+    CHECK(std::string("42\0foo", 6) == resp.value().as_string());
+  }
 }
 
 TEST_CASE("list a directory")
