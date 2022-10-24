@@ -124,6 +124,7 @@ etcd::KeepAlive::~KeepAlive()
 
 void etcd::KeepAlive::Cancel()
 {
+  std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.exchange(false)) {
     return;
   }
@@ -142,6 +143,7 @@ void etcd::KeepAlive::Check() {
 
 void etcd::KeepAlive::refresh()
 {
+  std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.load()) {
     return;
   }
