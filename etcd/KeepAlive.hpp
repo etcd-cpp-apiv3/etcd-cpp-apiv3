@@ -5,6 +5,7 @@
 #include <chrono>
 #include <exception>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -117,6 +118,9 @@ namespace etcd
 
     int ttl;
     int64_t lease_id;
+
+    // protect the initializing status of `timer`.
+    std::mutex mutex_for_refresh_;
     std::atomic_bool continue_next;
 
     // grpc timeout in `refresh()`
