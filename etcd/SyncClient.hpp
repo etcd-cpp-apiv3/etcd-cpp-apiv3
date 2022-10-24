@@ -642,7 +642,7 @@ namespace etcd
     class Observer {
       public:
         ~Observer();
-        // wait a at least one response from the observer.
+        // wait at least *one* response from the observer.
         Response WaitOnce();
       private:
         std::shared_ptr<etcdv3::AsyncObserveAction> action = nullptr;
