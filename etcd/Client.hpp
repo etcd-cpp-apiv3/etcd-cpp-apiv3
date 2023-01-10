@@ -374,12 +374,6 @@ namespace etcd
     pplx::task<Response> rm_if(std::string const & key, int64_t old_index);
 
     /**
-     * Gets a directory listing of the directory identified by the key.
-     * @param key is the key to be listed
-     */
-    pplx::task<Response> ls(std::string const & key);
-
-    /**
      * Removes a directory node. Fails if the parent directory dos not exists or not a directory.
      * @param key is the directory to be created to be listed
      * @param recursive if true then delete a whole subtree, otherwise deletes only an empty directory.
@@ -405,7 +399,15 @@ namespace etcd
     pplx::task<Response> rmdir(std::string const & key, std::string const &range_end);
 
     /**
-     * Gets a directory listing of the directory identified by the key.
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * @param key is the key to be listed
+     */
+    pplx::task<Response> ls(std::string const & key);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
      * @param key is the key to be listed
      * @param limit is the size limit of results to be listed, we don't use default parameters
      *        to ensure backwards binary compatibility.
@@ -421,10 +423,9 @@ namespace etcd
      */
     pplx::task<Response> ls(std::string const & key, std::string const &range_end);
 
-
     /**
      * Gets a directory listing of the directory identified by the key and range_end, i.e., get
-     * all keys in the range [key, range_end).
+     * all keys in the range [key, range_end), and respects the given limit.
      *
      * @param key is the key to be listed
      * @param range_end is the end of key range to be listed
@@ -432,6 +433,50 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     pplx::task<Response> ls(std::string const & key, std::string const &range_end, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     */
+    pplx::task<Response> keys(std::string const & key);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    pplx::task<Response> keys(std::string const & key, size_t const limit);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end), and respects the given limit.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     */
+    pplx::task<Response> keys(std::string const & key, std::string const &range_end);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end).
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    pplx::task<Response> keys(std::string const & key, std::string const &range_end, size_t const limit);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and

@@ -787,17 +787,6 @@ etcd::Response etcd::SyncClient::ls(std::string const & key, size_t const limit)
   return Response::create(this->ls_internal(key, limit));
 }
 
-std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, size_t const limit) {
-  etcdv3::ActionParameters params;
-  params.key.assign(key);
-  params.withPrefix = true;
-  params.limit = limit;
-  params.auth_token.assign(this->token_authenticator->renew_if_expired());
-  params.grpc_timeout = this->grpc_timeout;
-  params.kv_stub = stubs->kvServiceStub.get();
-  return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
-}
-
 etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end)
 {
   return Response::create(this->ls_internal(key, range_end, 0 /* default: no limit */));
@@ -808,10 +797,43 @@ etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &
   return Response::create(this->ls_internal(key, range_end, limit));
 }
 
-std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, std::string const &range_end, size_t const limit) {
+etcd::Response etcd::SyncClient::keys(std::string const & key)
+{
+  return Response::create(this->ls_internal(key, 0 /* default: no limit */, true));
+}
+
+etcd::Response etcd::SyncClient::keys(std::string const & key, size_t const limit)
+{
+  return Response::create(this->ls_internal(key, limit, true));
+}
+
+etcd::Response etcd::SyncClient::keys(std::string const & key, std::string const &range_end)
+{
+  return Response::create(this->ls_internal(key, range_end, 0 /* default: no limit */, true));
+}
+
+etcd::Response etcd::SyncClient::keys(std::string const & key, std::string const &range_end, size_t const limit)
+{
+  return Response::create(this->ls_internal(key, range_end, limit, true));
+}
+
+std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, size_t const limit, bool const keys_only) {
+  etcdv3::ActionParameters params;
+  params.key.assign(key);
+  params.keys_only = keys_only;
+  params.withPrefix = true;
+  params.limit = limit;
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
+  params.kv_stub = stubs->kvServiceStub.get();
+  return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
+}
+
+std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.range_end.assign(range_end);
+  params.keys_only = keys_only;
   params.withPrefix = false;
   params.limit = limit;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());

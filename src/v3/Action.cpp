@@ -32,6 +32,8 @@ etcdv3::ActionParameters::ActionParameters()
   old_revision = 0;
   lease_id = 0;
   ttl = 0;
+  keys_only = false;
+  count_only = false;
   kv_stub = NULL;
   watch_stub = NULL;
   lease_stub = NULL;
@@ -56,6 +58,8 @@ void etcdv3::ActionParameters::dump(std::ostream &os) const {
   os << "  name:          " << name << std::endl;
   os << "  key:           " << key << std::endl;
   os << "  range_end:     " << range_end << std::endl;
+  os << "  keys_only:     " << keys_only << std::endl;
+  os << "  count_only:    " << count_only << std::endl;
   os << "  value:         " << value << std::endl;
   os << "  old_value:     " << old_value << std::endl;
   os << "  auth_token:    " << auth_token << std::endl;

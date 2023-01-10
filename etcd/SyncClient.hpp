@@ -454,13 +454,15 @@ namespace etcd
     Response rmdir(std::string const & key, std::string const &range_end);
 
     /**
-     * Gets a directory listing of the directory identified by the key.
+     * Gets a directory listing of the directory prefixed by the key.
+     *
      * @param key is the key to be listed
      */
     Response ls(std::string const & key);
 
     /**
-     * Gets a directory listing of the directory identified by the key.
+     * Gets a directory listing of the directory prefixed by the key.
+     *
      * @param key is the key to be listed
      * @param limit is the size limit of results to be listed, we don't use default parameters
      *        to ensure backwards binary compatibility.
@@ -478,7 +480,7 @@ namespace etcd
 
     /**
      * Gets a directory listing of the directory identified by the key and range_end, i.e., get
-     * all keys in the range [key, range_end).
+     * all keys in the range [key, range_end), and respects the given limit.
      *
      * @param key is the key to be listed
      * @param range_end is the end of key range to be listed
@@ -486,6 +488,50 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     Response ls(std::string const & key, std::string const &range_end, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     */
+    Response keys(std::string const & key);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    Response keys(std::string const & key, size_t const limit);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end).
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     */
+    Response keys(std::string const & key, std::string const &range_end);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end), and respects the given limit.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     */
+    Response keys(std::string const & key, std::string const &range_end, size_t const limit);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
@@ -684,8 +730,8 @@ namespace etcd
     std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> rm_if_internal(std::string const & key, int64_t old_index, const std::string & old_value, etcdv3::AtomicityType const & atomicity_type);
     std::shared_ptr<etcdv3::AsyncDeleteAction> rmdir_internal(std::string const & key, bool recursive = false);
     std::shared_ptr<etcdv3::AsyncDeleteAction> rmdir_internal(std::string const & key, std::string const &range_end);
-    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, size_t const limit);
-    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, std::string const &range_end, size_t const limit);
+    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, size_t const limit, bool const keys_only = false);
+    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only = false);
     std::shared_ptr<etcdv3::AsyncWatchAction> watch_internal(std::string const & key, int64_t fromIndex, bool recursive = false);
     std::shared_ptr<etcdv3::AsyncWatchAction> watch_internal(std::string const & key, std::string const &range_end, int64_t fromIndex);
     std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> leaserevoke_internal(int64_t lease_id);

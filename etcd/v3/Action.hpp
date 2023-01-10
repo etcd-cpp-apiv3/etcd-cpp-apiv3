@@ -43,6 +43,8 @@ namespace etcdv3
     std::string name;  // for campaign (in v3election)
     std::string key;
     std::string range_end;
+    bool keys_only;
+    bool count_only;
     std::string value;
     std::string old_value;
     std::string auth_token;
