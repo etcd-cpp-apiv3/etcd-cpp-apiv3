@@ -557,6 +557,17 @@ keys defined by the prefix. mkdir method is removed since etcdv3 treats everythi
     }
   ```
 
+  etcd-cpp-apiv3 supports lists keys only without fetching values from etcd server:
+
+  ```c++
+    etcd::Client etcd("http://127.0.0.1:2379");
+    etcd::Response resp = etcd.keys("/test/new_dir").get();
+    for (int i = 0; i < resp.keys().size(); ++i)
+    {
+      std::cout << resp.keys(i);
+    }
+  ```
+
 3. Removing directory:
 
 If you want the delete recursively then you have to pass a second `true` parameter

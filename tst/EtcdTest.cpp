@@ -326,6 +326,36 @@ TEST_CASE("list by range")
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
 
+TEST_CASE("list by range, w/o values")
+{
+  etcd::Client etcd(etcd_url);
+  CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
+
+  etcd.set("/test/new_dir/key0", "value0").wait();
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/key3", "value3").wait();
+  etcd.set("/test/new_dir/key4", "value4").wait();
+
+  etcd::Response resp1 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key3").get();
+  REQUIRE(resp1.is_ok());
+  CHECK("get" == resp1.action());
+  REQUIRE(2 == resp1.keys().size());
+  REQUIRE(2 == resp1.values().size());
+  REQUIRE(resp1.values()[0].as_string() == "value0");
+  REQUIRE(resp1.values()[1].as_string() == "value1");
+
+  etcd::Response resp2 = etcd.keys("/test/new_dir/key1", "/test/new_dir/key3").get();
+  REQUIRE(resp1.is_ok());
+  CHECK("get" == resp2.action());
+  REQUIRE(2 == resp2.keys().size());
+  REQUIRE(2 == resp2.values().size());
+  REQUIRE(resp2.values()[0].as_string() == "");
+  REQUIRE(resp2.values()[1].as_string() == "");
+
+  CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
+}
+
 TEST_CASE("delete a directory")
 {
   etcd::Client etcd(etcd_url);

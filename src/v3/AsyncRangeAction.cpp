@@ -30,6 +30,10 @@ etcdv3::AsyncRangeAction::AsyncRangeAction(
   }
   get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_NONE);
 
+  // set keys_only and count_only
+  get_request.set_keys_only(params.keys_only);
+  get_request.set_count_only(params.count_only);
+
   response_reader = parameters.kv_stub->AsyncRange(&context,get_request,&cq_);
   response_reader->Finish(&reply, &status, (void*)this);
 }

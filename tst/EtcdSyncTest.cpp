@@ -45,6 +45,12 @@ TEST_CASE("sync operations")
   etcd.set("/test/new_dir/key2", "value2");
   CHECK(2 == etcd.ls("/test/new_dir").keys().size());
 
+  // keys
+  CHECK(0 == etcd.keys("/test/new_dir").keys().size());
+  etcd.set("/test/new_dir/key1", "value1");
+  etcd.set("/test/new_dir/key2", "value2");
+  CHECK(2 == etcd.keys("/test/new_dir").keys().size());
+
   // rmdir
   CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.rmdir("/test/new_dir").error_code()); // key not found
   CHECK(0 == etcd.rmdir("/test/new_dir", true).error_code());
