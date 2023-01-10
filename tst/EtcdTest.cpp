@@ -342,7 +342,7 @@ TEST_CASE("list by range, w/o values")
   CHECK("get" == resp1.action());
   REQUIRE(1 == resp1.keys().size());
   REQUIRE(1 == resp1.values().size());
-  REQUIRE(resp1.values()[0].as_string() == "value0");
+  REQUIRE(resp1.values()[0].as_string() == "value1");
 
   etcd::Response resp2 = etcd.keys("/test/new_dir/key1", "/test/new_dir/key2").get();
   REQUIRE(resp1.is_ok());
