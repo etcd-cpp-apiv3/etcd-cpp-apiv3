@@ -122,7 +122,6 @@ else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
-message("-- Found GRPC: ${GRPC_LIBRARIES} (found version: \"${gRPC_VERSION}\")")
 # avoid use the apt-get installed libgrpc-dev (version v1.13) on Ubuntu 18.04
 if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
     message(FATAL_ERROR "gRPC '${gRPC_VERSION}' is not supported, please install a newer gRPC library "
@@ -153,6 +152,20 @@ check_cxx_compiler_flag(-Wno-c++17-extensions W_NO_CPP17_EXTENSIONS)
 if(W_NO_CPP17_EXTENSIONS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
 endif()
+
+set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${GRPC_INCLUDE_DIR}")
+set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${GRPC_LIBRARIES}")
+set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
+check_cxx_source_compiles("
+#include <grpc++/grpc++.h>
+namespace grpc { class Channel; }
+int main() {}
+" GRPC_CHANNEL_CLASS_FOUND)
+if(GRPC_CHANNEL_CLASS_FOUND)
+    add_definitions(-DWITH_GRPC_CHANNEL_CLASS)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 add_subdirectory(src)
