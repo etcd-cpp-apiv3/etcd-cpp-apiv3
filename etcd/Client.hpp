@@ -81,11 +81,11 @@ namespace etcd
      */
     static Client *WithUrl(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments
+                           grpc::ChannelArguments const & arguments
 #else
-                                 grpc_impl::ChannelArguments const & arguments
+                           grpc_impl::ChannelArguments const & arguments
 #endif
-                                 );
+                           );
 
     /**
      * Constructs an etcd client object.
@@ -153,15 +153,15 @@ namespace etcd
      *                       Default value should be 300.
      */
     static Client *WithUser(std::string const & etcd_url,
-                                  std::string const & username,
-                                  std::string const & password,
-                                  int const auth_token_ttl,
+                            std::string const & username,
+                            std::string const & password,
+                            int const auth_token_ttl,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                  grpc::ChannelArguments const & arguments
+                            grpc::ChannelArguments const & arguments
 #else
-                                  grpc_impl::ChannelArguments const & arguments
+                            grpc_impl::ChannelArguments const & arguments
 #endif
-                                  );
+                            );
 
     /**
      * Constructs an etcd client object.
@@ -237,14 +237,14 @@ namespace etcd
      */
     static Client *WithSSL(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments,
+                           grpc::ChannelArguments const & arguments,
 #else
-                                 grpc_impl::ChannelArguments const & arguments,
+                           grpc_impl::ChannelArguments const & arguments,
 #endif
-                                 std::string const & ca,
-                                 std::string const & cert = "",
-                                 std::string const & privkey = "",
-                                 std::string const & target_name_override = "");
+                           std::string const & ca,
+                           std::string const & cert = "",
+                           std::string const & privkey = "",
+                           std::string const & target_name_override = "");
 
     ~Client();
 
