@@ -11,10 +11,53 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-11.0, macos-12]
-        etcd: [v3.2.26, v3.3.11, v3.4.13]
+        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-22.04, macos-10.15, macos-11, macos-12]
+        etcd: [v3.2.26, v3.3.11, v3.4.13, v3.5.7]
+        exclude:
+          - os: ubuntu-18.04
+            etcd: v3.3.11
+          - os: ubuntu-18.04
+            etcd: v3.4.13
+          - os: ubuntu-18.04
+            etcd: v3.5.7
+
+          - os: ubuntu-20.04
+            etcd: v3.2.26
+          - os: ubuntu-20.04
+            etcd: v3.4.13
+          - os: ubuntu-20.04
+            etcd: v3.5.7
+
+          - os: ubuntu-22.04
+            etcd: v3.2.26
+          - os: ubuntu-22.04
+            etcd: v3.3.11
+          - os: ubuntu-22.04
+            etcd: v3.5.7
+
+          - os: macos-10.15
+            etcd: v3.2.26
+          - os: macos-10.15
+            etcd: v3.3.11
+          - os: macos-10.15
+            etcd: v3.4.13
+
+          - os: macos-11
+            etcd: v3.2.26
+          - os: macos-11
+            etcd: v3.3.11
+          - os: macos-11
+            etcd: v3.4.13
+
+          - os: macos-12
+            etcd: v3.2.26
+          - os: macos-12
+            etcd: v3.3.11
+          - os: macos-12
+            etcd: v3.4.13
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
@@ -23,7 +66,7 @@ jobs:
           date +'%Y-%m' > snapshot.txt
 
       - name: Cache for cccahe
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /home/runner/.ccache
           key: ${{ runner.os }}-ccache-${{ hashFiles('**/snapshot.txt') }}
@@ -76,8 +119,8 @@ jobs:
           make -j`nproc`
           sudo make install
 
-      - name: Install grpc for Ubuntu 20.04
-        if: matrix.os == 'ubuntu-20.04'
+      - name: Install grpc for Ubuntu 20.04 or later
+        if: ${{ runner.os != 'macOS' && matrix.os != 'ubuntu-18.04' }}
         run: |
           sudo apt install -y libcurl4-openssl-dev \
                               libprotobuf-dev \
@@ -146,7 +189,7 @@ jobs:
 
       - name: Setup tmate session
         if: false
-        uses: mxschmitt/action-tmate@v2
+        uses: mxschmitt/action-tmate@v3
 
       - name: Test
         run: |
@@ -253,7 +296,7 @@ jobs:
               printf 'root\nroot\n' | /usr/local/bin/etcdctl user add root || true
           fi
           # for etcd v3.4
-          if [[ "${{ matrix.etcd }}" == v3.4* ]];
+          if [[ "${{ matrix.etcd }}" == v3.4* ]] || [[ "${{ matrix.etcd }}" == v3.5* ]];
           then
               /usr/local/bin/etcdctl user add root --new-user-password="root" || true
           fi
@@ -268,7 +311,7 @@ jobs:
               /usr/local/bin/etcdctl --user="root:root" auth disable || true
           fi
           # for etcd v3.4
-          if [[ "${{ matrix.etcd }}" == v3.4* ]];
+          if [[ "${{ matrix.etcd }}" == v3.4* ]] || [[ "${{ matrix.etcd }}" == v3.5* ]];
           then
               /usr/local/bin/etcdctl auth disable --user="root" --password="root" || true
           fi

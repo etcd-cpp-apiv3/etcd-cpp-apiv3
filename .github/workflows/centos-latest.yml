@@ -39,11 +39,22 @@ jobs:
           chmod +x screenfetch-dev
           mv ./screenfetch-dev /usr/bin/screenfetch
 
-
       # the checkout action require new version of git
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
+
+      - name: Get time
+        run: |
+          date +'%Y-%m' > snapshot.txt
+
+      - name: Cache for cccahe
+        uses: actions/cache@v3
+        with:
+          path: /home/runner/.ccache
+          key: ${{ runner.os }}-centos-ccache-${{ hashFiles('**/snapshot.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-centos-ccache-
 
       - name: Install grpc v1.27.x for CentOS latest
         run: |
@@ -113,7 +124,7 @@ jobs:
 
       - name: Setup tmate session
         if: false
-        uses: mxschmitt/action-tmate@v2
+        uses: mxschmitt/action-tmate@v3
 
       - name: Test
         run: |
