@@ -55,12 +55,7 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     Client(std::string const & etcd_url,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-           );
+           grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -80,12 +75,7 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     static Client *WithUrl(std::string const & etcd_url,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments
-#else
-                                 grpc_impl::ChannelArguments const & arguments
-#endif
-                                 );
+                           grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -118,12 +108,7 @@ namespace etcd
            std::string const & username,
            std::string const & password,
            int const auth_token_ttl,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-           );
+           grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -156,12 +141,7 @@ namespace etcd
                                   std::string const & username,
                                   std::string const & password,
                                   int const auth_token_ttl,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-                                  grpc::ChannelArguments const & arguments
-#else
-                                  grpc_impl::ChannelArguments const & arguments
-#endif
-                                  );
+                                  grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -195,12 +175,7 @@ namespace etcd
            std::string const & cert,
            std::string const & privkey,
            std::string const & target_name_override,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-           );
+           grpc::ChannelArguments const & arguments);
 
     /**
      * Constructs an etcd client object.
@@ -236,15 +211,11 @@ namespace etcd
      * @param arguments user provided grpc channel arguments.
      */
     static Client *WithSSL(std::string const & etcd_url,
-#if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments,
-#else
-                                 grpc_impl::ChannelArguments const & arguments,
-#endif
-                                 std::string const & ca,
-                                 std::string const & cert = "",
-                                 std::string const & privkey = "",
-                                 std::string const & target_name_override = "");
+                           grpc::ChannelArguments const & arguments,
+                           std::string const & ca,
+                           std::string const & cert = "",
+                           std::string const & privkey = "",
+                           std::string const & target_name_override = "");
 
     ~Client();
 
@@ -683,11 +654,7 @@ namespace etcd
     /**
      * Obtain the underlying gRPC channel.
      */
-#if defined(WITH_GRPC_CHANNEL_CLASS)
     std::shared_ptr<grpc::Channel> grpc_channel() const;
-#else
-    std::shared_ptr<grpc_impl::Channel> grpc_channel() const;
-#endif
 
     /**
      * Set a timeout value for grpc operations.
