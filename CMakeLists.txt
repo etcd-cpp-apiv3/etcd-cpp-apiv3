@@ -60,20 +60,20 @@ if(NOT (CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache") AND NOT (CMAKE_C_COMPILER_
     endif(ccache_EXECUTABLE)
 endif()
 
-macro(use_cxx11 target)
+macro(use_cxx14 target)
     if(CMAKE_VERSION VERSION_LESS "3.1")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            target_compile_options(${target} PRIVATE "-std=gnu++11")
+            target_compile_options(${target} PRIVATE "-std=gnu++14")
         else()
-            target_compile_options(${target} PRIVATE "-std=c++11")
+            target_compile_options(${target} PRIVATE "-std=c++14")
         endif()
     else()
         set_target_properties(${target} PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD 14
             CXX_STANDARD_REQUIRED ON
         )
     endif()
-endmacro(use_cxx11)
+endmacro(use_cxx14)
 
 find_package(Boost REQUIRED COMPONENTS system thread random)
 if(APPLE)
