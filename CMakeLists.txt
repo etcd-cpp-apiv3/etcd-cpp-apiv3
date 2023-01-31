@@ -122,6 +122,7 @@ else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
+message("-- Found GRPC: ${GRPC_LIBRARIES} (found version: \"${gRPC_VERSION}\")")
 # avoid use the apt-get installed libgrpc-dev (version v1.13) on Ubuntu 18.04
 if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
     message(FATAL_ERROR "gRPC '${gRPC_VERSION}' is not supported, please install a newer gRPC library "
@@ -130,6 +131,10 @@ if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
                         "    https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/build-test.yml#L50-L75")
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobufGRPC.cmake)
+
+if(gRPC_VERSION VERSION_LESS "1.21" OR gRPC_VERSION VERSION_GREATER "1.31")
+    add_definitions(-DWITH_GRPC_CHANNEL_CLASS)
+endif()
 
 # will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
@@ -151,19 +156,6 @@ endif()
 check_cxx_compiler_flag(-Wno-c++17-extensions W_NO_CPP17_EXTENSIONS)
 if(W_NO_CPP17_EXTENSIONS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
-endif()
-
-set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -std=c++11")
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${GRPC_INCLUDE_DIR}")
-set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES} ${GRPC_LIBRARIES}")
-set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
-check_cxx_source_compiles("
-#include <grpc++/grpc++.h>
-namespace grpc { class Channel; }
-int main() {}
-" GRPC_CHANNEL_CLASS_FOUND)
-if(GRPC_CHANNEL_CLASS_FOUND)
-    add_definitions(-DWITH_GRPC_CHANNEL_CLASS)
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)

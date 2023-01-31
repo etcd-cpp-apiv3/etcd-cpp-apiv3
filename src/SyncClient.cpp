@@ -271,12 +271,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
 }
 
 etcd::SyncClient::SyncClient(std::string const & address,
-                     #if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-                     )
+                             grpc::ChannelArguments const & arguments)
 {
   // create channels
   std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
@@ -302,12 +297,7 @@ etcd::SyncClient *etcd::SyncClient::WithUrl(std::string const & etcd_url,
 }
 
 etcd::SyncClient *etcd::SyncClient::WithUrl(std::string const & etcd_url,
-                                    #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments
-#else
-                                 grpc_impl::ChannelArguments const & arguments
-#endif
-                                    ) {
+                                            grpc::ChannelArguments const & arguments) {
   return new etcd::SyncClient(etcd_url, arguments);
 }
 
@@ -342,13 +332,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
                      std::string const & username,
                      std::string const & password,
                      int const auth_token_ttl,
-                     #if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-
-                     )
+                     grpc::ChannelArguments const & arguments)
 {
   // create channels
   std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
@@ -382,12 +366,7 @@ etcd::SyncClient *etcd::SyncClient::WithUser(std::string const & etcd_url,
                                      std::string const & username,
                                      std::string const & password,
                                      int const auth_token_ttl,
-                                     #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                  grpc::ChannelArguments const & arguments
-#else
-                                  grpc_impl::ChannelArguments const & arguments
-#endif
-                                     ) {
+                                     grpc::ChannelArguments const & arguments) {
   return new etcd::SyncClient(etcd_url, username, password, auth_token_ttl, arguments);
 }
 
@@ -427,13 +406,7 @@ etcd::SyncClient::SyncClient(std::string const & address,
                      std::string const & cert,
                      std::string const & privkey,
                      std::string const & target_name_override,
-                     #if defined(WITH_GRPC_CHANNEL_CLASS)
-           grpc::ChannelArguments const & arguments
-#else
-           grpc_impl::ChannelArguments const & arguments
-#endif
-
-                     )
+                     grpc::ChannelArguments const & arguments)
 {
   // create channels
   std::string const addresses = etcd::detail::strip_and_resolve_addresses(address);
@@ -458,24 +431,20 @@ etcd::SyncClient::SyncClient(std::string const & address,
 }
 
 etcd::SyncClient *etcd::SyncClient::WithSSL(std::string const & etcd_url,
-                                    std::string const & ca,
-                                    std::string const & cert,
-                                    std::string const & privkey,
-                                    std::string const & target_name_override,
-                                    std::string const & load_balancer) {
+                                            std::string const & ca,
+                                            std::string const & cert,
+                                            std::string const & privkey,
+                                            std::string const & target_name_override,
+                                            std::string const & load_balancer) {
   return new etcd::SyncClient(etcd_url, ca, cert, privkey, target_name_override, load_balancer);
 }
 
 etcd::SyncClient *etcd::SyncClient::WithSSL(std::string const & etcd_url,
-                                    #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments,
-#else
-                                 grpc_impl::ChannelArguments const & arguments,
-#endif
-                                    std::string const & ca,
-                                    std::string const & cert,
-                                    std::string const & privkey,
-                                    std::string const & target_name_override) {
+                                            grpc::ChannelArguments const & arguments,
+                                            std::string const & ca,
+                                            std::string const & cert,
+                                            std::string const & privkey,
+                                            std::string const & target_name_override) {
   return new etcd::SyncClient(etcd_url, ca, cert, privkey, target_name_override, arguments);
 }
 

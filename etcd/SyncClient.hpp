@@ -134,11 +134,11 @@ namespace etcd
      */
     static SyncClient *WithUrl(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments
+                               grpc::ChannelArguments const & arguments
 #else
-                                 grpc_impl::ChannelArguments const & arguments
+                               grpc_impl::ChannelArguments const & arguments
 #endif
-                                 );
+                               );
 
     /**
      * Constructs an etcd client object.
@@ -293,14 +293,14 @@ namespace etcd
      */
     static SyncClient *WithSSL(std::string const & etcd_url,
 #if defined(WITH_GRPC_CHANNEL_CLASS)
-                                 grpc::ChannelArguments const & arguments,
+                               grpc::ChannelArguments const & arguments,
 #else
-                                 grpc_impl::ChannelArguments const & arguments,
+                               grpc_impl::ChannelArguments const & arguments,
 #endif
-                                 std::string const & ca,
-                                 std::string const & cert = "",
-                                 std::string const & privkey = "",
-                                 std::string const & target_name_override = "");
+                               std::string const & ca,
+                               std::string const & cert = "",
+                               std::string const & privkey = "",
+                               std::string const & target_name_override = "");
 
     ~SyncClient();
 
