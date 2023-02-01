@@ -18,13 +18,13 @@ file(GLOB_RECURSE CPP_CLIENT_CORE_SRC
 )
 
 add_library(etcd-cpp-api-core-objects OBJECT ${CPP_CLIENT_CORE_SRC} ${PROTOBUF_GENERATES})
-use_cxx14(etcd-cpp-api-core-objects)
+use_cxx(etcd-cpp-api-core-objects)
 add_dependencies(etcd-cpp-api-core-objects protobuf_generates)
 include_generated_protobuf_files(etcd-cpp-api-core-objects)
 
 # add the core library, includes the sycnhronous client only
 add_library(etcd-cpp-api-core $<TARGET_OBJECTS:etcd-cpp-api-core-objects>)
-use_cxx14(etcd-cpp-api-core)
+use_cxx(etcd-cpp-api-core)
 target_link_libraries(etcd-cpp-api-core PUBLIC
                       ${Boost_LIBRARIES}
                       ${PROTOBUF_LIBRARIES}
@@ -36,7 +36,7 @@ include_generated_protobuf_files(etcd-cpp-api-core)
 # add the client with asynchronus client
 add_library(etcd-cpp-api $<TARGET_OBJECTS:etcd-cpp-api-core-objects>
                          "${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp")
-use_cxx14(etcd-cpp-api)
+use_cxx(etcd-cpp-api)
 target_link_libraries(etcd-cpp-api PUBLIC
                       ${Boost_LIBRARIES}
                       ${CPPREST_LIB}  # n.b.: the asynchronous client requires pplx in cpprestsdk
