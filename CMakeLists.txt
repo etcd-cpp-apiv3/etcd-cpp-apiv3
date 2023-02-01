@@ -30,6 +30,16 @@ option(BUILD_SHARED_LIBS "Build etcd-cpp-apiv3 shared libraries" ON)
 option(BUILD_ETCD_TESTS "Build etcd-cpp-apiv3 test cases" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build etcd-cpp-apiv3 with -fPIC" ON)
 option(ETCD_W_STRICT "Build etcd-cpp-apiv3 with -Werror" ON)
+option(ETCD_CMAKE_CXX_STANDARD "Build etcd-cpp-apiv3 with specified C++ standard, e.g., 11, 14, 17, 20" "")
+
+if(NOT "${ETCD_CMAKE_CXX_STANDARD}")
+    if(NOT "${CMAKE_CXX_STANDARD}")
+        set(ETCD_CMAKE_CXX_STANDARD 11)
+    else()
+        set(ETCD_CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+    endif()
+endif()
+message("Building etcd-cpp-apiv3 with C++${ETCD_CMAKE_CXX_STANDARD}")
 
 # reference: https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling#always-full-rpath
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
@@ -60,20 +70,20 @@ if(NOT (CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache") AND NOT (CMAKE_C_COMPILER_
     endif(ccache_EXECUTABLE)
 endif()
 
-macro(use_cxx11 target)
+macro(use_cxx target)
     if(CMAKE_VERSION VERSION_LESS "3.1")
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            target_compile_options(${target} PRIVATE "-std=gnu++11")
+            target_compile_options(${target} PRIVATE "-std=gnu++${ETCD_CMAKE_CXX_STANDARD}")
         else()
-            target_compile_options(${target} PRIVATE "-std=c++11")
+            target_compile_options(${target} PRIVATE "-std=c++${ETCD_CMAKE_CXX_STANDARD}")
         endif()
     else()
         set_target_properties(${target} PROPERTIES
-            CXX_STANDARD 11
+            CXX_STANDARD ${ETCD_CMAKE_CXX_STANDARD}
             CXX_STANDARD_REQUIRED ON
         )
     endif()
-endmacro(use_cxx11)
+endmacro(use_cxx)
 
 find_package(Boost REQUIRED COMPONENTS system thread random)
 if(APPLE)

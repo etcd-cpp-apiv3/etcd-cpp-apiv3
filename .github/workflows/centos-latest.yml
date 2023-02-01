@@ -16,10 +16,6 @@ jobs:
         os: [ubuntu-20.04]
         etcd: [v3.4.13]
     steps:
-      - name: Get time
-        run: |
-          date +'%Y-%m' > snapshot.txt
-
       - name: Install dependencies for Linux
         run: |
           # switch to centos stream
@@ -44,15 +40,11 @@ jobs:
         with:
           submodules: true
 
-      - name: Get time
-        run: |
-          date +'%Y-%m' > snapshot.txt
-
       - name: Cache for cccahe
         uses: actions/cache@v3
         with:
           path: /home/runner/.ccache
-          key: ${{ runner.os }}-centos-ccache-${{ hashFiles('**/snapshot.txt') }}
+          key: ${{ runner.os }}-centos-ccache-${{ hashFiles('/CMakeLists.txt') }}
           restore-keys: |
             ${{ runner.os }}-centos-ccache-
 
