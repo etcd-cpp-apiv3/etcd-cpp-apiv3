@@ -18,7 +18,7 @@ i.e., `ETCDCTL_API=3`.
   - MacOS 11.0
 
 + **Windows**
-  - Windows 10, with [vcpkg](https://github.com/microsoft/vcpkg)
+  - Windows 10, with [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/etcd-cpp-apiv3)
 
 ### Supported etcd versions:
 
