@@ -97,7 +97,7 @@ etcdv3::AsyncLeaseKeepAliveResponse etcdv3::AsyncLeaseKeepAliveAction::ParseResp
 
 etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
 {
-  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
+  std::lock_guard<std::recursive_mutex> scope_lock(this->protect_is_cancelled);
 
   auto start_timepoint = std::chrono::high_resolution_clock::now();
   if (isCancelled) {
@@ -171,7 +171,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
 
 void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
 {
-  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
+  std::lock_guard<std::recursive_mutex> scope_lock(this->protect_is_cancelled);
   if(isCancelled == false)
   {
     isCancelled = true;

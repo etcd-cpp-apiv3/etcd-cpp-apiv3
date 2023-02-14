@@ -62,7 +62,7 @@ namespace etcdv3
 
       LeaseKeepAliveRequest req;
       bool isCancelled;
-      std::mutex protect_is_cancelled;
+      std::recursive_mutex protect_is_cancelled;
 
       friend class etcd::KeepAlive;
   };
