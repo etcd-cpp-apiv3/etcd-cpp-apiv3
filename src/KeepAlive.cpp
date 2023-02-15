@@ -90,12 +90,13 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client,
       this->refresh();
       context.run();
     } catch (...) {
-      if (handler_) {
-        handler_(std::current_exception());
-      } else {
-        eptr_ = std::current_exception();
-      }
+      // run canceller first
       this->Cancel();
+      // propogate the exception
+      eptr_ = std::current_exception();
+      if (handler_) {
+        handler_(eptr_);
+      }
     }
   });
 }
@@ -124,7 +125,7 @@ etcd::KeepAlive::~KeepAlive()
 
 void etcd::KeepAlive::Cancel()
 {
-  std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
+  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.exchange(false)) {
     return;
   }
@@ -139,11 +140,27 @@ void etcd::KeepAlive::Check() {
   if (eptr_) {
     std::rethrow_exception(eptr_);
   }
+  // issue an refresh to make sure it still alive
+  try {
+    this->refresh_once();
+  } catch (...) {
+    // run canceller first
+    this->Cancel();
+
+    // propogate the exception, as we throw in `Check()`, the `handler` won't be touched
+    eptr_ = std::current_exception();
+    if (handler_) {
+      handler_(eptr_);
+    }
+
+    // rethrow in `Check()` to keep the consistent semantics
+    std::rethrow_exception(eptr_);
+  }
 }
 
 void etcd::KeepAlive::refresh()
 {
-  std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
+  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.load()) {
     return;
   }
@@ -157,18 +174,28 @@ void etcd::KeepAlive::refresh()
 #endif
     } else {
       if (this->continue_next.load()) {
-        this->stubs->call->mutable_parameters().grpc_timeout = this->grpc_timeout;
-        auto resp = this->stubs->call->Refresh();
-        if (!resp.is_ok()) {
-          throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
-                                   ", message: " + resp.error_message());
-        }
-        if (resp.value().ttl() == 0) {
-          throw std::out_of_range("Failed to refresh lease due to expiration: the new TTL is 0.");
-        }
+        // execute refresh
+        this->refresh_once();
         // trigger the next round;
         this->refresh();
       }
     }
   });
+}
+
+void etcd::KeepAlive::refresh_once()
+{
+  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
+  if (!continue_next.load()) {
+    return;
+  }
+  this->stubs->call->mutable_parameters().grpc_timeout = this->grpc_timeout;
+  auto resp = this->stubs->call->Refresh();
+  if (!resp.is_ok()) {
+    throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
+                              ", message: " + resp.error_message());
+  }
+  if (resp.value().ttl() == 0) {
+    throw std::out_of_range("Failed to refresh lease due to expiration: the new TTL is 0.");
+  }
 }
