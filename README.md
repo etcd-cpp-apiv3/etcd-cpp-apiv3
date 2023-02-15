@@ -830,6 +830,8 @@ is constructed.
 Without handler, the internal state can be checked via `KeepAlive::Check()` and it will rethrow
 the async exception when there are errors during keeping the lease alive.
 
+Note that even with `handler`, the `KeepAlive::Check()` still rethrow if there's an async exception.
+
 ### Etcd transactions
 
 Etcd v3's [Transaction APIs](https://etcd.io/docs/v3.4/learning/api/#transaction) is supported via the

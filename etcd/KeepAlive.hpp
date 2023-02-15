@@ -99,7 +99,10 @@ namespace etcd
     ~KeepAlive();
 
   protected:
+    // automatically refresh loop
     void refresh();
+    // refresh once immediately
+    void refresh_once();
 
     struct EtcdServerStubs;
     struct EtcdServerStubsDeleter {
@@ -120,7 +123,7 @@ namespace etcd
     int64_t lease_id;
 
     // protect the initializing status of `timer`.
-    std::mutex mutex_for_refresh_;
+    std::recursive_mutex mutex_for_refresh_;
     std::atomic_bool continue_next;
 
     // grpc timeout in `refresh()`
