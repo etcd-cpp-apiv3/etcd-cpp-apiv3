@@ -77,11 +77,13 @@ macro(use_cxx target)
         else()
             target_compile_options(${target} PRIVATE "-std=c++${ETCD_CMAKE_CXX_STANDARD}")
         endif()
-    else()
+    elseif(CMAKE_VERSION VERSION_LESS "3.8")
         set_target_properties(${target} PROPERTIES
             CXX_STANDARD ${ETCD_CMAKE_CXX_STANDARD}
             CXX_STANDARD_REQUIRED ON
         )
+    else()
+        target_compile_features(${target} PUBLIC cxx_std_${ETCD_CMAKE_CXX_STANDARD})
     endif()
 endmacro(use_cxx)
 
