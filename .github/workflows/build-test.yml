@@ -226,6 +226,9 @@ jobs:
           echo "Run the etcd election test ........................."
           ./build/bin/ElectionTest
 
+          echo "Run the etcd with fork test ........................."
+          ./build/bin/ForkTest
+
           killall -TERM etcd || true
           sleep 5
 
