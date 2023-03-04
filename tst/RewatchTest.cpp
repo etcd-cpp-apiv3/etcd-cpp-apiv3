@@ -8,7 +8,7 @@
 #include "etcd/SyncClient.hpp"
 #include "etcd/Watcher.hpp"
 
-static const std::string etcd_url("http://127.0.0.1:2379");
+static const std::string etcd_url("http://127.0.0.1:24799");
 
 static int watcher_called = 0;
 
@@ -33,9 +33,17 @@ void print_response(etcd::Response const & resp)
   }
 }
 
-void wait_for_connection(etcd::Client &client) {
-  // wait until the client connects to etcd server 
-  while (!client.head().get().is_ok()) {
+void wait_for_connection(std::string endpoints) {
+  // wait until the client connects to etcd server
+  while (true) {
+    try {
+      etcd::Client client(endpoints);
+      if (client.head().get().is_ok()) {
+        break;
+      }
+    } catch (...) {
+      // pass
+    }
     sleep(1);
   }
 }
@@ -44,8 +52,9 @@ void initialize_watcher(const std::string& endpoints,
                         const std::string& prefix,
                         std::function<void(etcd::Response)> callback,
                         std::shared_ptr<etcd::Watcher>& watcher) {
+  // wait until the endpoints turn to be available
+  wait_for_connection(endpoints);
   etcd::Client client(endpoints);
-  wait_for_connection(client);
 
   // Check if the failed one has been cancelled first
   if (watcher && watcher->Cancelled()) {

@@ -298,10 +298,12 @@ void etcd::Watcher::doWatch(std::string const & key,
     stubs->call->waitForResponse(callback);
     if (wait_callback != nullptr) {
       // issue the callback in another thread (detached) to avoid deadlock,
-      // it is ok to detach a pplx::task, but we cannot use the pplx::task
+      // it is ok to detach a pplx::task, but we don't want to use the pplx::task
       // in the core library
-      std::thread canceller([this]() {
-        wait_callback(stubs->call->Cancelled());
+      bool cancelled = stubs->call->Cancelled();
+      std::function<void(bool)> wait_callback = this->wait_callback;
+      std::thread canceller([wait_callback, cancelled]() {
+        wait_callback(cancelled);
       });
       canceller.detach();
     }
