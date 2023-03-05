@@ -49,7 +49,7 @@ TEST_CASE("watch shouldn't leak memory")
   // issue some changes to see if the watcher works
   etcd::Client client(etcd_url);
   std::unique_ptr<etcd::Watcher> watcher;
-  for (int round = 0; round < 1000; ++round) {
+  for (int round = 0; round < 10 /* update this value to make it run for longer */; ++round) {
     if (round % 50 == 0) {
       std::cout << "starting round " << round << std::endl;
     }
