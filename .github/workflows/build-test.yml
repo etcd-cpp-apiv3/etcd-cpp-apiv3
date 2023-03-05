@@ -132,6 +132,10 @@ jobs:
                               libgrpc++-dev \
                               protobuf-compiler-grpc
 
+          # install libsegfault.so
+          sudo apt-get install libc6 || true
+          sudo apt-get install glibc-tools || true
+
       - name: Install dependencies for Mac
         if: runner.os == 'macOS'
         run: |
@@ -176,7 +180,7 @@ jobs:
           sudo make install
 
       - name: Setup tmate session
-        if: true
+        if: false
         uses: mxschmitt/action-tmate@v3
 
       - name: Build
