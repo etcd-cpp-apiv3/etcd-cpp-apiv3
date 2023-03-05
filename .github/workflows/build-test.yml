@@ -175,6 +175,10 @@ jobs:
           make -j`nproc`
           sudo make install
 
+      - name: Setup tmate session
+        if: true
+        uses: mxschmitt/action-tmate@v3
+
       - name: Build
         run: |
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
