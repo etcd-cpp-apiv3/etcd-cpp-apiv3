@@ -66,6 +66,8 @@ namespace etcdv3
   public:
     Action(etcdv3::ActionParameters const &params);
     Action(etcdv3::ActionParameters && params);
+    virtual ~Action();
+
     void waitForResponse();
     const std::chrono::high_resolution_clock::time_point startTimepoint();
   protected:
@@ -83,6 +85,7 @@ namespace etcdv3
 
   namespace detail {
     std::string string_plus_one(std::string const &value);
+    std::string resolve_etcd_endpoints(std::string const &default_endpoints);
   }
 }
 #endif

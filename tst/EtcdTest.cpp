@@ -7,7 +7,7 @@
 
 #include "etcd/Client.hpp"
 
-static const std::string etcd_url("http://127.0.0.1:2379");
+static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 TEST_CASE("setup")
 {

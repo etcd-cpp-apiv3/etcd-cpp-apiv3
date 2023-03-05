@@ -23,7 +23,15 @@ foreach(testfile ${TEST_FILES})
 
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen/proto)
-    target_link_libraries(${test_name} etcd-cpp-api)
+    target_link_libraries(${test_name} PRIVATE etcd-cpp-api)
+
+    if(UNIX AND NOT APPLE)
+        if(CMAKE_VERSION VERSION_LESS 3.13)
+            target_link_libraries(${test_name} PRIVATE -Wl,--no-as-needed -lSegFault -Wl,--as-needed)
+        else()
+            target_link_options(${test_name} PRIVATE -Wl,--no-as-needed -lSegFault -Wl,--as-needed)
+        endif()
+    endif()
 
     add_dependencies(etcd_tests ${test_name})
 endforeach()

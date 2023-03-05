@@ -33,10 +33,13 @@ char const * etcdv3::KEEPALIVE_CREATE = "keepalive create";
 char const * etcdv3::KEEPALIVE_WRITE = "keepalive write";
 char const * etcdv3::KEEPALIVE_READ = "keepalive read";
 char const * etcdv3::KEEPALIVE_DONE = "keepalive done";
+char const * etcdv3::KEEPALIVE_FINISH = "keepalive finish";
 
 char const * etcdv3::WATCH_CREATE = "watch create";
 char const * etcdv3::WATCH_WRITE = "watch write";
+char const * etcdv3::WATCH_WRITE_CANCEL = "watch write cancel";
 char const * etcdv3::WATCH_WRITES_DONE = "watch writes done";
+char const * etcdv3::WATCH_FINISH = "watch finish";
 
 char const * etcdv3::ELECTION_OBSERVE_CREATE = "observe create";
 

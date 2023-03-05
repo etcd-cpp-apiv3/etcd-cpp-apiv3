@@ -34,10 +34,13 @@ namespace etcdv3
   extern char const * KEEPALIVE_WRITE;
   extern char const * KEEPALIVE_READ;
   extern char const * KEEPALIVE_DONE;
+  extern char const * KEEPALIVE_FINISH;
 
   extern char const * WATCH_CREATE;
   extern char const * WATCH_WRITE;
+  extern char const * WATCH_WRITE_CANCEL;
   extern char const * WATCH_WRITES_DONE;
+  extern char const * WATCH_FINISH;
 
   extern char const * ELECTION_OBSERVE_CREATE;
 

@@ -6,6 +6,9 @@ concurrency:
   group: ${{ github.repository }}-${{ github.event.number || github.head_ref || github.sha }}-${{ github.workflow }}
   cancel-in-progress: true
 
+env:
+  SEGFAULT_SIGNALS: all
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -129,6 +132,10 @@ jobs:
                               libgrpc++-dev \
                               protobuf-compiler-grpc
 
+          # install libsegfault.so
+          sudo apt-get install libc6 || true
+          sudo apt-get install glibc-tools || true
+
       - name: Install dependencies for Mac
         if: runner.os == 'macOS'
         run: |
@@ -172,6 +179,10 @@ jobs:
           make -j`nproc`
           sudo make install
 
+      - name: Setup tmate session
+        if: false
+        uses: mxschmitt/action-tmate@v3
+
       - name: Build
         run: |
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
@@ -211,11 +222,17 @@ jobs:
           echo "Run the etcd test ........................."
           ./build/bin/EtcdTest
 
+          echo "Run the etcd campaign test ........................."
+          ./build/bin/CampaignTest
+
           echo "Run the etcd memory leak test ........................."
           ./build/bin/MemLeakTest
 
           echo "Run the etcd watcher test ........................."
           ./build/bin/WatcherTest
+
+          echo "Run the etcd memory leak in watcher test ........................."
+          ./build/bin/MemLeakWatcherTest
 
           echo "Run the etcd keepalive test ........................."
           ./build/bin/KeepAliveTest

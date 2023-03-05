@@ -22,12 +22,13 @@ namespace etcdv3
       AsyncWatchAction(etcdv3::ActionParameters && params);
       AsyncWatchResponse ParseResponse();
       void waitForResponse();
-      void waitForResponse(std::function<void(etcd::Response)> callback); 
+      void waitForResponse(std::function<void(etcd::Response)> callback);
       void CancelWatch();
       bool Cancelled() const;
     private:
+      int64_t watch_id = -1;
       WatchResponse reply;
-      std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;   
+      std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;
       std::atomic_bool isCancelled;
   };
 }
