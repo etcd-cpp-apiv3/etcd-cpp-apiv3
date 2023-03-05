@@ -98,11 +98,17 @@ void etcdv3::AsyncWatchAction::waitForResponse()
           std::cerr << "WARN: The response hasn't been fully received and parsed" << std::endl;
         }
 
+        std::cout << "issue a watch cancel" << std::endl;
+        // cancel the watcher after receiving the good response
         this->CancelWatch();
-        continue;
+
+        // start the next round to read finish messages, read into "&dummy"
+        // (use nullptr, as it won't be touched).
+        stream->Read(nullptr, (void*)etcdv3::WATCH_FINISH);
+      } else {
+        // start the next round to read reply, read into "&reply"
+        stream->Read(&reply, (void*)this);
       }
-      // otherwise, start next round read-reply
-      stream->Read(&reply, (void*)this);
       continue;
     }
     if(isCancelled.load()) {
