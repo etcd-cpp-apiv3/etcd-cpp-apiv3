@@ -6,7 +6,7 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
-static const std::string etcd_url("http://127.0.0.1:2379");
+static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 class DistributedLock {
 public:
@@ -75,7 +75,7 @@ DistributedLock::~DistributedLock() noexcept {
 
 int main() {
   int i = 0, t = 0;
-  while(t < 10 /* update this value to make it run for longer */) {
+  while(t < 100 /* update this value to make it run for longer */) {
     {
       DistributedLock lock(std::to_string(i), 0);
       if(!lock.lock_acquired()) {
@@ -88,6 +88,8 @@ int main() {
     if (i == 10) {
       i = 0;
     }
-    std::cout << "round: i = " << i << ", t = " << t << std::endl;
+    if (t % 10 == 0) {
+      std::cout << "round: i = " << i << ", t = " << t << std::endl;
+    }
   }
 }

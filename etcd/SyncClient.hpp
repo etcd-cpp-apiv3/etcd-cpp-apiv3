@@ -42,6 +42,7 @@ namespace etcdv3 {
 
   namespace detail {
     std::string string_plus_one(std::string const &value);
+    std::string resolve_etcd_endpoints(std::string const &default_endpoints);
   }
 }
 

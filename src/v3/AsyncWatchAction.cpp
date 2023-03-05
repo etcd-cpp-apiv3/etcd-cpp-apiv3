@@ -2,13 +2,11 @@
 #include "etcd/v3/action_constants.hpp"
 
 
-using etcdserverpb::RangeRequest;
-using etcdserverpb::RangeResponse;
 using etcdserverpb::WatchCreateRequest;
 
 etcdv3::AsyncWatchAction::AsyncWatchAction(
     etcdv3::ActionParameters && params)
-  : etcdv3::Action(std::move(params)) 
+  : etcdv3::Action(std::move(params))
 {
   isCancelled.store(false);
   stream = parameters.watch_stub->AsyncWatch(&context,&cq_,(void*)etcdv3::WATCH_CREATE);
@@ -45,12 +43,13 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(
   // wait "write" (WatchCreateRequest) success, and start to read the first reply
   if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::WATCH_WRITE) {
     stream->Read(&reply, (void*)this);
+    this->watch_id = reply.watch_id();
   } else {
     throw std::runtime_error("failed to write WatchCreateRequest to server");
   }
 }
 
-void etcdv3::AsyncWatchAction::waitForResponse() 
+void etcdv3::AsyncWatchAction::waitForResponse()
 {
   void* got_tag;
   bool ok = false;
@@ -61,47 +60,54 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     {
       break;
     }
-    if(isCancelled.load()) {
-      break;
+    if(got_tag == (void *)etcdv3::WATCH_WRITE_CANCEL) {
+      stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+      continue;
     }
-    if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE) {
-      isCancelled.store(true);
+    if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)
+    {
+      grpc::Status status;
+      stream->Finish(&status, (void *)etcdv3::WATCH_FINISH);
+      continue;
+    }
+    if (got_tag == (void *)etcdv3::WATCH_FINISH) {
+      // shutdown
       cq_.Shutdown();
+      // cancel on-the-fly calls
+      context.TryCancel();
       break;
     }
     if(got_tag == (void*)this) // read tag
     {
       if (reply.canceled()) {
-        isCancelled.store(true);
-        cq_.Shutdown();
-        break;
+        // cancel on-the-fly calls, but don't shutdown the completion queue as there
+        // are still a inflight call to finish
+        context.TryCancel();
+        // cq_.Shutdown();
+        continue;
       }
-      else if ((reply.created() && reply.header().revision() < parameters.revision) ||
+
+      // we stop watch under two conditions:
+      //
+      // 1. watch for a future revision, return immediately with empty events set
+      // 2. receive any effective events.
+      if ((reply.created() && reply.header().revision() < parameters.revision) ||
           reply.events_size() > 0) {
-        // we stop watch under two conditions:
-        //
-        // 1. watch for a future revision, return immediately with empty events set
-        // 2. receive any effective events.
-        isCancelled.store(true);
-
-        stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
-
-        grpc::Status status;
-        stream->Finish(&status, (void *)this);
-
-        cq_.Shutdown();
-
         // leave a warning if the response is too large and been fragmented
         if (reply.fragment()) {
           std::cerr << "WARN: The response hasn't been fully received and parsed" << std::endl;
         }
-        break;
+
+        this->CancelWatch();
+        continue;
       }
-      else
-      {
-        // otherwise, start next round read-reply
-        stream->Read(&reply, (void*)this);
-      }
+      // otherwise, start next round read-reply
+      stream->Read(&reply, (void*)this);
+      continue;
+    }
+    if(isCancelled.load()) {
+      // invalid tag, and is cancelled
+      break;
     }
   }
 }
@@ -109,12 +115,10 @@ void etcdv3::AsyncWatchAction::waitForResponse()
 void etcdv3::AsyncWatchAction::CancelWatch()
 {
   if (!isCancelled.exchange(true)) {
-    stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
-
-    grpc::Status status;
-    stream->Finish(&status, (void *)this);
-
-    cq_.Shutdown();
+    WatchRequest cancel_req;
+    cancel_req.mutable_cancel_request()->set_watch_id(this->watch_id);
+    stream->Write(cancel_req, (void *)etcdv3::WATCH_WRITE_CANCEL);
+    isCancelled.store(true);
   }
 }
 
@@ -122,10 +126,10 @@ bool etcdv3::AsyncWatchAction::Cancelled() const {
   return isCancelled.load();
 }
 
-void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response)> callback) 
+void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response)> callback)
 {
   void* got_tag;
-  bool ok = false;    
+  bool ok = false;
 
   while(cq_.Next(&got_tag, &ok))
   {
@@ -133,39 +137,55 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
     {
       break;
     }
-    if(isCancelled.load()) {
-      break;
+    if(got_tag == (void *)etcdv3::WATCH_WRITE_CANCEL) {
+      stream->WritesDone((void*)etcdv3::WATCH_WRITES_DONE);
+      continue;
     }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)
     {
-      isCancelled.store(true);
+      grpc::Status status;
+      stream->Finish(&status, (void *)etcdv3::WATCH_FINISH);
+      continue;
+    }
+    if (got_tag == (void *)etcdv3::WATCH_FINISH) {
+      // shutdown
       cq_.Shutdown();
+      // cancel on-the-fly calls
+      context.TryCancel();
       break;
     }
-    else if(got_tag == (void*)this) // read tag
+    if(got_tag == (void*)this) // read tag
     {
       if (reply.canceled()) {
-        isCancelled.store(true);
-        cq_.Shutdown();
         if (reply.compact_revision() != 0) {
-          auto resp = etcd::Response(grpc::StatusCode::OUT_OF_RANGE /* error code */,
-                                     "required revision has been compacted");
-          resp._compact_revision = reply.compact_revision();
-          callback(resp);
+          auto resp = ParseResponse();
+          auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::high_resolution_clock::now() - start_timepoint);
+          callback(etcd::Response(resp, duration));
         }
-        break;
+        // cancel on-the-fly calls, but don't shutdown the completion queue as there
+        // are still a inflight call to finish
+        context.TryCancel();
+        // cq_.Shutdown();
+        continue;
       }
+
+      // for the callback case, we don't invoke callback immediately if watching
+      // for a future revision, we wait until there are some effective events.
       if(reply.events_size())
       {
-        // for the callback case, we don't stop immediately if watching for a future revison,
-        // we wait until there are some expected events.
         auto resp = ParseResponse();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start_timepoint);
-        callback(etcd::Response(resp, duration)); 
+        callback(etcd::Response(resp, duration));
         start_timepoint = std::chrono::high_resolution_clock::now();
       }
       stream->Read(&reply, (void*)this);
+      continue;
+    }
+    if(isCancelled.load()) {
+      // invalid tag, and is cancelled
+      break;
     }
   }
 }
@@ -181,7 +201,7 @@ etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
     watch_resp.set_error_message(status.error_message());
   }
   else
-  { 
+  {
     watch_resp.ParseResponse(reply);
   }
   return watch_resp;

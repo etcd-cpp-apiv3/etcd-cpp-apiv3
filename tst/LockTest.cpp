@@ -10,7 +10,7 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
-static const std::string etcd_url("http://127.0.0.1:2379");
+static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 TEST_CASE("lock and unlock")
 {

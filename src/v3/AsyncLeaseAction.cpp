@@ -183,16 +183,22 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
     if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)etcdv3::KEEPALIVE_DONE) {
       // ok
     } else {
-      std::cerr << "Failed to mark a lease keep-alive connection as DONE" << std::endl;
+      std::cerr << "Failed to mark a lease keep-alive connection as DONE: "
+                << context.debug_error_string() << std::endl;
     }
 
     grpc::Status status;
-    stream->Finish(&status, (void *)this);
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
+    stream->Finish(&status, (void *)KEEPALIVE_FINISH);
+    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)KEEPALIVE_FINISH) {
       // ok
     } else {
-      std::cerr << "Failed to finish a lease keep-alive connection" << std::endl;
+      std::cerr << "Failed to finish a lease keep-alive connection: "
+                << status.error_message()
+                << ", " << context.debug_error_string() << std::endl;
     }
+
+    // cancel on-the-fly calls
+    context.TryCancel();
 
     cq_.Shutdown();
   }

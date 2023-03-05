@@ -10,7 +10,7 @@
 #include "etcd/SyncClient.hpp"
 #include "etcd/Value.hpp"
 
-static std::string etcd_uri(
+static std::string etcd_uri = etcdv3::detail::resolve_etcd_endpoints(
     "http://127.0.0.1:2379,http://127.0.0.1:2479,http://127.0.0.1:2579");
 
 TEST_CASE("keepalive revoke and check if alive") {

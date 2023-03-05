@@ -39,7 +39,7 @@ if(NOT "${ETCD_CMAKE_CXX_STANDARD}")
         set(ETCD_CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD})
     endif()
 endif()
-message("Building etcd-cpp-apiv3 with C++${ETCD_CMAKE_CXX_STANDARD}")
+message(STATUS "Building etcd-cpp-apiv3 with C++${ETCD_CMAKE_CXX_STANDARD}")
 
 # reference: https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling#always-full-rpath
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
@@ -134,7 +134,7 @@ else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
-message("-- Found GRPC: ${GRPC_LIBRARIES} (found version: \"${gRPC_VERSION}\")")
+message("-- Found GRPC: ${GRPC_LIBRARIES}, ${GRPC_CPP_PLUGIN} (found version: \"${gRPC_VERSION}\")")
 # avoid use the apt-get installed libgrpc-dev (version v1.13) on Ubuntu 18.04
 if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
     message(FATAL_ERROR "gRPC '${gRPC_VERSION}' is not supported, please install a newer gRPC library "

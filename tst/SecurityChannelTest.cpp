@@ -9,7 +9,7 @@ static std::string ca = "security-config/certs/ca.crt";
 static std::string cert = "security-config/certs/etcd0.example.com.crt";
 static std::string key = "security-config/private/etcd0.example.com.key";
 
-static const std::string etcd_url("https://127.0.0.1:2379");
+static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("https://127.0.0.1:2379");
 
 TEST_CASE("setup with auth")
 {

@@ -8,7 +8,7 @@
 #include "etcd/SyncClient.hpp"
 #include "etcd/Watcher.hpp"
 
-static const std::string etcd_url("http://127.0.0.1:24799");
+static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 static int watcher_called = 0;
 

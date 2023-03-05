@@ -11,6 +11,12 @@ struct etcd::Watcher::EtcdServerStubs {
 
 void etcd::Watcher::EtcdServerStubsDeleter::operator()(etcd::Watcher::EtcdServerStubs *stubs) {
   if (stubs) {
+    if (stubs->watchServiceStub) {
+      stubs->watchServiceStub.reset();
+    }
+    if (stubs->call) {
+      stubs->call.reset();
+    }
     delete stubs;
   }
 }

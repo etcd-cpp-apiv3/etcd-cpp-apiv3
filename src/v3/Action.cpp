@@ -15,6 +15,13 @@ etcdv3::Action::Action(etcdv3::ActionParameters && params)
   this->InitAction();
 }
 
+etcdv3::Action::~Action() {
+  cq_.Shutdown();
+
+  // cancel on-the-fly calls
+  context.TryCancel();
+}
+
 void etcdv3::Action::InitAction() {
   if (!parameters.auth_token.empty()) {
     // use `token` as the key, see:
@@ -104,6 +111,10 @@ std::string etcdv3::detail::string_plus_one(std::string const &value) {
       return s;
     }
   }
-
   return {etcdv3::NUL};
+}
+
+std::string etcdv3::detail::resolve_etcd_endpoints(std::string const&default_endpoints) {
+  const char *ep = std::getenv("ETCD_ENDPOINTS");
+  return ep ? ep : default_endpoints;
 }

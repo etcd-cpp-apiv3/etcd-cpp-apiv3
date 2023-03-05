@@ -211,11 +211,17 @@ jobs:
           echo "Run the etcd test ........................."
           ./build/bin/EtcdTest
 
+          echo "Run the etcd campaign test ........................."
+          ./build/bin/CampaignTest
+
           echo "Run the etcd memory leak test ........................."
           ./build/bin/MemLeakTest
 
           echo "Run the etcd watcher test ........................."
           ./build/bin/WatcherTest
+
+          echo "Run the etcd memory leak in watcher test ........................."
+          ./build/bin/MemLeakWatcherTest
 
           echo "Run the etcd keepalive test ........................."
           ./build/bin/KeepAliveTest
