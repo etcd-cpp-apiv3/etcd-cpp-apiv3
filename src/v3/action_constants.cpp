@@ -25,9 +25,9 @@ char const * etcdv3::LEADER_ACTION = "leader";
 char const * etcdv3::OBSERVE_ACTION = "obverse";
 char const * etcdv3::RESIGN_ACTION = "resign";
 
-// see: noPrefixEnd in etcd, however c++ doesn't allows '\0' inside a string, thus we use
-// the UTF-8 char U+0000 (i.e., "\xC0\x80").
-char const * etcdv3::NUL = "\xC0\x80";
+// see: noPrefixEnd in etcd, however c++ doesn't allows naive '\0' inside
+// a string, thus we use std::string(1, '\x00') as the constructor.
+std::string const etcdv3::NUL = std::string(1, '\x00');
 
 char const * etcdv3::KEEPALIVE_CREATE = "keepalive create";
 char const * etcdv3::KEEPALIVE_WRITE = "keepalive write";

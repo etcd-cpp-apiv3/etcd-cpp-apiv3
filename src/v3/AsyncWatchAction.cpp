@@ -13,21 +13,24 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(
 
   WatchRequest watch_req;
   WatchCreateRequest watch_create_req;
-  watch_create_req.set_key(parameters.key);
-  watch_create_req.set_prev_kv(true);
-  watch_create_req.set_start_revision(parameters.revision);
 
-  if(parameters.withPrefix)
-  {
+  if(!parameters.withPrefix) {
+    watch_create_req.set_key(parameters.key);
+  } else {
     if (parameters.key.empty()) {
-      watch_create_req.set_range_end(detail::string_plus_one(etcdv3::NUL));
+      watch_create_req.set_range_end(etcdv3::NUL);
+      watch_create_req.set_range_end(etcdv3::NUL);
     } else {
+      watch_create_req.set_range_end(parameters.key);
       watch_create_req.set_range_end(detail::string_plus_one(parameters.key));
     }
   }
   if(!parameters.range_end.empty()) {
     watch_create_req.set_range_end(parameters.range_end);
   }
+
+  watch_create_req.set_prev_kv(true);
+  watch_create_req.set_start_revision(parameters.revision);
 
   watch_req.mutable_create_request()->CopyFrom(watch_create_req);
 

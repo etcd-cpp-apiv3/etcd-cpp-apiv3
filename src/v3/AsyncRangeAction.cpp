@@ -11,23 +11,23 @@ etcdv3::AsyncRangeAction::AsyncRangeAction(
   : etcdv3::Action(std::move(params))
 {
   RangeRequest get_request;
-  if (parameters.key.empty()) {
-    get_request.set_key(etcdv3::NUL);
-  } else {
+  if (!parameters.withPrefix) {
     get_request.set_key(parameters.key);
-  }
-  get_request.set_limit(parameters.limit);
-  if(parameters.withPrefix)
-  {
+  } else {
     if (parameters.key.empty()) {
-      get_request.set_range_end(detail::string_plus_one(etcdv3::NUL));
+      // see: WithFromKey in etcdv3/client
+      get_request.set_key(etcdv3::NUL);
+      get_request.set_range_end(etcdv3::NUL);
     } else {
+      get_request.set_key(parameters.key);
       get_request.set_range_end(detail::string_plus_one(parameters.key));
     }
   }
   if(!parameters.range_end.empty()) {
     get_request.set_range_end(parameters.range_end);
   }
+
+  get_request.set_limit(parameters.limit);
   get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_NONE);
 
   // set keys_only and count_only

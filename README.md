@@ -46,7 +46,7 @@ i.e., `ETCDCTL_API=3`.
                  libgrpc++-dev \
                  libprotobuf-dev \
                  protobuf-compiler-grpc
-        
+
    + On MacOS, above requirements related to protobuf and gRPC can be installed as:
 
          brew install grpc protobuf
@@ -714,7 +714,7 @@ Here is an example how users can make a watcher re-connect to server after disco
 ```c++
 // wait the client ready
 void wait_for_connection(etcd::Client &client) {
-  // wait until the client connects to etcd server 
+  // wait until the client connects to etcd server
   while (!client.head().get().is_ok()) {
     sleep(1);
   }
@@ -750,16 +750,18 @@ void initialize_watcher(const std::string& endpoints,
 The functionalities can be used as
 
 ```c++
-std::string endpoints = "http://127.0.0.1:2379";  
+std::string endpoints = "http://127.0.0.1:2379";
 std::function<void(Response)> callback = printResponse;
-const std::string prefix = "/test/key"; 
+const std::string prefix = "/test/key";
 
 // the watcher initialized in this way will auto re-connect to etcd
 std::shared_ptr<etcd::Watcher> watcher;
 initialize_watcher(endpoints, prefix, callback, watcher);
 ```
 
-For a complete runnable example, see also [./tst/RewatchTest.cpp](./tst/RewatchTest.cpp).
+For a complete runnable example, see also [./tst/RewatchTest.cpp](./tst/RewatchTest.cpp). Note
+that you shouldn't use the watcher itself inside the `Wait()` callback as the callback will be
+invoked in a separate **detached** thread where the watcher may have been destroyed.
 
 ### Requesting for lease
 

@@ -223,7 +223,7 @@ TEST_CASE("using binary keys and values, raw char pointer doesn't work")
     CHECK(std::string("42\0foo", 6) != resp.value().as_string());
   }
   {
-    // should exist
+    // should exist, but different value
     etcd::Response resp = etcd.get("/test/key1\0xyz").get();
     REQUIRE(resp.is_ok());
     CHECK(std::string("42") == resp.value().as_string());
@@ -282,6 +282,11 @@ TEST_CASE("list a directory")
   CHECK(resp.values()[2].is_dir() == 0);
 
   CHECK(0 == etcd.ls("/test/new_dir/key1").get().error_code());
+
+  // list with empty prefix
+  resp = etcd.ls("").get();
+  CHECK(0 == resp.error_code());
+  CHECK(0 < resp.keys().size());
 
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
@@ -383,6 +388,20 @@ TEST_CASE("delete a directory")
   CHECK(!resp.is_ok());
   CHECK(etcd::ERROR_KEY_NOT_FOUND == resp.error_code());
   CHECK("etcd-cpp-apiv3: key not found" == resp.error_message());
+}
+
+TEST_CASE("delete all keys with rmdir(\"\", true)")
+{
+  etcd::Client etcd(etcd_url);
+  etcd.rmdir("", true).wait();
+
+  etcd.set("/test/new_dir/key1", "value1").wait();
+  etcd.set("/test/new_dir/key2", "value2").wait();
+  etcd.set("/test/new_dir/key3", "value3").wait();
+
+  auto resp = etcd.rmdir("", true).get();
+  CHECK(resp.is_ok());
+  CHECK(resp.values().size() == 3);
 }
 
 TEST_CASE("delete by range")

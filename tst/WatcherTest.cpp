@@ -13,8 +13,6 @@ static int watcher_called = 0;
 
 void printResponse(etcd::Response const & resp)
 {
-  ++watcher_called;
-  std::cout << "print response called" << std::endl;
   if (resp.error_code()) {
     std::cout << resp.error_code() << ": " << resp.error_message() << std::endl;
   }
@@ -24,33 +22,37 @@ void printResponse(etcd::Response const & resp)
 
     std::cout << "Events size: " << resp.events().size() << std::endl;
     for (auto const &ev: resp.events()) {
+      if (ev.prev_kv().key().find("/leader") == 0 || ev.kv().key().find("/leader") == 0) {
+        return;
+      }
       std::cout << "Value change in events: " << static_cast<int>(ev.event_type())
                 << ", prev kv = " << ev.prev_kv().key() << " -> " << ev.prev_kv().as_string()
                 << ", kv = " << ev.kv().key() << " -> " << ev.kv().as_string()
                 << std::endl;
     }
   }
+  std::cout << "print response called" << std::endl;
+  ++watcher_called;
 }
 
 TEST_CASE("create watcher with cancel")
 {
-  
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
   watcher_called = 0;
   etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   etcd.set("/test/key", "42");
   etcd.set("/test/key", "43");
   etcd.rm("/test/key");
   etcd.set("/test/key", "44");
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   CHECK(4 == watcher_called);
   watcher.Cancel();
   etcd.set("/test/key", "50");
   etcd.set("/test/key", "51");
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   CHECK(4 == watcher_called);
 
   etcd.rmdir("/test", true);
@@ -63,17 +65,17 @@ TEST_CASE("create watcher on ranges with cancel")
 
   watcher_called = 0;
   etcd::Watcher watcher(etcd_url, "/test/key1", "/test/key5", printResponse);
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   etcd.set("/test/key1", "42");
   etcd.set("/test/key2", "43");
   etcd.rm("/test/key1");
   etcd.set("/test/key5", "44");
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   CHECK(3 == watcher_called);
   watcher.Cancel();
   etcd.set("/test/key3", "50");
   etcd.set("/test/key4", "51");
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   CHECK(3 == watcher_called);
 
   etcd.rmdir("/test", true);
@@ -87,11 +89,11 @@ TEST_CASE("create watcher")
   watcher_called = 0;
   {
     etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     etcd.set("/test/key", "42");
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     etcd.set("/test/key", "43");
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
   }
   CHECK(2 == watcher_called);
   etcd.rmdir("/test", true).error_code();
