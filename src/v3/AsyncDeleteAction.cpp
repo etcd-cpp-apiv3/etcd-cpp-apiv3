@@ -8,19 +8,23 @@ etcdv3::AsyncDeleteAction::AsyncDeleteAction(
   : etcdv3::Action(std::move(params))
 {
   DeleteRangeRequest del_request;
-  del_request.set_key(parameters.key);
-  del_request.set_prev_kv(true);
-  if(parameters.withPrefix)
-  {
+  if (!parameters.withPrefix) {
+    del_request.set_key(parameters.key);
+  } else {
     if (parameters.key.empty()) {
-      del_request.set_range_end(detail::string_plus_one(etcdv3::NUL));
+      // see: WithFromKey in etcdv3/client
+      del_request.set_key(etcdv3::NUL);
+      del_request.set_range_end(etcdv3::NUL);
     } else {
+      del_request.set_key(parameters.key);
       del_request.set_range_end(detail::string_plus_one(parameters.key));
     }
   }
   if(!parameters.range_end.empty()) {
     del_request.set_range_end(parameters.range_end);
   }
+
+  del_request.set_prev_kv(true);
 
   response_reader = parameters.kv_stub->AsyncDeleteRange(&context, del_request, &cq_);
   response_reader->Finish(&reply, &status, (void*)this);

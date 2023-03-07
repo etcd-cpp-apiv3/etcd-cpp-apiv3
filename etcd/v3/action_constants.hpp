@@ -1,6 +1,8 @@
 #ifndef __ETCD_ACTION_CONSTANTS_HPP__
 #define __ETCD_ACTION_CONSTANTS_HPP__
 
+#include <string>
+
 namespace etcdv3
 {
   extern char const * CREATE_ACTION;
@@ -28,7 +30,7 @@ namespace etcdv3
   extern char const * OBSERVE_ACTION;
   extern char const * RESIGN_ACTION;
 
-  extern char const * NUL;
+  extern std::string const NUL;
 
   extern char const * KEEPALIVE_CREATE;
   extern char const * KEEPALIVE_WRITE;

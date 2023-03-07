@@ -188,14 +188,18 @@ namespace etcd
      * Wait util the task has been stopped, actively or passively, e.g., the watcher
      * get cancelled or the server closes the connection.
      *
-     * Returns true if the watcher is been normally cancalled, otherwise false.
+     * Returns true if the watcher is been normally cancelled, otherwise false.
      */
     bool Wait();
 
     /**
      * An async wait, the callback will be called when the task has been stopped.
      *
-     * The callback parameter would be true if the watch is been normally cancalled.
+     * The callback parameter would be true if the watch is been normally cancelled.
+     *
+     * Note that you shouldn't use the watcher itself inside the `Wait()` callback
+     * as the callback will be invoked in a separate **detached** thread where the
+     * watcher may have been destroyed.
      */
     void Wait(std::function<void(bool)> callback);
 
