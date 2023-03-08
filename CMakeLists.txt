@@ -5,7 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
 set(etcd-cpp-api_VERSION_MINOR 2)
-set(etcd-cpp-api_VERSION_PATCH 13)
+set(etcd-cpp-api_VERSION_PATCH 14)
 set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MINOR}.${etcd-cpp-api_VERSION_PATCH})
 set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
 
@@ -134,7 +134,7 @@ else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
     set(GRPC_LIBRARIES ${GPR_LIBRARY} ${GRPC_LIBRARY} ${GRPC_GRPC++_LIBRARY})
 endif()
-message("-- Found GRPC: ${GRPC_LIBRARIES}, ${GRPC_CPP_PLUGIN} (found version: \"${gRPC_VERSION}\")")
+message(STATUS "Found GRPC: ${GRPC_LIBRARIES}, ${GRPC_CPP_PLUGIN} (found version: \"${gRPC_VERSION}\")")
 # avoid use the apt-get installed libgrpc-dev (version v1.13) on Ubuntu 18.04
 if(gRPC_FOUND AND gRPC_VERSION VERSION_LESS "1.14")
     message(FATAL_ERROR "gRPC '${gRPC_VERSION}' is not supported, please install a newer gRPC library "
