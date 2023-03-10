@@ -18,10 +18,10 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(
     watch_create_req.set_key(parameters.key);
   } else {
     if (parameters.key.empty()) {
-      watch_create_req.set_range_end(etcdv3::NUL);
+      watch_create_req.set_key(etcdv3::NUL);
       watch_create_req.set_range_end(etcdv3::NUL);
     } else {
-      watch_create_req.set_range_end(parameters.key);
+      watch_create_req.set_key(parameters.key);
       watch_create_req.set_range_end(detail::string_plus_one(parameters.key));
     }
   }
@@ -76,8 +76,6 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     if (got_tag == (void *)etcdv3::WATCH_FINISH) {
       // shutdown
       cq_.Shutdown();
-      // cancel on-the-fly calls
-      context.TryCancel();
       break;
     }
     if(got_tag == (void*)this) // read tag
@@ -159,8 +157,6 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
     if (got_tag == (void *)etcdv3::WATCH_FINISH) {
       // shutdown
       cq_.Shutdown();
-      // cancel on-the-fly calls
-      context.TryCancel();
       break;
     }
     if(got_tag == (void*)this) // read tag
