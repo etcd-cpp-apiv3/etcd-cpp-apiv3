@@ -4,7 +4,7 @@ project (etcd-cpp-api)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(etcd-cpp-api_VERSION_MAJOR 0)
-set(etcd-cpp-api_VERSION_MINOR 13)
+set(etcd-cpp-api_VERSION_MINOR 14)
 set(etcd-cpp-api_VERSION_PATCH 0)
 set(etcd-cpp-api_VERSION ${etcd-cpp-api_VERSION_MAJOR}.${etcd-cpp-api_VERSION_MINOR}.${etcd-cpp-api_VERSION_PATCH})
 set(CMAKE_PROJECT_HOMEPAGE_URL https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3)
