@@ -31,12 +31,12 @@ etcdv3::AsyncCampaignResponse etcdv3::AsyncCampaignAction::ParseResponse()
 {
   AsyncCampaignResponse campaign_resp;
   campaign_resp.set_action(etcdv3::CAMPAIGN_ACTION);
-  
+
   if(!status.ok()) {
     campaign_resp.set_error_code(status.error_code());
     campaign_resp.set_error_message(status.error_message());
   }
-  else { 
+  else {
     campaign_resp.ParseResponse(reply);
   }
   return campaign_resp;
