@@ -187,7 +187,6 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive()
                 << context.debug_error_string() << std::endl;
     }
 
-    grpc::Status status;
     stream->Finish(&status, (void *)KEEPALIVE_FINISH);
     if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)KEEPALIVE_FINISH) {
       // ok
