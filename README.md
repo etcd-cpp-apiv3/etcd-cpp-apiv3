@@ -884,6 +884,10 @@ pplx::task<Response> resign(std::string const &name, int64_t lease_id,
                             std::string const &key, int64_t revision);
 ```
 
+Note that if grpc timeout is set, `campaign()` will return an timeout error response if it
+cannot acquire the election ownership within the timeout period. Otherwise will block until
+become the leader.
+
 The `Observer` returned by `observe()` can be use to monitor the changes of election ownership.
 The observer stream will be canceled when been destructed.
 
