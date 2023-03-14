@@ -69,7 +69,6 @@ void etcdv3::AsyncWatchAction::waitForResponse()
     }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)
     {
-      grpc::Status status;
       stream->Finish(&status, (void *)etcdv3::WATCH_FINISH);
       continue;
     }
@@ -84,7 +83,6 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         // cancel on-the-fly calls, but don't shutdown the completion queue as there
         // are still a inflight call to finish
         context.TryCancel();
-        // cq_.Shutdown();
         continue;
       }
 
@@ -150,7 +148,6 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
     }
     if(got_tag == (void*)etcdv3::WATCH_WRITES_DONE)
     {
-      grpc::Status status;
       stream->Finish(&status, (void *)etcdv3::WATCH_FINISH);
       continue;
     }
@@ -171,7 +168,6 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
         // cancel on-the-fly calls, but don't shutdown the completion queue as there
         // are still a inflight call to finish
         context.TryCancel();
-        // cq_.Shutdown();
         continue;
       }
 
