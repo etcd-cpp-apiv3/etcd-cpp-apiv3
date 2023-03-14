@@ -146,14 +146,14 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
         break;
       }
       case CompletionQueue::NextStatus::GOT_EVENT: {
-        if (!ok || got_tag != (void *)etcdv3::KEEPALIVE_READ) {
-          return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: read not ok or invalid tag");
+        if (ok && got_tag == (void *)etcdv3::KEEPALIVE_READ) {
+          return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
         }
         break;
       }
     }
     this->CancelKeepAlive();
-    return etcd::Response(ParseResponse(), etcd::detail::duration_till_now(start_timepoint));
+    return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: read not ok or invalid tag");
   } else {
     stream->Write(leasekeepalive_request, (void *)etcdv3::KEEPALIVE_WRITE);
     // wait write finish
@@ -165,7 +165,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh()
       }
     }
     this->CancelKeepAlive();
-    return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection");
+    return etcd::Response(grpc::StatusCode::ABORTED, "Failed to create a lease keep-alive connection: read not ok or invalid tag");
   }
 }
 
