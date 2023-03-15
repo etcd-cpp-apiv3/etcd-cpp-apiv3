@@ -51,7 +51,7 @@ i.e., `ETCDCTL_API=3`.
 
          brew install grpc protobuf
 
-   + When building grpc from source code (e.g., on [Ubuntu 18.04][https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/build-test.yml#L73]
+   + When building grpc from source code (e.g., on [Ubuntu 18.04](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/build-test.yml#L73)
      and on [CentOS](https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/blob/master/.github/workflows/centos-latest.yml#L44-L67)),
      if the system-installed openssl is preferred, you need to add `-DgRPC_SSL_PROVIDER=package`
      when building gRPC with CMake.
