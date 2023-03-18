@@ -27,6 +27,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(BUILD_SHARED_LIBS "Build etcd-cpp-apiv3 shared libraries" ON)
+option(BUILD_ETCD_CORE_ONLY "Build etcd-cpp-apiv3 core library (the synchronous runtime) only" OFF)
 option(BUILD_ETCD_TESTS "Build etcd-cpp-apiv3 test cases" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build etcd-cpp-apiv3 with -fPIC" ON)
 option(ETCD_W_STRICT "Build etcd-cpp-apiv3 with -Werror" ON)
@@ -116,14 +117,6 @@ if(Protobuf_PROTOC_EXECUTABLE)
         endif()
     endif()
 endif()
-find_package(cpprestsdk QUIET)
-if(cpprestsdk_FOUND)
-    set(CPPREST_INCLUDE_DIR)
-    set(CPPREST_LIB cpprestsdk::cpprest)
-else()
-    find_library(CPPREST_LIB NAMES cpprest)
-    find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
-endif()
 
 find_package(gRPC QUIET)
 if(gRPC_FOUND)
@@ -152,6 +145,27 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
+# test cases requires the async runtime
+if(BUILD_ETCD_TESTS)
+    message(STATUS "Building etcd-cpp-apiv3 with tests requires the async runtime, "
+                   "setting BUILD_ETCD_CORE_ONLY to ON ...")
+    set(BUILD_ETCD_CORE_ONLY ON)
+endif()
+
+if (NOT BUILD_ETCD_CORE_ONLY)
+    find_package(cpprestsdk QUIET)
+    if(cpprestsdk_FOUND)
+        set(CPPREST_INCLUDE_DIR)
+        set(CPPREST_LIB cpprestsdk::cpprest)
+    else()
+        find_library(CPPREST_LIB NAMES cpprest)
+        find_path(CPPREST_INCLUDE_DIR NAMES cpprest/http_client.h)
+    endif()
+else()
+    set(CPPREST_INCLUDE_DIR)
+    set(CPPREST_LIB)
+endif()
+
 include_directories(SYSTEM ${Boost_INCLUDE_DIR}
                            ${CPPREST_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
@@ -178,16 +192,19 @@ if(BUILD_ETCD_TESTS)
   add_subdirectory(tst)
 endif()
 
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/KeepAlive.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/SyncClient.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
-               DESTINATION include/etcd)
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/action_constants.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
-               DESTINATION include/etcd/v3)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/KeepAlive.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/SyncClient.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
+              DESTINATION include/etcd)
+if(NOT BUILD_ETCD_CORE_ONLY)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
+                  DESTINATION include/etcd)
+endif()
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/action_constants.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
+              DESTINATION include/etcd/v3)
 
 configure_file(etcd-cpp-api-config.in.cmake
                "${PROJECT_BINARY_DIR}/etcd-cpp-api-config.cmake" @ONLY
@@ -250,7 +267,7 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcpprest-dev,
                                   libgrpc++-dev,
                                   libssl-dev")
 
-set(CPACK_DEBIAN_PACKAGE_UPSTREAM_COPYRIGHT_YEAR 2016-2021)
+set(CPACK_DEBIAN_PACKAGE_UPSTREAM_COPYRIGHT_YEAR 2016-2023)
 set(CPACK_DEBIAN_PACKAGE_LICENSE bsd)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Tao He <sighingnow@gmail.com>")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/")
@@ -267,8 +284,8 @@ set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER_PREFIX "")
 set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER 0)
 
 set(CPACK_DEBIAN_PACKAGE_DISTRIBUTION "focal")
-set(DPUT_HOST "ppa:graphscope/etcd-cpp-api")
-set(DPUT_SNAPSHOT_HOST "ppa:graphscope/etcd-cpp-api")
+set(DPUT_HOST "ppa:etcd-cpp-apiv3/etcd-cpp-api")
+set(DPUT_SNAPSHOT_HOST "ppa:etcd-cpp-apiv3/etcd-cpp-api")
 
 find_program(DEBUILD_EXECUTABLE debuild)
 find_program(DPUT_EXECUTABLE dput)
