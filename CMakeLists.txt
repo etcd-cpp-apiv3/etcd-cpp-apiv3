@@ -149,7 +149,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 if(BUILD_ETCD_TESTS)
     message(STATUS "Building etcd-cpp-apiv3 with tests requires the async runtime, "
                    "setting BUILD_ETCD_CORE_ONLY to ON ...")
-    set(BUILD_ETCD_CORE_ONLY ON)
+    set(BUILD_ETCD_CORE_ONLY OFF)
 endif()
 
 if (NOT BUILD_ETCD_CORE_ONLY)
