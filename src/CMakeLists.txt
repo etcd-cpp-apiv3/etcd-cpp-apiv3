@@ -28,29 +28,39 @@ target_link_libraries(etcd-cpp-api-core-objects PUBLIC
                       ${GRPC_LIBRARIES}
 )
 
-# add the core library, includes the sycnhronous client only
-add_library(etcd-cpp-api-core $<TARGET_OBJECTS:etcd-cpp-api-core-objects>)
-use_cxx(etcd-cpp-api-core)
-target_link_libraries(etcd-cpp-api-core PUBLIC
-                      ${Boost_LIBRARIES}
-                      ${PROTOBUF_LIBRARIES}
-                      ${OPENSSL_LIBRARIES}
-                      ${GRPC_LIBRARIES}
-)
-include_generated_protobuf_files(etcd-cpp-api-core)
+if(BUILD_ETCD_CORE_ONLY)
+    # add the core library, includes the sycnhronous client only
+    add_library(etcd-cpp-api-core $<TARGET_OBJECTS:etcd-cpp-api-core-objects>)
+    use_cxx(etcd-cpp-api-core)
+    target_link_libraries(etcd-cpp-api-core PUBLIC
+                         ${Boost_LIBRARIES}
+                         ${PROTOBUF_LIBRARIES}
+                         ${OPENSSL_LIBRARIES}
+                         ${GRPC_LIBRARIES}
+    )
+    include_generated_protobuf_files(etcd-cpp-api-core)
+else()
+    # add the client with asynchronus client
+    add_library(etcd-cpp-api $<TARGET_OBJECTS:etcd-cpp-api-core-objects>
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp")
+    use_cxx(etcd-cpp-api)
+    target_link_libraries(etcd-cpp-api PUBLIC
+                          ${Boost_LIBRARIES}
+                          ${CPPREST_LIB}  # n.b.: the asynchronous client requires pplx in cpprestsdk
+                          ${PROTOBUF_LIBRARIES}
+                          ${OPENSSL_LIBRARIES}
+                          ${GRPC_LIBRARIES}
+    )
+    include_generated_protobuf_files(etcd-cpp-api)
+endif()
 
-# add the client with asynchronus client
-add_library(etcd-cpp-api $<TARGET_OBJECTS:etcd-cpp-api-core-objects>
-                         "${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp")
-use_cxx(etcd-cpp-api)
-target_link_libraries(etcd-cpp-api PUBLIC
-                      ${Boost_LIBRARIES}
-                      ${CPPREST_LIB}  # n.b.: the asynchronous client requires pplx in cpprestsdk
-                      ${PROTOBUF_LIBRARIES}
-                      ${OPENSSL_LIBRARIES}
-                      ${GRPC_LIBRARIES}
-)
-include_generated_protobuf_files(etcd-cpp-api)
+if(BUILD_ETCD_CORE_ONLY)
+    add_library(etcd-cpp-api INTERFACE)
+    target_link_libraries(etcd-cpp-api INTERFACE etcd-cpp-api-core)
+else()
+    add_library(etcd-cpp-api-core INTERFACE)
+    target_link_libraries(etcd-cpp-api-core INTERFACE etcd-cpp-api)
+endif()
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.14")
     install(TARGETS etcd-cpp-api-core etcd-cpp-api
