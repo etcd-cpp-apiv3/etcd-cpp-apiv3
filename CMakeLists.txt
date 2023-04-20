@@ -119,7 +119,7 @@ if(Protobuf_PROTOC_EXECUTABLE)
 endif()
 
 find_package(gRPC QUIET)
-if(gRPC_FOUND)
+if(gRPC_FOUND AND TARGET gRPC::grpc AND TARGET gRPC::grpc_cpp_plugin)
     set(GRPC_LIBRARIES gRPC::gpr gRPC::grpc gRPC::grpc++)
     get_target_property(GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin LOCATION)
     get_target_property(GRPC_INCLUDE_DIR gRPC::grpc INTERFACE_INCLUDE_DIRECTORIES)
