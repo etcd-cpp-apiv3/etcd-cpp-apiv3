@@ -145,7 +145,6 @@ TEST_CASE("watch should exit normally")
 
 TEST_CASE("watch should can be cancelled repeatedly")
 {
-  // cancel immediately after start watch.
   etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   std::vector<std::thread> threads(10);
   for (size_t i = 0; i < 10; ++i) {
@@ -155,6 +154,40 @@ TEST_CASE("watch should can be cancelled repeatedly")
   }
   for (size_t i = 0; i < 10; ++i) {
     threads[i].join();
+  }
+}
+
+TEST_CASE("watch changes on the same key (#212)")
+{
+  std::string key_watch = "key watch";
+  etcd::SyncClient client(etcd_url);
+  client.put(key_watch, "inittt");
+
+  auto current_index = client.head().index();
+  std::cout << "Current index " << current_index << std::endl;
+  auto internal_cb = [&](etcd::Response resp) -> void {
+      if (!resp.is_ok()) {
+        std::cout << "Error: " << resp.error_message() << std::endl;
+        return;
+      }
+      for (auto const &event: resp.events()) {
+        std::cout << "Watch '" << event.kv().key()
+                  << "'. ModifedRevision : " <<  event.kv().modified_index()
+                  << "', Vision : " <<  event.kv().version()
+                  << ", value = " << event.kv().as_string() << std::endl;
+      }
+  };
+  auto wait_cb =  [&](bool) {};
+  etcd::Watcher w(client, key_watch, current_index,
+                                        std::move(internal_cb),
+                                        std::move(wait_cb),
+                                        false);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  for (int i = 0; i < 10; ) {
+    std::string value = "watch_" + std::to_string(i++);
+    client.put(key_watch, value);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 
