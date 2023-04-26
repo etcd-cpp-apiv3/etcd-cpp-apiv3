@@ -244,6 +244,13 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const & key)
     this->client->get_internal(key));
 }
 
+pplx::task<etcd::Response> etcd::Client::get(std::string const & key, int64_t revision)
+{
+  return etcd::detail::asyncify(
+    static_cast<etcd::responser_t<etcdv3::AsyncRangeAction>>(Response::create),
+    this->client->get_internal(key, revision));
+}
+
 pplx::task<etcd::Response> etcd::Client::set(std::string const & key, std::string const & value, int ttl)
 {
   if (ttl > 0) {
@@ -439,6 +446,13 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t cons
       this->client->ls_internal(key, limit));
 }
 
+pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, size_t const limit, int64_t revision)
+{
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
+      this->client->ls_internal(key, limit, false, revision));
+}
+
 pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end)
 {
   return etcd::detail::asyncify(
@@ -451,6 +465,13 @@ pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
       this->client->ls_internal(key, range_end, limit));
+}
+
+pplx::task<etcd::Response> etcd::Client::ls(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision)
+{
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
+      this->client->ls_internal(key, range_end, limit, false, revision));
 }
 
 pplx::task<etcd::Response> etcd::Client::keys(std::string const & key)
@@ -467,6 +488,13 @@ pplx::task<etcd::Response> etcd::Client::keys(std::string const & key, size_t co
       this->client->ls_internal(key, limit, true));
 }
 
+pplx::task<etcd::Response> etcd::Client::keys(std::string const & key, size_t const limit, int64_t revision)
+{
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
+      this->client->ls_internal(key, limit, true, revision));
+}
+
 pplx::task<etcd::Response> etcd::Client::keys(std::string const & key, std::string const &range_end)
 {
   return etcd::detail::asyncify(
@@ -479,6 +507,13 @@ pplx::task<etcd::Response> etcd::Client::keys(std::string const & key, std::stri
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
       this->client->ls_internal(key, range_end, limit, true));
+}
+
+pplx::task<etcd::Response> etcd::Client::keys(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision)
+{
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncRangeAction>>(Response::create),
+      this->client->ls_internal(key, range_end, limit, true, revision));
 }
 
 pplx::task<etcd::Response> etcd::Client::watch(std::string const & key, bool recursive)

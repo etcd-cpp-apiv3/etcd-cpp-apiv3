@@ -35,8 +35,8 @@ namespace etcdv3
   {
     ActionParameters();
     bool withPrefix;
-    int64_t revision;
-    int64_t old_revision;
+    int64_t revision = 0;
+    int64_t old_revision = 0;
     int64_t lease_id = 0;  // no lease
     int ttl;
     int limit;

@@ -57,11 +57,24 @@ TEST_CASE("simplified read")
 TEST_CASE("modify a key")
 {
   etcd::Client etcd(etcd_url);
-  etcd::Response resp = etcd.modify("/test/key1", "43").get();
+
+  // get
+  etcd::Response resp = etcd.get("/test/key1").get();
+  REQUIRE(resp.is_ok());
+  int64_t revision = resp.value().modified_index();
+  CHECK("42" == resp.value().as_string());
+
+  // modify
+  resp = etcd.modify("/test/key1", "43").get();
   REQUIRE(0 == resp.error_code()); // overwrite
   CHECK("update" == resp.action());
   CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.modify("/test/key2", "43").get().error_code()); // Key not found
   CHECK("43" == etcd.modify("/test/key1", "42").get().prev_value().as_string());
+
+  // check previous
+  resp = etcd.get("/test/key1", revision).get();
+  REQUIRE(resp.is_ok());
+  CHECK("42" == resp.value().as_string());
 }
 
 TEST_CASE("set a key")
