@@ -482,10 +482,15 @@ etcd::Response etcd::SyncClient::get(std::string const &key) {
   return Response::create(this->get_internal(key));
 }
 
-std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::get_internal(std::string const & key)
+etcd::Response etcd::SyncClient::get(std::string const &key, int64_t revision) {
+  return Response::create(this->get_internal(key, revision));
+}
+
+std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::get_internal(std::string const & key, int64_t revision)
 {
   etcdv3::ActionParameters params;
   params.key.assign(key);
+  params.revision = revision;
   params.withPrefix = false;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.grpc_timeout = this->grpc_timeout;
@@ -756,6 +761,11 @@ etcd::Response etcd::SyncClient::ls(std::string const & key, size_t const limit)
   return Response::create(this->ls_internal(key, limit));
 }
 
+etcd::Response etcd::SyncClient::ls(std::string const & key, size_t const limit, int64_t revision)
+{
+  return Response::create(this->ls_internal(key, limit, false, revision));
+}
+
 etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end)
 {
   return Response::create(this->ls_internal(key, range_end, 0 /* default: no limit */));
@@ -764,6 +774,11 @@ etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &
 etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end, size_t const limit)
 {
   return Response::create(this->ls_internal(key, range_end, limit));
+}
+
+etcd::Response etcd::SyncClient::ls(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision)
+{
+  return Response::create(this->ls_internal(key, range_end, limit, false, revision));
 }
 
 etcd::Response etcd::SyncClient::keys(std::string const & key)
@@ -776,6 +791,11 @@ etcd::Response etcd::SyncClient::keys(std::string const & key, size_t const limi
   return Response::create(this->ls_internal(key, limit, true));
 }
 
+etcd::Response etcd::SyncClient::keys(std::string const & key, size_t const limit, int64_t revision)
+{
+  return Response::create(this->ls_internal(key, limit, true, revision));
+}
+
 etcd::Response etcd::SyncClient::keys(std::string const & key, std::string const &range_end)
 {
   return Response::create(this->ls_internal(key, range_end, 0 /* default: no limit */, true));
@@ -786,25 +806,32 @@ etcd::Response etcd::SyncClient::keys(std::string const & key, std::string const
   return Response::create(this->ls_internal(key, range_end, limit, true));
 }
 
-std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, size_t const limit, bool const keys_only) {
+etcd::Response etcd::SyncClient::keys(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision)
+{
+  return Response::create(this->ls_internal(key, range_end, limit, true, revision));
+}
+
+std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, size_t const limit, bool const keys_only, int64_t revision) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.keys_only = keys_only;
   params.withPrefix = true;
   params.limit = limit;
+  params.revision = revision;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
   return std::make_shared<etcdv3::AsyncRangeAction>(std::move(params));
 }
 
-std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only) {
+std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only, int64_t revision) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.range_end.assign(range_end);
   params.keys_only = keys_only;
   params.withPrefix = false;
   params.limit = limit;
+  params.revision = revision;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();

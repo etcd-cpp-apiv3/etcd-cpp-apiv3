@@ -260,6 +260,13 @@ namespace etcd
     pplx::task<Response> get(std::string const & key);
 
     /**
+     * Get the value of specified key of specified revision from the etcd server
+     * @param key is the key to be read
+     * @param revision is the revision of the key to be read
+     */
+    pplx::task<Response> get(std::string const & key, int64_t revision);
+
+    /**
      * Sets the value of a key. The key will be modified if already exists or created
      * if it does not exists.
      * @param key is the key to be created or modified
@@ -410,9 +417,19 @@ namespace etcd
      *
      * @param key is the key to be listed
      * @param limit is the size limit of results to be listed, we don't use default parameters
-     *        to ensure backwards binary compatibility.
+     *        to ensure backwards binary compatibility. 0 means no limit.
      */
     pplx::task<Response> ls(std::string const & key, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key with given revision.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility. 0 means no limit.
+     * @param revision is the revision to be listed
+     */
+    pplx::task<Response> ls(std::string const & key, size_t const limit, int64_t revision);
 
     /**
      * Gets a directory listing of the directory identified by the key and range_end, i.e., get
@@ -435,6 +452,18 @@ namespace etcd
     pplx::task<Response> ls(std::string const & key, std::string const &range_end, size_t const limit);
 
     /**
+     * Gets a directory listing of the directory identified by the key and range_end, i.e., get
+     * all keys in the range [key, range_end), and respects the given limit and revision.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     * @param revision is the revision to be listed
+     */
+    pplx::task<Response> ls(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision);
+
+    /**
      * Gets a directory listing of the directory prefixed by the key.
      *
      * Note that only keys are included in the response.
@@ -453,6 +482,18 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     pplx::task<Response> keys(std::string const & key, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     * @param revision is the revision to be listed
+     */
+    pplx::task<Response> keys(std::string const & key, size_t const limit, int64_t revision);
 
     /**
      * List keys identified by the key and range_end, i.e., get all keys in the range [key,
@@ -477,6 +518,20 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     pplx::task<Response> keys(std::string const & key, std::string const &range_end, size_t const limit);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end).
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     * @param revision is the revision to be listed
+     */
+    pplx::task<Response> keys(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and

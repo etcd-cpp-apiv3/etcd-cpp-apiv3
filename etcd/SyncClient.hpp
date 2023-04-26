@@ -317,6 +317,13 @@ namespace etcd
     Response get(std::string const & key);
 
     /**
+     * Get the value of specified key of specified revision from the etcd server
+     * @param key is the key to be read
+     * @param revision is the revision of the key to be read
+     */
+    Response get(std::string const & key, int64_t revision);
+
+    /**
      * Sets the value of a key. The key will be modified if already exists or created
      * if it does not exists.
      * @param key is the key to be created or modified
@@ -466,9 +473,19 @@ namespace etcd
      *
      * @param key is the key to be listed
      * @param limit is the size limit of results to be listed, we don't use default parameters
-     *        to ensure backwards binary compatibility.
+     *        to ensure backwards binary compatibility. 0 means no limit.
      */
     Response ls(std::string const & key, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key with given revision.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility. 0 means no limit.
+     * @param revision is the revision to be listed
+     */
+    Response ls(std::string const & key, size_t const limit, int64_t revision);
 
     /**
      * Gets a directory listing of the directory identified by the key and range_end, i.e., get
@@ -486,9 +503,21 @@ namespace etcd
      * @param key is the key to be listed
      * @param range_end is the end of key range to be listed
      * @param limit is the size limit of results to be listed, we don't use default parameters
-     *        to ensure backwards binary compatibility.
+     *        to ensure backwards binary compatibility. 0 means no limit.
      */
     Response ls(std::string const & key, std::string const &range_end, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory identified by the key and range_end, i.e., get
+     * all keys in the range [key, range_end), and respects the given limit and revision.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility. 0 means no limit.
+     * @param revision is the revision to be listed
+     */
+    Response ls(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision);
 
     /**
      * Gets a directory listing of the directory prefixed by the key.
@@ -509,6 +538,18 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     Response keys(std::string const & key, size_t const limit);
+
+    /**
+     * Gets a directory listing of the directory prefixed by the key with specified revision.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     * @param revision is the revision to be listed
+     */
+    Response keys(std::string const & key, size_t const limit, int64_t revision);
 
     /**
      * List keys identified by the key and range_end, i.e., get all keys in the range [key,
@@ -533,6 +574,20 @@ namespace etcd
      *        to ensure backwards binary compatibility.
      */
     Response keys(std::string const & key, std::string const &range_end, size_t const limit);
+
+    /**
+     * List keys identified by the key and range_end, i.e., get all keys in the range [key,
+     * range_end), and respects the given limit and revision.
+     *
+     * Note that only keys are included in the response.
+     *
+     * @param key is the key to be listed
+     * @param range_end is the end of key range to be listed
+     * @param limit is the size limit of results to be listed, we don't use default parameters
+     *        to ensure backwards binary compatibility.
+     * @param revision is the revision to be listed
+     */
+    Response keys(std::string const & key, std::string const &range_end, size_t const limit, int64_t revision);
 
     /**
      * Watches for changes of a key or a subtree. Please note that if you watch e.g. "/testdir" and
@@ -721,7 +776,7 @@ namespace etcd
   private:
     // TODO: use std::unique_ptr<>
     std::shared_ptr<etcdv3::AsyncHeadAction> head_internal();
-    std::shared_ptr<etcdv3::AsyncRangeAction> get_internal(std::string const & key);
+    std::shared_ptr<etcdv3::AsyncRangeAction> get_internal(std::string const & key, int64_t revision=0);
     std::shared_ptr<etcdv3::AsyncSetAction> set_internal(std::string const & key, std::string const & value, int64_t leaseId);
     std::shared_ptr<etcdv3::AsyncSetAction> add_internal(std::string const & key, std::string const & value, int64_t leaseId);
     std::shared_ptr<etcdv3::AsyncPutAction> put_internal(std::string const & key, std::string const & value);
@@ -731,8 +786,8 @@ namespace etcd
     std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> rm_if_internal(std::string const & key, int64_t old_index, const std::string & old_value, etcdv3::AtomicityType const & atomicity_type);
     std::shared_ptr<etcdv3::AsyncDeleteAction> rmdir_internal(std::string const & key, bool recursive = false);
     std::shared_ptr<etcdv3::AsyncDeleteAction> rmdir_internal(std::string const & key, std::string const &range_end);
-    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, size_t const limit, bool const keys_only = false);
-    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only = false);
+    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, size_t const limit, bool const keys_only = false, int64_t revision=0);
+    std::shared_ptr<etcdv3::AsyncRangeAction> ls_internal(std::string const & key, std::string const &range_end, size_t const limit, bool const keys_only = false, int64_t revision=0);
     std::shared_ptr<etcdv3::AsyncWatchAction> watch_internal(std::string const & key, int64_t fromIndex, bool recursive = false);
     std::shared_ptr<etcdv3::AsyncWatchAction> watch_internal(std::string const & key, std::string const &range_end, int64_t fromIndex);
     std::shared_ptr<etcdv3::AsyncLeaseRevokeAction> leaserevoke_internal(int64_t lease_id);

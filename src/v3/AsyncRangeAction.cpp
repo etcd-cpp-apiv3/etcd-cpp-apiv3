@@ -26,6 +26,9 @@ etcdv3::AsyncRangeAction::AsyncRangeAction(
   if(!parameters.range_end.empty()) {
     get_request.set_range_end(parameters.range_end);
   }
+  if(parameters.revision > 0) {
+    get_request.set_revision(parameters.revision);
+  }
 
   get_request.set_limit(parameters.limit);
   get_request.set_sort_order(RangeRequest::SortOrder::RangeRequest_SortOrder_NONE);
