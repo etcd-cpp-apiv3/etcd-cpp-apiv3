@@ -88,7 +88,6 @@ macro(use_cxx target)
     endif()
 endmacro(use_cxx)
 
-find_package(Boost REQUIRED COMPONENTS system thread random)
 if(APPLE)
     # If we're on OS X check for Homebrew's copy of OpenSSL instead of Apple's
     if(NOT OpenSSL_DIR)
@@ -166,8 +165,7 @@ else()
     set(CPPREST_LIB)
 endif()
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIR}
-                           ${CPPREST_INCLUDE_DIR}
+include_directories(SYSTEM ${CPPREST_INCLUDE_DIR}
                            ${PROTOBUF_INCLUDE_DIRS}
                            ${GRPC_INCLUDE_DIR}
                            ${OPENSSL_INCLUDE_DIR})

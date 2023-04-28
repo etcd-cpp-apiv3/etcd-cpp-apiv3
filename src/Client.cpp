@@ -28,8 +28,6 @@
 #include <thread>
 #include <utility>
 
-#include <boost/algorithm/string.hpp>
-
 #include <grpc++/grpc++.h>
 #include <grpc++/security/credentials.h>
 #include "proto/rpc.grpc.pb.h"

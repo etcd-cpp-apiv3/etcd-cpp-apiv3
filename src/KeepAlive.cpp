@@ -37,15 +37,14 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client, int ttl, int64_t lease_id):
   continue_next.store(true);
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
-  task_ = std::thread([this]() {
+  refresh_task_ = std::thread([this]() {
     try {
       // start refresh
       this->refresh();
-      context.run();
-    } catch (...) {
+    } catch (const std::exception &e) {
+      // propagate the exception
       eptr_ = std::current_exception();
     }
-    context.stop();  // clean up
   });
 }
 
@@ -84,14 +83,11 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client,
   params.lease_stub = stubs->leaseServiceStub.get();
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
-  task_ = std::thread([this]() {
+  refresh_task_ = std::thread([this]() {
     try {
       // start refresh
       this->refresh();
-      context.run();
     } catch (...) {
-      // run canceller first
-      this->Cancel();
       // propogate the exception
       eptr_ = std::current_exception();
       if (handler_) {
@@ -117,23 +113,23 @@ etcd::KeepAlive::KeepAlive(std::string const & address,
 etcd::KeepAlive::~KeepAlive()
 {
   this->Cancel();
-  // clean up
-  if (task_.joinable()) {
-    task_.join();
-  }
 }
 
 void etcd::KeepAlive::Cancel()
 {
-  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.exchange(false)) {
     return;
   }
-  stubs->call->CancelKeepAlive();
-  if (keepalive_timer_) {
-    keepalive_timer_->cancel();
+
+  // stop the thread
+  cv_for_refresh_.notify_all();
+  refresh_task_.join();
+
+  // send a cancel request
+  {
+    std::lock_guard<std::mutex> lock(mutex_for_refresh_);
+    stubs->call->CancelKeepAlive();
   }
-  context.stop();
 }
 
 void etcd::KeepAlive::Check() {
@@ -147,7 +143,7 @@ void etcd::KeepAlive::Check() {
     // run canceller first
     this->Cancel();
 
-    // propogate the exception, as we throw in `Check()`, the `handler` won't be touched
+    // propagate the exception, as we throw in `Check()`, the `handler` won't be touched
     eptr_ = std::current_exception();
     if (handler_) {
       handler_(eptr_);
@@ -160,32 +156,27 @@ void etcd::KeepAlive::Check() {
 
 void etcd::KeepAlive::refresh()
 {
-  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
-  if (!continue_next.load()) {
-    return;
-  }
-  // minimal resolution: 1 second
-  int keepalive_ttl = std::max(ttl - 1, 1);
-  keepalive_timer_.reset(new boost::asio::steady_timer(context, std::chrono::seconds(keepalive_ttl)));
-  keepalive_timer_->async_wait([this](const boost::system::error_code& error) {
-    if (error) {
-#ifndef NDEBUG
-      std::cerr << "keepalive timer cancelled: " << error << ", " << error.message() << std::endl;
-#endif
-    } else {
-      if (this->continue_next.load()) {
-        // execute refresh
-        this->refresh_once();
-        // trigger the next round;
-        this->refresh();
+  while (true) {
+    if (!continue_next.load()) {
+      return;
+    }
+    // minimal resolution: 1 second
+    int keepalive_ttl = std::max(ttl - 1, 1);
+    {
+      std::unique_lock<std::mutex> lock(mutex_for_refresh_);
+      if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) == std::cv_status::no_timeout) {
+        return;
       }
     }
-  });
+
+    // execute refresh
+    this->refresh_once();
+  }
 }
 
 void etcd::KeepAlive::refresh_once()
 {
-  std::lock_guard<std::recursive_mutex> scope_lock(mutex_for_refresh_);
+  std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.load()) {
     return;
   }
