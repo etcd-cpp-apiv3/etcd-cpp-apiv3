@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <exception>
 #include <functional>
 #include <mutex>
@@ -11,14 +12,6 @@
 
 #include "etcd/SyncClient.hpp"
 #include "etcd/Response.hpp"
-
-#include <boost/config.hpp>
-#if BOOST_VERSION >= 106600
-#include <boost/asio/io_context.hpp>
-#else
-#include <boost/asio/io_service.hpp>
-#endif
-#include <boost/asio/steady_timer.hpp>
 
 namespace etcd
 {
@@ -117,24 +110,18 @@ namespace etcd
 
     // Don't use `pplx::task` to avoid sharing thread pool with other actions on the client
     // to avoid any potential blocking, which may block the keepalive loop and evict the lease.
-    std::thread task_;
+    std::thread refresh_task_;
 
     int ttl;
     int64_t lease_id;
 
     // protect the initializing status of `timer`.
-    std::recursive_mutex mutex_for_refresh_;
+    std::mutex mutex_for_refresh_;
+    std::condition_variable cv_for_refresh_;
     std::atomic_bool continue_next;
 
     // grpc timeout in `refresh()`
     mutable std::chrono::microseconds grpc_timeout = std::chrono::microseconds::zero();
-
-#if BOOST_VERSION >= 106600
-    boost::asio::io_context context;
-#else
-    boost::asio::io_service context;
-#endif
-    std::unique_ptr<boost::asio::steady_timer> keepalive_timer_;
   };
 }
 

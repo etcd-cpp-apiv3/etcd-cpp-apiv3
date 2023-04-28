@@ -28,7 +28,7 @@ i.e., `ETCDCTL_API=3`.
 
 ## Requirements
 
-1. boost and openssl
+1. boost and openssl (**Note that boost is only required if you need the asynchronous runtime**)
 
    + On Ubuntu, above requirement could be installed as:
 

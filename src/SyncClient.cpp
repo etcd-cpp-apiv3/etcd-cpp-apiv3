@@ -29,8 +29,6 @@
 #include <thread>
 #include <utility>
 
-#include <boost/algorithm/string.hpp>
-
 #include <grpc++/grpc++.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/status_code_enum.h>
@@ -69,6 +67,32 @@
 namespace etcd {
 namespace detail {
 
+static void string_split(std::vector<std::string> &dests, std::string const &src, std::string const &seps) {
+  dests.clear();
+  std::string::const_iterator start = src.begin();
+  std::string::const_iterator end = src.end();
+  std::string::const_iterator next = std::find_first_of(start, end, seps.begin(), seps.end());
+  while (next != end) {
+      dests.push_back(std::string(start, next));
+      start = next + 1;
+      next = std::find_first_of(start, end, seps.begin(), seps.end());
+  }
+  if (start != end) {
+    dests.push_back(std::string(start, end));
+  }
+}
+
+static std::string string_join(std::vector<std::string> const &srcs, std::string const sep) {
+  std::stringstream ss;
+  if (!srcs.empty()) {
+    ss << srcs[0];
+    for (size_t i = 1; i < srcs.size(); ++i) {
+      ss << sep << srcs[i];
+    }
+  }
+  return ss.str();
+}
+
 static bool dns_resolve(std::string const &target, std::vector<std::string> &endpoints) {
   struct addrinfo hints = {}, *addrs;
   hints.ai_family = AF_INET;
@@ -76,7 +100,7 @@ static bool dns_resolve(std::string const &target, std::vector<std::string> &end
   hints.ai_protocol = IPPROTO_TCP;
 
   std::vector<std::string> target_parts;
-  boost::split(target_parts, target, boost::is_any_of(":"));
+  string_split(target_parts, target, ":");
   if (target_parts.size() != 2) {
     std::cerr << "warn: invalid URL: " << target << std::endl;
     return false;
@@ -116,7 +140,7 @@ static bool dns_resolve(std::string const &target, std::vector<std::string> &end
 
 const std::string strip_and_resolve_addresses(std::string const &address) {
   std::vector<std::string> addresses;
-  boost::algorithm::split(addresses, address, boost::algorithm::is_any_of(",;"));
+  string_split(addresses, address, ",;");
   std::string stripped_address;
   {
     std::vector<std::string> stripped_addresses;
@@ -126,7 +150,7 @@ const std::string strip_and_resolve_addresses(std::string const &address) {
       std::string target = idx == std::string::npos ? addr : addr.substr(idx + substr.length());
       etcd::detail::dns_resolve(target, stripped_addresses);
     }
-    stripped_address = boost::algorithm::join(stripped_addresses, ",");
+    stripped_address = string_join(stripped_addresses, ",");
   }
   return "ipv4:///" + stripped_address;
 }

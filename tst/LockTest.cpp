@@ -205,6 +205,7 @@ TEST_CASE("concurrent lock & unlock")
   constexpr size_t trials = 192;
 
   std::function<void(std::string const &, const size_t)> locker = [&etcd](std::string const &key, const size_t index) {
+    std::cout << "start lock for " << key << ", index is " << index << std::endl;
     auto resp = etcd.lock(key).get();
     std::cout << "lock for " << index << " is ok, starts sleeping: ..." << resp.error_message() << std::endl << std::flush;
     REQUIRE(resp.is_ok());
