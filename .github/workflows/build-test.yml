@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-10.15, macos-11, macos-12]
+        os: [ubuntu-20.04, ubuntu-22.04, macos-11, macos-12]
         etcd: [v3.2.26, v3.3.11, v3.4.13, v3.5.7]
         exclude:
           - os: ubuntu-20.04
@@ -31,13 +31,6 @@ jobs:
             etcd: v3.3.11
           - os: ubuntu-22.04
             etcd: v3.5.7
-
-          - os: macos-10.15
-            etcd: v3.2.26
-          - os: macos-10.15
-            etcd: v3.3.11
-          - os: macos-10.15
-            etcd: v3.4.13
 
           - os: macos-11
             etcd: v3.2.26

@@ -2,7 +2,7 @@
 #include <ratio>
 
 #include "etcd/KeepAlive.hpp"
-#include "etcd/v3/AsyncLeaseAction.hpp"
+#include "etcd/v3/AsyncGRPC.hpp"
 
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
