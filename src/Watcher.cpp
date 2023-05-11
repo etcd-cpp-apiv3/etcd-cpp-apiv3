@@ -2,7 +2,7 @@
 
 #include "etcd/SyncClient.hpp"
 
-#include "etcd/v3/AsyncWatchAction.hpp"
+#include "etcd/v3/AsyncGRPC.hpp"
 
 struct etcd::Watcher::EtcdServerStubs {
   std::unique_ptr<Watch::Stub> watchServiceStub;
