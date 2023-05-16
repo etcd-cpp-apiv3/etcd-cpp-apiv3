@@ -26,6 +26,9 @@ namespace etcdv3
     etcdv3::KeyValue const & get_prev_value() const;
     bool has_values() const;
     int64_t get_compact_revision() const;
+    void set_compact_revision(const int64_t compact_revision);
+    int64_t get_watch_id() const;
+    void set_watch_id(const int64_t watch_id);
     void set_lock_key(std::string const &key);
     std::string const &get_lock_key() const;
     void set_name(std::string const &name);
@@ -45,6 +48,7 @@ namespace etcdv3
     std::vector<etcdv3::KeyValue> values;
     std::vector<etcdv3::KeyValue> prev_values; 
     int64_t compact_revision = -1;
+    int64_t watch_id = -1;
     std::string lock_key; // for lock
     std::string name;  // for campaign (in v3election)
     std::vector<mvccpb::Event> events; // for watch

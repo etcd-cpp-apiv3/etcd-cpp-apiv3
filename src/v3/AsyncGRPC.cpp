@@ -261,7 +261,6 @@ void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply)
         action = etcdv3::SET_ACTION;
       }
       value.kvs = event.kv();
-
     }
     else if(mvccpb::Event::EventType::Event_EventType_DELETE_ == event.type())
     {
@@ -1355,6 +1354,7 @@ etcdv3::AsyncWatchResponse etcdv3::AsyncWatchAction::ParseResponse()
 {
   AsyncWatchResponse watch_resp;
   watch_resp.set_action(etcdv3::WATCH_ACTION);
+  watch_resp.set_watch_id(reply.watch_id());
 
   if(!status.ok())
   {

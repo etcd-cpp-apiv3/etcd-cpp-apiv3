@@ -66,6 +66,21 @@ int64_t etcdv3::V3Response::get_compact_revision() const
   return compact_revision;
 }
 
+void etcdv3::V3Response::set_compact_revision(const int64_t compact_revision)
+{
+  this->compact_revision = compact_revision;
+}
+
+int64_t etcdv3::V3Response::get_watch_id() const
+{
+  return watch_id;
+}
+
+void etcdv3::V3Response::set_watch_id(const int64_t watch_id)
+{
+  this->watch_id = watch_id;
+}
+
 void etcdv3::V3Response::set_lock_key(std::string const &key) {
   this->lock_key = key;
 }
