@@ -53,6 +53,7 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _prev_value = Value(reply.get_prev_value());
 
   _compact_revision = reply.get_compact_revision();
+  _watch_id = reply.get_watch_id();
   _lock_key = reply.get_lock_key();
   _name = reply.get_name();
 
@@ -154,6 +155,11 @@ std::string const & etcd::Response::key(int index) const
 int64_t etcd::Response::compact_revision() const
 {
   return _compact_revision;
+}
+
+int64_t etcd::Response::watch_id() const
+{
+  return _watch_id;
 }
 
 std::string const & etcd::Response::lock_key() const {

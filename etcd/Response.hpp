@@ -162,6 +162,11 @@ namespace etcd
     int64_t compact_revision() const;
 
     /**
+     * Returns the watcher id for client.watch() requests. `-1` means uninitialized (the response is not for watch).
+     */
+    int64_t watch_id() const;
+
+    /**
      * Returns the lock key.
      */
     std::string const & lock_key() const;
@@ -215,6 +220,7 @@ namespace etcd
     Values      _values;
     Keys        _keys;
     int64_t     _compact_revision = -1; // for watch
+    int64_t     _watch_id = -1; // for watch
     std::string _lock_key; // for lock
     std::string _name;  // for campaign (in v3election)
     std::vector<Event> _events; // for watch
