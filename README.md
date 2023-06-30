@@ -514,58 +514,58 @@ keys defined by the prefix. mkdir method is removed since etcdv3 treats everythi
 
 2. Listing a directory:
 
-  Listing directory in etcd3 cpp client will return all keys that matched the given prefix
-  recursively.
+   Listing directory in etcd3 cpp client will return all keys that matched the given prefix
+   recursively.
 
-  ```c++
-    etcd.set("/test/key1", "value1").wait();
-    etcd.set("/test/key2", "value2").wait();
-    etcd.set("/test/key3", "value3").wait();
-    etcd.set("/test/subdir/foo", "foo").wait();
+   ```c++
+     etcd.set("/test/key1", "value1").wait();
+     etcd.set("/test/key2", "value2").wait();
+     etcd.set("/test/key3", "value3").wait();
+     etcd.set("/test/subdir/foo", "foo").wait();
 
-    etcd::Response resp = etcd.ls("/test/new_dir").get();
-  ```
+     etcd::Response resp = etcd.ls("/test").get();
+   ```
 
-  ```resp.key()``` will have the following values:
+   `resp.key()` will have the following values:
 
-  ```
-  /test/key1
-  /test/key2
-  /test/key3
-  /test/subdir/foo
-  ```
+   ```
+   /test/key1s
+   /test/key2
+   /test/key3
+   /test/subdir/foo
+   ```
 
-  Note: Regarding the returned keys when listing a directory:
+   Note: Regarding the returned keys when listing a directory:
 
-  + In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is
-    treated as keys in etcdv3.
-  + While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should
-    be created first before you can set "key1".
+   + In etcdv3 cpp client, resp.key(0) will return "/test/new_dir/key1" since everything is
+     treated as keys in etcdv3.
+   + While in etcdv2 cpp client it will return "key1" and "/test/new_dir" directory should
+     be created first before you can set "key1".
 
-  When you list a directory the response object's `keys()` and `values()` methods gives
-  you a vector of key names and values. The `value()` method with an integer parameter also
-  returns with the i-th element of the values vector, so `response.values()[i] == response.value(i)`.
+   When you list a directory the response object's `keys()` and `values()` methods gives
+   you a vector of key names and values. The `value()` method with an integer parameter also
+   returns with the i-th element of the values vector, so `response.values()[i] == response.value(i)`.
 
-  ```c++
-    etcd::Client etcd("http://127.0.0.1:2379");
-    etcd::Response resp = etcd.ls("/test/new_dir").get();
-    for (int i = 0; i < resp.keys().size(); ++i)
-    {
-      std::cout << resp.keys(i);
-      std::cout << " = " << resp.value(i).as_string() << std::endl;
-    }
-  ```
+   ```c++
+     etcd::Client etcd("http://127.0.0.1:2379");
+     etcd::Response resp = etcd.ls("/test/new_dir").get();
+     for (int i = 0; i < resp.keys().size(); ++i)
+     {
+       std::cout << resp.keys(i);
+       std::cout << " = " << resp.value(i).as_string() << std::endl;
+     }
+   ```
 
-  etcd-cpp-apiv3 supports lists keys only without fetching values from etcd server:
+   etcd-cpp-apiv3 supports lists keys only without fetching values from etcd server:
 
-  ```c++
-    etcd::Client etcd("http://127.0.0.1:2379");
-    etcd::Response resp = etcd.keys("/test/new_dir").get();
-    for (int i = 0; i < resp.keys().size(); ++i)
-    {
-      std::cout << resp.keys(i);
-    }
-  ```
+   ```c++
+     etcd::Client etcd("http://127.0.0.1:2379");
+     etcd::Response resp = etcd.keys("/test/new_dir").get();
+     for (int i = 0; i < resp.keys().size(); ++i)
+     {
+       std::cout << resp.keys(i);
+     }
+   ```
 
 3. Removing directory:
 
