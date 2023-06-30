@@ -569,26 +569,26 @@ keys defined by the prefix. mkdir method is removed since etcdv3 treats everythi
 
 3. Removing directory:
 
-If you want the delete recursively then you have to pass a second `true` parameter
-to rmdir and supply a key. This key will be treated as a prefix. All keys that match the
-prefix will be deleted. All deleted keys will be placed in `response.values()` and
-`response.keys()`. This parameter defaults to `false`.
+   If you want the delete recursively then you have to pass a second `true` parameter
+   to rmdir and supply a key. This key will be treated as a prefix. All keys that match the
+   prefix will be deleted. All deleted keys will be placed in `response.values()` and
+   `response.keys()`. This parameter defaults to `false`.
 
-```c++
-  etcd::Client etcd("http://127.0.0.1:2379");
-  etcd.set("/test/key1", "foo");
-  etcd.set("/test/key2", "bar");
-  etcd.set("/test/key3", "foo_bar");
-  etcd::Response resp = etcd.rmdir("/test", true).get();
-  for (int i = 0; i < resp.keys().size(); ++i)
-  {
-    std::cout << resp.keys(i);
-    std::cout << " = " << resp.value(i).as_string() << std::endl;
-  }
-```
+   ```c++
+     etcd::Client etcd("http://127.0.0.1:2379");
+     etcd.set("/test/key1", "foo");
+     etcd.set("/test/key2", "bar");
+     etcd.set("/test/key3", "foo_bar");
+     etcd::Response resp = etcd.rmdir("/test", true).get();
+     for (int i = 0; i < resp.keys().size(); ++i)
+     {
+       std::cout << resp.keys(i);
+       std::cout << " = " << resp.value(i).as_string() << std::endl;
+     }
+   ```
 
-However, if recursive parameter is false, functionality will be the same as just deleting a key.
-The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
+   However, if recursive parameter is false, functionality will be the same as just deleting a key.
+   The key supplied will NOT be treated as a prefix and will be treated as a normal key name.
 
 ### Using binary data as key and value
 
