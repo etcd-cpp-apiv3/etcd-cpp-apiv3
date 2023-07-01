@@ -14,10 +14,12 @@ static int watcher_called = 0;
 void printResponse(etcd::Response const & resp)
 {
   if (resp.error_code()) {
-    std::cout << resp.error_code() << ": " << resp.error_message() << std::endl;
+    std::cout << "Watcher "<< resp.watch_id()
+              << " fails with " << resp.error_code() << ": " << resp.error_message() << std::endl;
   }
   else {
-    std::cout << resp.action() << " " << resp.value().as_string() << std::endl;
+    std::cout << "Watcher " << resp.watch_id()
+              << " responses with " << resp.action() << " " << resp.value().as_string() << std::endl;
     std::cout << "Previous value: " << resp.prev_value().as_string() << std::endl;
 
     std::cout << "Events size: " << resp.events().size() << std::endl;
@@ -189,6 +191,14 @@ TEST_CASE("watch changes on the same key (#212)")
     client.put(key_watch, value);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+}
+
+TEST_CASE("create two watcher")
+{
+  etcd::Watcher w1(etcd_url, "/test", printResponse, true);
+  etcd::Watcher w2(etcd_url, "/test", printResponse, true);
+
+  std::this_thread::sleep_for(std::chrono::seconds(5));
 }
 
 // TEST_CASE("request cancellation")

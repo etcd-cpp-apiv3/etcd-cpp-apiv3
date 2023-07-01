@@ -89,6 +89,9 @@ void etcdv3::Action::waitForResponse()
         break;
       }
       case CompletionQueue::NextStatus::GOT_EVENT: {
+        if (!ok) {
+          status = grpc::Status(grpc::StatusCode::ABORTED, "Failed to execute the action: not ok or invalid tag");
+        }
         break;
       }
     }
