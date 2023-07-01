@@ -45,6 +45,7 @@ namespace etcdv3
   extern char const * WATCH_FINISH;
 
   extern char const * ELECTION_OBSERVE_CREATE;
+  extern char const * ELECTION_OBSERVE_FINISH;
 
   extern const int ERROR_GRPC_OK;
   extern const int ERROR_GRPC_CANCELLED;

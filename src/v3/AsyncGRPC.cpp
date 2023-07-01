@@ -817,10 +817,7 @@ void etcdv3::AsyncObserveAction::waitForResponse()
   response_reader->Read(&reply, (void *)this);
   if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void*)this) {
     auto response = ParseResponse();
-    if (response.get_error_code() == 0) {
-      // issue the next read
-      response_reader->Read(&reply, (void *)this);
-    } else {
+    if (response.get_error_code() != 0) {
       this->CancelObserve();
     }
   } else {
@@ -835,12 +832,24 @@ void etcdv3::AsyncObserveAction::CancelObserve()
   if (!isCancelled.exchange(true)) {
     void* got_tag;
     bool ok = false;
-    response_reader->Finish(&status, (void *)this);
-    if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void *)this) {
-      // ok
-    } else {
-      std::cerr << "Failed to finish a election observing connection" << std::endl;
+
+    response_reader->Finish(&status, (void *)ELECTION_OBSERVE_FINISH);
+
+    // FIXME: not sure why the `Next()` after `Finish()` blocks forever.
+    // Using the `AsyncNext()` without a timeout to ensure the cancel is done.
+    switch (cq_.AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::microseconds(1))) {
+      case CompletionQueue::NextStatus::TIMEOUT:
+      case CompletionQueue::NextStatus::SHUTDOWN:
+        // ignore
+        break;
+      case CompletionQueue::NextStatus::GOT_EVENT:
+        if (!ok || got_tag != (void *)ELECTION_OBSERVE_FINISH) {
+          std::cerr << "Failed to finish a election observing connection" << std::endl;
+        }
     }
+
+    // cancel on-the-fly calls
+    context.TryCancel();
 
     cq_.Shutdown();
   }
