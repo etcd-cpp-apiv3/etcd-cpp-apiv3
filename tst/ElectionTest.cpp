@@ -8,16 +8,15 @@
 #include "etcd/Client.hpp"
 #include "etcd/KeepAlive.hpp"
 
-static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
+static const std::string etcd_url =
+    etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
-TEST_CASE("setup")
-{
+TEST_CASE("setup") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 }
 
-TEST_CASE("campaign and resign")
-{
+TEST_CASE("campaign and resign") {
   etcd::Client etcd(etcd_url);
 
   auto keepalive = etcd.leasekeepalive(60).get();
@@ -36,9 +35,9 @@ TEST_CASE("campaign and resign")
   }
 
   // proclaim
-  auto resp3 = etcd.proclaim("test", lease_id,
-                             resp1.value().key(), resp1.value().created_index(),
-                             "tttt").get();
+  auto resp3 = etcd.proclaim("test", lease_id, resp1.value().key(),
+                             resp1.value().created_index(), "tttt")
+                   .get();
   REQUIRE(0 == resp3.error_code());
 
   // leader
@@ -50,13 +49,13 @@ TEST_CASE("campaign and resign")
   }
 
   // resign
-  auto resp5 = etcd.resign("test", lease_id,
-                           resp1.value().key(), resp1.value().created_index()).get();
+  auto resp5 = etcd.resign("test", lease_id, resp1.value().key(),
+                           resp1.value().created_index())
+                   .get();
   REQUIRE(0 == resp5.error_code());
 }
 
-TEST_CASE("campaign and observe")
-{
+TEST_CASE("campaign and observe") {
   etcd::Client etcd(etcd_url);
 
   auto keepalive = etcd.leasekeepalive(60).get();
@@ -67,7 +66,8 @@ TEST_CASE("campaign and observe")
     // wait many change events, blocked execution
     for (size_t i = 0; i < 10; ++i) {
       etcd::Response resp = observer->WaitOnce();
-      std::cout << "observe " << resp.value().key() << " as the leader: " << resp.value().as_string() << std::endl;
+      std::cout << "observe " << resp.value().key()
+                << " as the leader: " << resp.value().as_string() << std::endl;
     }
     std::cout << "finish the observe" << std::endl;
     // cancel the observers
@@ -109,8 +109,7 @@ TEST_CASE("campaign and observe")
   observer_thread.join();
 }
 
-TEST_CASE("cleanup")
-{
+TEST_CASE("cleanup") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).get();
 }

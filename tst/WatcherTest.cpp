@@ -4,41 +4,42 @@
 #include <chrono>
 #include <thread>
 
-#include "etcd/Watcher.hpp"
 #include "etcd/SyncClient.hpp"
+#include "etcd/Watcher.hpp"
 
-static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
+static const std::string etcd_url =
+    etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 static int watcher_called = 0;
 
-void printResponse(etcd::Response const & resp)
-{
+void printResponse(etcd::Response const& resp) {
   if (resp.error_code()) {
-    std::cout << "Watcher "<< resp.watch_id()
-              << " fails with " << resp.error_code() << ": " << resp.error_message() << std::endl;
-  }
-  else {
-    std::cout << "Watcher " << resp.watch_id()
-              << " responses with " << resp.action() << " " << resp.value().as_string() << std::endl;
-    std::cout << "Previous value: " << resp.prev_value().as_string() << std::endl;
+    std::cout << "Watcher " << resp.watch_id() << " fails with "
+              << resp.error_code() << ": " << resp.error_message() << std::endl;
+  } else {
+    std::cout << "Watcher " << resp.watch_id() << " responses with "
+              << resp.action() << " " << resp.value().as_string() << std::endl;
+    std::cout << "Previous value: " << resp.prev_value().as_string()
+              << std::endl;
 
     std::cout << "Events size: " << resp.events().size() << std::endl;
-    for (auto const &ev: resp.events()) {
-      if (ev.prev_kv().key().find("/leader") == 0 || ev.kv().key().find("/leader") == 0) {
+    for (auto const& ev : resp.events()) {
+      if (ev.prev_kv().key().find("/leader") == 0 ||
+          ev.kv().key().find("/leader") == 0) {
         return;
       }
-      std::cout << "Value change in events: " << static_cast<int>(ev.event_type())
-                << ", prev kv = " << ev.prev_kv().key() << " -> " << ev.prev_kv().as_string()
-                << ", kv = " << ev.kv().key() << " -> " << ev.kv().as_string()
-                << std::endl;
+      std::cout << "Value change in events: "
+                << static_cast<int>(ev.event_type())
+                << ", prev kv = " << ev.prev_kv().key() << " -> "
+                << ev.prev_kv().as_string() << ", kv = " << ev.kv().key()
+                << " -> " << ev.kv().as_string() << std::endl;
     }
   }
   std::cout << "print response called" << std::endl;
   ++watcher_called;
 }
 
-TEST_CASE("create watcher")
-{
+TEST_CASE("create watcher") {
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
@@ -55,8 +56,7 @@ TEST_CASE("create watcher")
   etcd.rmdir("/test", true);
 }
 
-TEST_CASE("watch with correct prefix")
-{
+TEST_CASE("watch with correct prefix") {
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
@@ -92,8 +92,7 @@ TEST_CASE("watch with correct prefix")
   etcd.rmdir("/test", true);
 }
 
-TEST_CASE("create watcher with cancel")
-{
+TEST_CASE("create watcher with cancel") {
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
@@ -115,8 +114,7 @@ TEST_CASE("create watcher with cancel")
   etcd.rmdir("/test", true);
 }
 
-TEST_CASE("create watcher on ranges with cancel")
-{
+TEST_CASE("create watcher on ranges with cancel") {
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
@@ -138,29 +136,24 @@ TEST_CASE("create watcher on ranges with cancel")
   etcd.rmdir("/test", true);
 }
 
-TEST_CASE("watch should exit normally")
-{
+TEST_CASE("watch should exit normally") {
   // cancel immediately after start watch.
   etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   watcher.Cancel();
 }
 
-TEST_CASE("watch should can be cancelled repeatedly")
-{
+TEST_CASE("watch should can be cancelled repeatedly") {
   etcd::Watcher watcher(etcd_url, "/test", printResponse, true);
   std::vector<std::thread> threads(10);
   for (size_t i = 0; i < 10; ++i) {
-    threads[i] = std::thread([&]() {
-      watcher.Cancel();
-    });
+    threads[i] = std::thread([&]() { watcher.Cancel(); });
   }
   for (size_t i = 0; i < 10; ++i) {
     threads[i].join();
   }
 }
 
-TEST_CASE("watch changes on the same key (#212)")
-{
+TEST_CASE("watch changes on the same key (#212)") {
   std::string key_watch = "key watch";
   etcd::SyncClient client(etcd_url);
   client.put(key_watch, "inittt");
@@ -168,33 +161,30 @@ TEST_CASE("watch changes on the same key (#212)")
   auto current_index = client.head().index();
   std::cout << "Current index " << current_index << std::endl;
   auto internal_cb = [&](etcd::Response resp) -> void {
-      if (!resp.is_ok()) {
-        std::cout << "Error: " << resp.error_message() << std::endl;
-        return;
-      }
-      for (auto const &event: resp.events()) {
-        std::cout << "Watch '" << event.kv().key()
-                  << "'. ModifedRevision : " <<  event.kv().modified_index()
-                  << "', Vision : " <<  event.kv().version()
-                  << ", value = " << event.kv().as_string() << std::endl;
-      }
+    if (!resp.is_ok()) {
+      std::cout << "Error: " << resp.error_message() << std::endl;
+      return;
+    }
+    for (auto const& event : resp.events()) {
+      std::cout << "Watch '" << event.kv().key()
+                << "'. ModifedRevision : " << event.kv().modified_index()
+                << "', Vision : " << event.kv().version()
+                << ", value = " << event.kv().as_string() << std::endl;
+    }
   };
-  auto wait_cb =  [&](bool) {};
-  etcd::Watcher w(client, key_watch, current_index,
-                                        std::move(internal_cb),
-                                        std::move(wait_cb),
-                                        false);
+  auto wait_cb = [&](bool) {};
+  etcd::Watcher w(client, key_watch, current_index, std::move(internal_cb),
+                  std::move(wait_cb), false);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  for (int i = 0; i < 10; ) {
-    std::string value = "watch_" + std::to_string(i++);
+  for (int i = 0; i < 10; ++i) {
+    std::string value = "watch_" + std::to_string(i);
     client.put(key_watch, value);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 
-TEST_CASE("create two watcher")
-{
+TEST_CASE("create two watcher") {
   etcd::Watcher w1(etcd_url, "/test", printResponse, true);
   etcd::Watcher w2(etcd_url, "/test", printResponse, true);
 

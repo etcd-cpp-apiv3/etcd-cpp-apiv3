@@ -3,18 +3,16 @@
 
 #include "proto/kv.pb.h"
 
+namespace etcdv3 {
+class KeyValue {
+ public:
+  KeyValue();
+  mvccpb::KeyValue kvs;
+  void set_ttl(int ttl);
+  int get_ttl() const;
 
-namespace etcdv3
-{
-  class KeyValue
-  {
-  public:
-    KeyValue();
-    mvccpb::KeyValue kvs;
-    void set_ttl(int ttl);
-    int get_ttl() const;
-  private:
-    int ttl;
-  };
-}
+ private:
+  int ttl;
+};
+}  // namespace etcdv3
 #endif

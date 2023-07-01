@@ -8,16 +8,15 @@
 #include "etcd/Client.hpp"
 #include "etcd/v3/Transaction.hpp"
 
-static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
+static const std::string etcd_url =
+    etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
-TEST_CASE("setup")
-{
+TEST_CASE("setup") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 }
 
-TEST_CASE("add a new key")
-{
+TEST_CASE("add a new key") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 
@@ -49,13 +48,15 @@ TEST_CASE("add a new key")
   // do some put and delete using txn
   {
     etcdv3::Transaction txn;
-    
+
     // setup the conditions
     txn.reset_key("/test/x1");
-    txn.init_compare("1", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+    txn.init_compare("1", etcdv3::CompareResult::EQUAL,
+                     etcdv3::CompareTarget::VALUE);
 
     txn.reset_key("/test/x2");
-    txn.init_compare("2", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+    txn.init_compare("2", etcdv3::CompareResult::EQUAL,
+                     etcdv3::CompareTarget::VALUE);
 
     txn.setup_put("/test/x1", "111");
     txn.setup_delete("/test/x2");
@@ -83,8 +84,7 @@ TEST_CASE("add a new key")
   }
 }
 
-TEST_CASE("cleanup")
-{
+TEST_CASE("cleanup") {
   etcd::Client etcd(etcd_url);
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
 }

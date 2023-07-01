@@ -6,16 +6,16 @@
 
 #include <grpc++/grpc++.h>
 
-#include "proto/rpc.pb.h"
 #include "proto/rpc.grpc.pb.h"
-#include "proto/v3election.pb.h"
+#include "proto/rpc.pb.h"
 #include "proto/v3election.grpc.pb.h"
-#include "proto/v3lock.pb.h"
+#include "proto/v3election.pb.h"
 #include "proto/v3lock.grpc.pb.h"
+#include "proto/v3lock.pb.h"
 
+#include "etcd/Response.hpp"
 #include "etcd/v3/Action.hpp"
 #include "etcd/v3/V3Response.hpp"
-#include "etcd/Response.hpp"
 
 using grpc::ClientAsyncReader;
 using grpc::ClientAsyncReaderWriter;
@@ -23,28 +23,20 @@ using grpc::ClientAsyncResponseReader;
 
 using etcdserverpb::KV;
 
-using v3electionpb::CampaignRequest;
-using v3electionpb::CampaignResponse;
 using etcdserverpb::DeleteRangeRequest;
 using etcdserverpb::DeleteRangeResponse;
 using etcdserverpb::LeaseCheckpointRequest;
 using etcdserverpb::LeaseCheckpointResponse;
 using etcdserverpb::LeaseGrantRequest;
 using etcdserverpb::LeaseGrantResponse;
-using etcdserverpb::LeaseRevokeRequest;
-using etcdserverpb::LeaseRevokeResponse;
 using etcdserverpb::LeaseKeepAliveRequest;
 using etcdserverpb::LeaseKeepAliveResponse;
 using etcdserverpb::LeaseLeasesRequest;
 using etcdserverpb::LeaseLeasesResponse;
+using etcdserverpb::LeaseRevokeRequest;
+using etcdserverpb::LeaseRevokeResponse;
 using etcdserverpb::LeaseTimeToLiveRequest;
 using etcdserverpb::LeaseTimeToLiveResponse;
-using etcdserverpb::TxnRequest;
-using etcdserverpb::TxnResponse;
-using etcdserverpb::RangeRequest;
-using etcdserverpb::RangeResponse;
-using v3electionpb::ResignRequest;
-using v3electionpb::ResignResponse;
 using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
 using etcdserverpb::RangeRequest;
@@ -53,393 +45,393 @@ using etcdserverpb::TxnRequest;
 using etcdserverpb::TxnResponse;
 using etcdserverpb::WatchRequest;
 using etcdserverpb::WatchResponse;
+using v3electionpb::CampaignRequest;
+using v3electionpb::CampaignResponse;
 using v3electionpb::LeaderRequest;
 using v3electionpb::LeaderResponse;
 using v3electionpb::ProclaimRequest;
 using v3electionpb::ProclaimResponse;
+using v3electionpb::ResignRequest;
+using v3electionpb::ResignResponse;
 using v3lockpb::LockRequest;
 using v3lockpb::LockResponse;
 using v3lockpb::UnlockRequest;
 using v3lockpb::UnlockResponse;
 
 namespace etcd {
-  class KeepAlive;
+class KeepAlive;
 }
 
 namespace etcdv3 {
-  class Transaction;
+class Transaction;
 }
 
 namespace etcdv3 {
-  class AsyncCampaignResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncCampaignResponse(){};
-      void ParseResponse(CampaignResponse& resp);
-  };
+class AsyncCampaignResponse : public etcdv3::V3Response {
+ public:
+  AsyncCampaignResponse(){};
+  void ParseResponse(CampaignResponse& resp);
+};
 
-  class AsyncDeleteResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncDeleteResponse(){};
-      void ParseResponse(std::string const& key, bool prefix, DeleteRangeResponse& resp);
-  };
+class AsyncDeleteResponse : public etcdv3::V3Response {
+ public:
+  AsyncDeleteResponse(){};
+  void ParseResponse(std::string const& key, bool prefix,
+                     DeleteRangeResponse& resp);
+};
 
-  class AsyncHeadResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncHeadResponse(){};
-      void ParseResponse(RangeResponse& resp);
-  };
+class AsyncHeadResponse : public etcdv3::V3Response {
+ public:
+  AsyncHeadResponse(){};
+  void ParseResponse(RangeResponse& resp);
+};
 
-  class AsyncLeaderResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaderResponse(){};
-      void ParseResponse(LeaderResponse& resp);
-  };
+class AsyncLeaderResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaderResponse(){};
+  void ParseResponse(LeaderResponse& resp);
+};
 
-  class AsyncLeaseGrantResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaseGrantResponse(){};
-      void ParseResponse(LeaseGrantResponse& resp);
-  };
+class AsyncLeaseGrantResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaseGrantResponse(){};
+  void ParseResponse(LeaseGrantResponse& resp);
+};
 
-  class AsyncLeaseKeepAliveResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaseKeepAliveResponse(){};
-      void ParseResponse(LeaseKeepAliveResponse& resp);
-  };
+class AsyncLeaseKeepAliveResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaseKeepAliveResponse(){};
+  void ParseResponse(LeaseKeepAliveResponse& resp);
+};
 
-  class AsyncLeaseLeasesResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaseLeasesResponse(){};
-      void ParseResponse(LeaseLeasesResponse& resp);
-  };
+class AsyncLeaseLeasesResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaseLeasesResponse(){};
+  void ParseResponse(LeaseLeasesResponse& resp);
+};
 
-  class AsyncLeaseRevokeResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaseRevokeResponse(){};
-      void ParseResponse(LeaseRevokeResponse& resp);
-  };
+class AsyncLeaseRevokeResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaseRevokeResponse(){};
+  void ParseResponse(LeaseRevokeResponse& resp);
+};
 
-  class AsyncLeaseTimeToLiveResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLeaseTimeToLiveResponse(){};
-      void ParseResponse(LeaseTimeToLiveResponse& resp);
-  };
+class AsyncLeaseTimeToLiveResponse : public etcdv3::V3Response {
+ public:
+  AsyncLeaseTimeToLiveResponse(){};
+  void ParseResponse(LeaseTimeToLiveResponse& resp);
+};
 
-  class AsyncLockResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncLockResponse(){};
-      void ParseResponse(LockResponse& resp);
-  };
+class AsyncLockResponse : public etcdv3::V3Response {
+ public:
+  AsyncLockResponse(){};
+  void ParseResponse(LockResponse& resp);
+};
 
-  class AsyncObserveResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncObserveResponse(){};
-      void ParseResponse(LeaderResponse& resp);
-  };
+class AsyncObserveResponse : public etcdv3::V3Response {
+ public:
+  AsyncObserveResponse(){};
+  void ParseResponse(LeaderResponse& resp);
+};
 
-  class AsyncProclaimResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncProclaimResponse(){};
-      void ParseResponse(ProclaimResponse& resp);
-  };
+class AsyncProclaimResponse : public etcdv3::V3Response {
+ public:
+  AsyncProclaimResponse(){};
+  void ParseResponse(ProclaimResponse& resp);
+};
 
-  class AsyncPutResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncPutResponse(){};
-      void ParseResponse(PutResponse& resp);
-  };
+class AsyncPutResponse : public etcdv3::V3Response {
+ public:
+  AsyncPutResponse(){};
+  void ParseResponse(PutResponse& resp);
+};
 
-  class AsyncRangeResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncRangeResponse(){};
-      void ParseResponse(RangeResponse& resp, bool prefix=false);
-  };
+class AsyncRangeResponse : public etcdv3::V3Response {
+ public:
+  AsyncRangeResponse(){};
+  void ParseResponse(RangeResponse& resp, bool prefix = false);
+};
 
-  class AsyncResignResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncResignResponse(){};
-      void ParseResponse(ResignResponse& resp);
-  };
+class AsyncResignResponse : public etcdv3::V3Response {
+ public:
+  AsyncResignResponse(){};
+  void ParseResponse(ResignResponse& resp);
+};
 
-  class AsyncTxnResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncTxnResponse(){};
-      void ParseResponse(TxnResponse& resp);
-      void ParseResponse(std::string const& key, bool prefix, TxnResponse& resp);
-  };
+class AsyncTxnResponse : public etcdv3::V3Response {
+ public:
+  AsyncTxnResponse(){};
+  void ParseResponse(TxnResponse& resp);
+  void ParseResponse(std::string const& key, bool prefix, TxnResponse& resp);
+};
 
-  class AsyncUnlockResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncUnlockResponse(){};
-      void ParseResponse(UnlockResponse& resp);
-  };
+class AsyncUnlockResponse : public etcdv3::V3Response {
+ public:
+  AsyncUnlockResponse(){};
+  void ParseResponse(UnlockResponse& resp);
+};
 
-  class AsyncWatchResponse : public etcdv3::V3Response
-  {
-    public:
-      AsyncWatchResponse(){};
-      void ParseResponse(WatchResponse& resp);
-  };
-}
+class AsyncWatchResponse : public etcdv3::V3Response {
+ public:
+  AsyncWatchResponse(){};
+  void ParseResponse(WatchResponse& resp);
+};
+}  // namespace etcdv3
 
-namespace etcdv3
-{
-  class AsyncCampaignAction : public etcdv3::Action
-  {
-    public:
-      AsyncCampaignAction(etcdv3::ActionParameters && params);
-      AsyncCampaignResponse ParseResponse();
-    private:
-      CampaignResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<CampaignResponse>> response_reader;
-  };
+namespace etcdv3 {
+class AsyncCampaignAction : public etcdv3::Action {
+ public:
+  AsyncCampaignAction(etcdv3::ActionParameters&& params);
+  AsyncCampaignResponse ParseResponse();
 
-  class AsyncCompareAndDeleteAction : public etcdv3::Action
-  {
-    public:
-      AsyncCompareAndDeleteAction(etcdv3::ActionParameters && params, etcdv3::AtomicityType type);
-      AsyncTxnResponse ParseResponse();
-    private:
-      TxnResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-  };
+ private:
+  CampaignResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<CampaignResponse>> response_reader;
+};
 
-  class AsyncCompareAndSwapAction : public etcdv3::Action
-  {
-    public:
-      AsyncCompareAndSwapAction(etcdv3::ActionParameters && params, etcdv3::AtomicityType type);
-      AsyncTxnResponse ParseResponse();
-    private:
-      TxnResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-  };
+class AsyncCompareAndDeleteAction : public etcdv3::Action {
+ public:
+  AsyncCompareAndDeleteAction(etcdv3::ActionParameters&& params,
+                              etcdv3::AtomicityType type);
+  AsyncTxnResponse ParseResponse();
 
-  class AsyncDeleteAction : public etcdv3::Action
-  {
-    public:
-      AsyncDeleteAction(etcdv3::ActionParameters && params);
-      AsyncDeleteResponse ParseResponse();
-    private:
-      DeleteRangeResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<DeleteRangeResponse>> response_reader;
-  };
+ private:
+  TxnResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
+};
 
-  class AsyncHeadAction : public etcdv3::Action
-  {
-    public:
-      AsyncHeadAction(etcdv3::ActionParameters && params);
-      AsyncHeadResponse ParseResponse();
-    private:
-      RangeResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-  };
+class AsyncCompareAndSwapAction : public etcdv3::Action {
+ public:
+  AsyncCompareAndSwapAction(etcdv3::ActionParameters&& params,
+                            etcdv3::AtomicityType type);
+  AsyncTxnResponse ParseResponse();
 
-  class AsyncLeaderAction : public etcdv3::Action
-  {
-    public:
-      AsyncLeaderAction(etcdv3::ActionParameters && params);
-      AsyncLeaderResponse ParseResponse();
-    private:
-      LeaderResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LeaderResponse>> response_reader;
-  };
+ private:
+  TxnResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
+};
 
-  class AsyncLeaseGrantAction : public etcdv3::Action {
-    public:
-      AsyncLeaseGrantAction(etcdv3::ActionParameters && params);
-      AsyncLeaseGrantResponse ParseResponse();
-    private:
-      LeaseGrantResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LeaseGrantResponse>> response_reader;
-  };
+class AsyncDeleteAction : public etcdv3::Action {
+ public:
+  AsyncDeleteAction(etcdv3::ActionParameters&& params);
+  AsyncDeleteResponse ParseResponse();
 
-  class AsyncLeaseKeepAliveAction: public etcdv3::Action {
-    public:
-      AsyncLeaseKeepAliveAction(etcdv3::ActionParameters && params);
-      AsyncLeaseKeepAliveResponse ParseResponse();
+ private:
+  DeleteRangeResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<DeleteRangeResponse>>
+      response_reader;
+};
 
-      etcd::Response Refresh();
-      void CancelKeepAlive();
-      bool Cancelled() const;
+class AsyncHeadAction : public etcdv3::Action {
+ public:
+  AsyncHeadAction(etcdv3::ActionParameters&& params);
+  AsyncHeadResponse ParseResponse();
 
-    private:
-      etcdv3::ActionParameters& mutable_parameters();
+ private:
+  RangeResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
+};
 
-      LeaseKeepAliveResponse reply;
-      std::unique_ptr<ClientAsyncReaderWriter<LeaseKeepAliveRequest, LeaseKeepAliveResponse>> stream;
+class AsyncLeaderAction : public etcdv3::Action {
+ public:
+  AsyncLeaderAction(etcdv3::ActionParameters&& params);
+  AsyncLeaderResponse ParseResponse();
 
-      LeaseKeepAliveRequest req;
-      bool isCancelled;
-      std::recursive_mutex protect_is_cancelled;
+ private:
+  LeaderResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LeaderResponse>> response_reader;
+};
 
-      friend class etcd::KeepAlive;
-  };
+class AsyncLeaseGrantAction : public etcdv3::Action {
+ public:
+  AsyncLeaseGrantAction(etcdv3::ActionParameters&& params);
+  AsyncLeaseGrantResponse ParseResponse();
 
-  class AsyncLeaseLeasesAction: public etcdv3::Action {
-    public:
-      AsyncLeaseLeasesAction(etcdv3::ActionParameters && params);
-      AsyncLeaseLeasesResponse ParseResponse();
-    private:
-      LeaseLeasesResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LeaseLeasesResponse>> response_reader;
-  };
+ private:
+  LeaseGrantResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LeaseGrantResponse>>
+      response_reader;
+};
 
-  class AsyncLeaseRevokeAction: public etcdv3::Action {
-    public:
-      AsyncLeaseRevokeAction(etcdv3::ActionParameters && params);
-      AsyncLeaseRevokeResponse ParseResponse();
-    private:
-      LeaseRevokeResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LeaseRevokeResponse>> response_reader;
-  };
+class AsyncLeaseKeepAliveAction : public etcdv3::Action {
+ public:
+  AsyncLeaseKeepAliveAction(etcdv3::ActionParameters&& params);
+  AsyncLeaseKeepAliveResponse ParseResponse();
 
-  class AsyncLeaseTimeToLiveAction: public etcdv3::Action {
-    public:
-      AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters && params);
-      AsyncLeaseTimeToLiveResponse ParseResponse();
-    private:
-      LeaseTimeToLiveResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LeaseTimeToLiveResponse>> response_reader;
-  };
+  etcd::Response Refresh();
+  void CancelKeepAlive();
+  bool Cancelled() const;
 
-  class AsyncLockAction : public etcdv3::Action
-  {
-    public:
-      AsyncLockAction(etcdv3::ActionParameters && params);
-      AsyncLockResponse ParseResponse();
-    private:
-      LockResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<LockResponse>> response_reader;
-  };
+ private:
+  etcdv3::ActionParameters& mutable_parameters();
 
-  class AsyncObserveAction : public etcdv3::Action
-  {
-    public:
-      AsyncObserveAction(etcdv3::ActionParameters && params);
-      AsyncObserveResponse ParseResponse();
-      void waitForResponse();
-      void CancelObserve();
-      bool Cancelled() const;
-    private:
-      LeaderResponse reply;
-      std::unique_ptr<ClientAsyncReader<LeaderResponse>> response_reader;
-      std::atomic_bool isCancelled;
-      std::mutex protect_is_cancalled;
-  };
+  LeaseKeepAliveResponse reply;
+  std::unique_ptr<
+      ClientAsyncReaderWriter<LeaseKeepAliveRequest, LeaseKeepAliveResponse>>
+      stream;
 
-  class AsyncProclaimAction : public etcdv3::Action
-  {
-    public:
-      AsyncProclaimAction(etcdv3::ActionParameters && params);
-      AsyncProclaimResponse ParseResponse();
-    private:
-      ProclaimResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<ProclaimResponse>> response_reader;
-  };
+  LeaseKeepAliveRequest req;
+  bool isCancelled;
+  std::recursive_mutex protect_is_cancelled;
 
-  class AsyncPutAction : public etcdv3::Action
-  {
-    public:
-      AsyncPutAction(etcdv3::ActionParameters && params);
-      AsyncPutResponse ParseResponse();
-    private:
-      PutResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
-  };
+  friend class etcd::KeepAlive;
+};
 
-  class AsyncRangeAction : public etcdv3::Action
-  {
-    public:
-      AsyncRangeAction(etcdv3::ActionParameters && params);
-      AsyncRangeResponse ParseResponse();
-    private:
-      RangeResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
-  };
+class AsyncLeaseLeasesAction : public etcdv3::Action {
+ public:
+  AsyncLeaseLeasesAction(etcdv3::ActionParameters&& params);
+  AsyncLeaseLeasesResponse ParseResponse();
 
-  class AsyncResignAction : public etcdv3::Action
-  {
-    public:
-      AsyncResignAction(etcdv3::ActionParameters && params);
-      AsyncResignResponse ParseResponse();
-    private:
-      ResignResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<ResignResponse>> response_reader;
-  };
+ private:
+  LeaseLeasesResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LeaseLeasesResponse>>
+      response_reader;
+};
 
-  class AsyncSetAction : public etcdv3::Action
-  {
-    public:
-      AsyncSetAction(etcdv3::ActionParameters && params, bool create=false);
-      AsyncTxnResponse ParseResponse();
-    private:
-      TxnResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-      bool isCreate;
-  };
+class AsyncLeaseRevokeAction : public etcdv3::Action {
+ public:
+  AsyncLeaseRevokeAction(etcdv3::ActionParameters&& params);
+  AsyncLeaseRevokeResponse ParseResponse();
 
-  class AsyncTxnAction : public etcdv3::Action
-  {
-    public:
-      AsyncTxnAction(etcdv3::ActionParameters && params, etcdv3::Transaction const &tx);
-      AsyncTxnResponse ParseResponse();
-    private:
-      TxnResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-  };
+ private:
+  LeaseRevokeResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LeaseRevokeResponse>>
+      response_reader;
+};
 
-  class AsyncUnlockAction : public etcdv3::Action
-  {
-    public:
-      AsyncUnlockAction(etcdv3::ActionParameters && params);
-      AsyncUnlockResponse ParseResponse();
-    private:
-      UnlockResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<UnlockResponse>> response_reader;
-  };
+class AsyncLeaseTimeToLiveAction : public etcdv3::Action {
+ public:
+  AsyncLeaseTimeToLiveAction(etcdv3::ActionParameters&& params);
+  AsyncLeaseTimeToLiveResponse ParseResponse();
 
-  class AsyncUpdateAction : public etcdv3::Action
-  {
-    public:
-      AsyncUpdateAction(etcdv3::ActionParameters && params);
-      AsyncTxnResponse ParseResponse();
-    private:
-      TxnResponse reply;
-      std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
-  };
+ private:
+  LeaseTimeToLiveResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LeaseTimeToLiveResponse>>
+      response_reader;
+};
 
-  class AsyncWatchAction : public etcdv3::Action
-  {
-    public:
-      AsyncWatchAction(etcdv3::ActionParameters && params);
-      AsyncWatchResponse ParseResponse();
-      void waitForResponse();
-      void waitForResponse(std::function<void(etcd::Response)> callback);
-      void CancelWatch();
-      bool Cancelled() const;
-    private:
-      int64_t watch_id = -1;
-      WatchResponse reply;
-      std::unique_ptr<ClientAsyncReaderWriter<WatchRequest,WatchResponse>> stream;
-      std::atomic_bool isCancelled;
-  };
-}
+class AsyncLockAction : public etcdv3::Action {
+ public:
+  AsyncLockAction(etcdv3::ActionParameters&& params);
+  AsyncLockResponse ParseResponse();
+
+ private:
+  LockResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<LockResponse>> response_reader;
+};
+
+class AsyncObserveAction : public etcdv3::Action {
+ public:
+  AsyncObserveAction(etcdv3::ActionParameters&& params);
+  AsyncObserveResponse ParseResponse();
+  void waitForResponse();
+  void CancelObserve();
+  bool Cancelled() const;
+
+ private:
+  LeaderResponse reply;
+  std::unique_ptr<ClientAsyncReader<LeaderResponse>> response_reader;
+  std::atomic_bool isCancelled;
+  std::mutex protect_is_cancalled;
+};
+
+class AsyncProclaimAction : public etcdv3::Action {
+ public:
+  AsyncProclaimAction(etcdv3::ActionParameters&& params);
+  AsyncProclaimResponse ParseResponse();
+
+ private:
+  ProclaimResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<ProclaimResponse>> response_reader;
+};
+
+class AsyncPutAction : public etcdv3::Action {
+ public:
+  AsyncPutAction(etcdv3::ActionParameters&& params);
+  AsyncPutResponse ParseResponse();
+
+ private:
+  PutResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<PutResponse>> response_reader;
+};
+
+class AsyncRangeAction : public etcdv3::Action {
+ public:
+  AsyncRangeAction(etcdv3::ActionParameters&& params);
+  AsyncRangeResponse ParseResponse();
+
+ private:
+  RangeResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<RangeResponse>> response_reader;
+};
+
+class AsyncResignAction : public etcdv3::Action {
+ public:
+  AsyncResignAction(etcdv3::ActionParameters&& params);
+  AsyncResignResponse ParseResponse();
+
+ private:
+  ResignResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<ResignResponse>> response_reader;
+};
+
+class AsyncSetAction : public etcdv3::Action {
+ public:
+  AsyncSetAction(etcdv3::ActionParameters&& params, bool create = false);
+  AsyncTxnResponse ParseResponse();
+
+ private:
+  TxnResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
+  bool isCreate;
+};
+
+class AsyncTxnAction : public etcdv3::Action {
+ public:
+  AsyncTxnAction(etcdv3::ActionParameters&& params,
+                 etcdv3::Transaction const& tx);
+  AsyncTxnResponse ParseResponse();
+
+ private:
+  TxnResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
+};
+
+class AsyncUnlockAction : public etcdv3::Action {
+ public:
+  AsyncUnlockAction(etcdv3::ActionParameters&& params);
+  AsyncUnlockResponse ParseResponse();
+
+ private:
+  UnlockResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<UnlockResponse>> response_reader;
+};
+
+class AsyncUpdateAction : public etcdv3::Action {
+ public:
+  AsyncUpdateAction(etcdv3::ActionParameters&& params);
+  AsyncTxnResponse ParseResponse();
+
+ private:
+  TxnResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<TxnResponse>> response_reader;
+};
+
+class AsyncWatchAction : public etcdv3::Action {
+ public:
+  AsyncWatchAction(etcdv3::ActionParameters&& params);
+  AsyncWatchResponse ParseResponse();
+  void waitForResponse();
+  void waitForResponse(std::function<void(etcd::Response)> callback);
+  void CancelWatch();
+  bool Cancelled() const;
+
+ private:
+  int64_t watch_id = -1;
+  WatchResponse reply;
+  std::unique_ptr<ClientAsyncReaderWriter<WatchRequest, WatchResponse>> stream;
+  std::atomic_bool isCancelled;
+};
+}  // namespace etcdv3
 
 #endif

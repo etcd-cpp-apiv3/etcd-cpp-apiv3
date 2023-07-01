@@ -10,8 +10,8 @@
 #include "etcd/SyncClient.hpp"
 #include "etcd/Value.hpp"
 
-static std::string etcd_uri = etcdv3::detail::resolve_etcd_endpoints(
-    "http://127.0.0.1:2379,http://127.0.0.1:2479,http://127.0.0.1:2579");
+static std::string etcd_uri =
+    etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
 TEST_CASE("keepalive revoke and check if alive") {
   etcd::Client etcd(etcd_uri);
@@ -32,4 +32,31 @@ TEST_CASE("keepalive revoke and check if alive") {
 
   // expect keep_alive->Check() to throw exception
   REQUIRE_THROWS(keepalive->Check());
+}
+
+TEST_CASE("keepalive won't expire") {
+  etcd::Client etcd(etcd_uri);
+
+  const int64_t ttl = 3;
+  const std::string key = "key";
+  const std::string meta_str = "meta ....";
+
+  etcd::Response resp = etcd.leasegrant(ttl).get();
+  auto lease_id = resp.value().lease();
+  etcd.add(key, meta_str, lease_id);
+
+  std::function<void(std::exception_ptr)> handler =
+      [](std::exception_ptr eptr) {
+        try {
+          if (eptr) {
+            std::rethrow_exception(eptr);
+          }
+        } catch (const std::runtime_error& e) {
+          std::cerr << "Connection failure \"" << e.what() << "\"\n";
+        } catch (const std::out_of_range& e) {
+          std::cerr << "Lease expiry \"" << e.what() << "\"\n";
+        }
+      };
+  etcd::KeepAlive keepalive(etcd, handler, ttl, lease_id);
+  std::this_thread::sleep_for(std::chrono::seconds(5));
 }

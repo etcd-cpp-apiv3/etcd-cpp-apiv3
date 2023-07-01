@@ -223,6 +223,17 @@ install(EXPORT etcd-targets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etcd-cpp-api
 )
 
+file(GLOB_RECURSE FILES_NEED_FORMAT
+        "etcd/*.hpp"
+        "src/*.cpp"
+        "tst/*.cpp"
+)
+
+add_custom_target(etcd_cpp_apiv3_clformat
+    COMMAND clang-format --style=file -i ${FILES_NEED_FORMAT}
+    COMMENT "Running clang-format, using clang-format-11 from https://github.com/muttleyxd/clang-tools-static-binaries/releases"
+    VERBATIM)
+
 # deb/rpc packaging for Linux
 
 set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})

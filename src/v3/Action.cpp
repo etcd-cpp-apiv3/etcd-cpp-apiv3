@@ -1,16 +1,14 @@
+#include "etcd/v3/Action.hpp"
 #include <grpc/support/log.h>
 #include <grpcpp/support/status.h>
 #include "etcd/v3/action_constants.hpp"
-#include "etcd/v3/Action.hpp"
 
-etcdv3::Action::Action(etcdv3::ActionParameters const &params)
-{
+etcdv3::Action::Action(etcdv3::ActionParameters const& params) {
   parameters = params;
   this->InitAction();
 }
 
-etcdv3::Action::Action(etcdv3::ActionParameters && params)
-{
+etcdv3::Action::Action(etcdv3::ActionParameters&& params) {
   parameters = std::move(params);
   this->InitAction();
 }
@@ -32,8 +30,7 @@ void etcdv3::Action::InitAction() {
   start_timepoint = std::chrono::high_resolution_clock::now();
 }
 
-etcdv3::ActionParameters::ActionParameters()
-{
+etcdv3::ActionParameters::ActionParameters() {
   withPrefix = false;
   revision = 0;
   old_revision = 0;
@@ -50,11 +47,12 @@ bool etcdv3::ActionParameters::has_grpc_timeout() const {
   return this->grpc_timeout != std::chrono::microseconds::zero();
 }
 
-std::chrono::system_clock::time_point etcdv3::ActionParameters::grpc_deadline() const {
+std::chrono::system_clock::time_point etcdv3::ActionParameters::grpc_deadline()
+    const {
   return std::chrono::system_clock::now() + this->grpc_timeout;
 }
 
-void etcdv3::ActionParameters::dump(std::ostream &os) const {
+void etcdv3::ActionParameters::dump(std::ostream& os) const {
   os << "ActionParameters:" << std::endl;
   os << "  withPrefix:    " << withPrefix << std::endl;
   os << "  revision:      " << revision << std::endl;
@@ -73,39 +71,43 @@ void etcdv3::ActionParameters::dump(std::ostream &os) const {
   os << "  grpc_timeout:  " << grpc_timeout.count() << "(ms)" << std::endl;
 }
 
-void etcdv3::Action::waitForResponse()
-{
+void etcdv3::Action::waitForResponse() {
   void* got_tag;
   bool ok = false;
 
   if (parameters.has_grpc_timeout()) {
     switch (cq_.AsyncNext(&got_tag, &ok, parameters.grpc_deadline())) {
-      case CompletionQueue::NextStatus::TIMEOUT: {
-        status = grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout");
-        break;
+    case CompletionQueue::NextStatus::TIMEOUT: {
+      status =
+          grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, "gRPC timeout");
+      break;
+    }
+    case CompletionQueue::NextStatus::SHUTDOWN: {
+      status =
+          grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown");
+      break;
+    }
+    case CompletionQueue::NextStatus::GOT_EVENT: {
+      if (!ok) {
+        status =
+            grpc::Status(grpc::StatusCode::ABORTED,
+                         "Failed to execute the action: not ok or invalid tag");
       }
-      case CompletionQueue::NextStatus::SHUTDOWN: {
-        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, "gRPC already shutdown");
-        break;
-      }
-      case CompletionQueue::NextStatus::GOT_EVENT: {
-        if (!ok) {
-          status = grpc::Status(grpc::StatusCode::ABORTED, "Failed to execute the action: not ok or invalid tag");
-        }
-        break;
-      }
+      break;
+    }
     }
   } else {
     cq_.Next(&got_tag, &ok);
-    GPR_ASSERT(got_tag == (void*)this);
+    GPR_ASSERT(got_tag == (void*) this);
   }
 }
 
-const std::chrono::high_resolution_clock::time_point etcdv3::Action::startTimepoint() {
+const std::chrono::high_resolution_clock::time_point
+etcdv3::Action::startTimepoint() {
   return this->start_timepoint;
 }
 
-std::string etcdv3::detail::string_plus_one(std::string const &value) {
+std::string etcdv3::detail::string_plus_one(std::string const& value) {
   // Referred from the Go implementation in etcd.
   for (int32_t i = value.size() - 1; i >= 0; --i) {
     if (static_cast<unsigned char>(value[i]) < 0xff) {
@@ -117,7 +119,8 @@ std::string etcdv3::detail::string_plus_one(std::string const &value) {
   return {etcdv3::NUL};
 }
 
-std::string etcdv3::detail::resolve_etcd_endpoints(std::string const&default_endpoints) {
-  const char *ep = std::getenv("ETCD_ENDPOINTS");
+std::string etcdv3::detail::resolve_etcd_endpoints(
+    std::string const& default_endpoints) {
+  const char* ep = std::getenv("ETCD_ENDPOINTS");
   return ep ? ep : default_endpoints;
 }
