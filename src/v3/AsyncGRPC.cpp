@@ -1178,6 +1178,7 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(
 {
   isCancelled.store(false);
   stream = parameters.watch_stub->AsyncWatch(&context,&cq_,(void*)etcdv3::WATCH_CREATE);
+  this->watch_id = std::chrono::steady_clock::now().time_since_epoch().count();
 
   WatchRequest watch_req;
   WatchCreateRequest watch_create_req;
@@ -1199,6 +1200,7 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(
 
   watch_create_req.set_prev_kv(true);
   watch_create_req.set_start_revision(parameters.revision);
+  watch_create_req.set_watch_id(this->watch_id);
 
   watch_req.mutable_create_request()->CopyFrom(watch_create_req);
 
@@ -1253,6 +1255,9 @@ void etcdv3::AsyncWatchAction::waitForResponse()
         context.TryCancel();
         continue;
       }
+
+      // record the watcher id
+      this->watch_id = reply.watch_id();
 
       // we stop watch under two conditions:
       //
@@ -1338,6 +1343,9 @@ void etcdv3::AsyncWatchAction::waitForResponse(std::function<void(etcd::Response
         context.TryCancel();
         continue;
       }
+
+      // record the watcher id
+      this->watch_id = reply.watch_id();
 
       // for the callback case, we don't invoke callback immediately if watching
       // for a future revision, we wait until there are some effective events.
