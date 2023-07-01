@@ -82,6 +82,10 @@ jobs:
           wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3-Linux-x86_64.sh
           sudo bash cmake-3.19.3-Linux-x86_64.sh --prefix /usr --skip-license
 
+          # install clang-format
+          sudo curl -L https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-1d7ec53d/clang-format-11_linux-amd64 --output /usr/bin/clang-format
+          sudo chmod +x /usr/bin/clang-format
+
       - name: Install grpc v1.27.x for Ubuntu 18.04
         if: matrix.os == 'ubuntu-18.04'
         run: |
@@ -170,7 +174,7 @@ jobs:
         if: false
         uses: mxschmitt/action-tmate@v3
 
-      - name: Build
+      - name: CMake
         run: |
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 
@@ -182,6 +186,42 @@ jobs:
                    -DBUILD_ETCD_TESTS=ON \
                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Format
+        if: runner.os == 'Linux'
+        run: |
+          cd build
+
+          function prepend() { while read line; do echo "${1}${line}"; done; }
+
+          make etcd_cpp_apiv3_clformat
+          GIT_DIFF=$(git diff --ignore-submodules)
+          if [[ -n $GIT_DIFF ]]; then
+              echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+              echo "| clang-format failures found!"
+              echo "|"
+              echo "$GIT_DIFF" | prepend "| "
+              echo "|"
+              echo "| Run: "
+              echo "|"
+              echo "|    make etcd_cpp_apiv3_clformat"
+              echo "|"
+              echo "| to fix this error."
+              echo "|"
+              echo "| Ensure you are working with clang-format-11, which can be obtained from"
+              echo "|"
+              echo "|    https://github.com/muttleyxd/clang-tools-static-binaries/releases "
+              echo "|"
+              echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+              exit -1
+          fi
+
+
+      - name: Build
+        run: |
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
+
+          cd build
           make -j`nproc`
           sudo make install
 

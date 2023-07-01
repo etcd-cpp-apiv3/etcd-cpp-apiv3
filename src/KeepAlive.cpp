@@ -8,7 +8,7 @@
 #include "proto/rpc.grpc.pb.h"
 
 namespace etcdv3 {
-  class AsyncLeaseKeepAliveAction;
+class AsyncLeaseKeepAliveAction;
 }
 
 struct etcd::KeepAlive::EtcdServerStubs {
@@ -16,15 +16,18 @@ struct etcd::KeepAlive::EtcdServerStubs {
   std::unique_ptr<etcdv3::AsyncLeaseKeepAliveAction> call;
 };
 
-void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(etcd::KeepAlive::EtcdServerStubs *stubs) {
+void etcd::KeepAlive::EtcdServerStubsDeleter::operator()(
+    etcd::KeepAlive::EtcdServerStubs* stubs) {
   if (stubs) {
     delete stubs;
   }
 }
 
-etcd::KeepAlive::KeepAlive(SyncClient const &client, int ttl, int64_t lease_id):
-    ttl(ttl), lease_id(lease_id), continue_next(true),
-    grpc_timeout(client.get_grpc_timeout()) {
+etcd::KeepAlive::KeepAlive(SyncClient const& client, int ttl, int64_t lease_id)
+    : ttl(ttl),
+      lease_id(lease_id),
+      continue_next(true),
+      grpc_timeout(client.get_grpc_timeout()) {
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
@@ -41,38 +44,41 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client, int ttl, int64_t lease_id):
     try {
       // start refresh
       this->refresh();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       // propagate the exception
       eptr_ = std::current_exception();
     }
   });
 }
 
-etcd::KeepAlive::KeepAlive(std::string const & address, int ttl, int64_t lease_id):
-    KeepAlive(SyncClient(address), ttl, lease_id) {
-}
+etcd::KeepAlive::KeepAlive(std::string const& address, int ttl,
+                           int64_t lease_id)
+    : KeepAlive(SyncClient(address), ttl, lease_id) {}
 
-etcd::KeepAlive::KeepAlive(std::string const & address,
-                           std::string const & username, std::string const & password,
-                           int ttl, int64_t lease_id, int const auth_token_ttl):
-    KeepAlive(SyncClient(address, username, password, auth_token_ttl), ttl, lease_id) {
-}
+etcd::KeepAlive::KeepAlive(std::string const& address,
+                           std::string const& username,
+                           std::string const& password, int ttl,
+                           int64_t lease_id, int const auth_token_ttl)
+    : KeepAlive(SyncClient(address, username, password, auth_token_ttl), ttl,
+                lease_id) {}
 
-etcd::KeepAlive::KeepAlive(std::string const & address,
-              std::string const & ca,
-              std::string const & cert,
-              std::string const & privkey,
-              std::function<void (std::exception_ptr)> const &handler,
-              int ttl, int64_t lease_id,
-              std::string const & target_name_override):
-    KeepAlive(SyncClient(address, ca, cert, privkey, target_name_override), ttl, lease_id) {
-}
+etcd::KeepAlive::KeepAlive(
+    std::string const& address, std::string const& ca, std::string const& cert,
+    std::string const& privkey,
+    std::function<void(std::exception_ptr)> const& handler, int ttl,
+    int64_t lease_id, std::string const& target_name_override)
+    : KeepAlive(SyncClient(address, ca, cert, privkey, target_name_override),
+                ttl, lease_id) {}
 
-etcd::KeepAlive::KeepAlive(SyncClient const &client,
-                           std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id):
-    handler_(handler), ttl(ttl), lease_id(lease_id), continue_next(true),
-    grpc_timeout(client.get_grpc_timeout()) {
+etcd::KeepAlive::KeepAlive(
+    SyncClient const& client,
+    std::function<void(std::exception_ptr)> const& handler, int ttl,
+    int64_t lease_id)
+    : handler_(handler),
+      ttl(ttl),
+      lease_id(lease_id),
+      continue_next(true),
+      grpc_timeout(client.get_grpc_timeout()) {
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
@@ -97,26 +103,23 @@ etcd::KeepAlive::KeepAlive(SyncClient const &client,
   });
 }
 
-etcd::KeepAlive::KeepAlive(std::string const & address,
-                           std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id):
-    KeepAlive(SyncClient(address), handler, ttl, lease_id) {
-}
+etcd::KeepAlive::KeepAlive(
+    std::string const& address,
+    std::function<void(std::exception_ptr)> const& handler, int ttl,
+    int64_t lease_id)
+    : KeepAlive(SyncClient(address), handler, ttl, lease_id) {}
 
-etcd::KeepAlive::KeepAlive(std::string const & address,
-                           std::string const & username, std::string const & password,
-                           std::function<void (std::exception_ptr)> const &handler,
-                           int ttl, int64_t lease_id, const int auth_token_ttl):
-    KeepAlive(SyncClient(address, username, password, auth_token_ttl), handler, ttl, lease_id) {
-}
+etcd::KeepAlive::KeepAlive(
+    std::string const& address, std::string const& username,
+    std::string const& password,
+    std::function<void(std::exception_ptr)> const& handler, int ttl,
+    int64_t lease_id, const int auth_token_ttl)
+    : KeepAlive(SyncClient(address, username, password, auth_token_ttl),
+                handler, ttl, lease_id) {}
 
-etcd::KeepAlive::~KeepAlive()
-{
-  this->Cancel();
-}
+etcd::KeepAlive::~KeepAlive() { this->Cancel(); }
 
-void etcd::KeepAlive::Cancel()
-{
+void etcd::KeepAlive::Cancel() {
   if (!continue_next.exchange(false)) {
     return;
   }
@@ -143,7 +146,8 @@ void etcd::KeepAlive::Check() {
     // run canceller first
     this->Cancel();
 
-    // propagate the exception, as we throw in `Check()`, the `handler` won't be touched
+    // propagate the exception, as we throw in `Check()`, the `handler` won't be
+    // touched
     eptr_ = std::current_exception();
     if (handler_) {
       handler_(eptr_);
@@ -154,8 +158,7 @@ void etcd::KeepAlive::Check() {
   }
 }
 
-void etcd::KeepAlive::refresh()
-{
+void etcd::KeepAlive::refresh() {
   while (true) {
     if (!continue_next.load()) {
       return;
@@ -164,7 +167,8 @@ void etcd::KeepAlive::refresh()
     int keepalive_ttl = std::max(ttl - 1, 1);
     {
       std::unique_lock<std::mutex> lock(mutex_for_refresh_);
-      if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) == std::cv_status::no_timeout) {
+      if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) ==
+          std::cv_status::no_timeout) {
         return;
       }
     }
@@ -174,8 +178,7 @@ void etcd::KeepAlive::refresh()
   }
 }
 
-void etcd::KeepAlive::refresh_once()
-{
+void etcd::KeepAlive::refresh_once() {
   std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.load()) {
     return;
@@ -183,10 +186,12 @@ void etcd::KeepAlive::refresh_once()
   this->stubs->call->mutable_parameters().grpc_timeout = this->grpc_timeout;
   auto resp = this->stubs->call->Refresh();
   if (!resp.is_ok()) {
-    throw std::runtime_error("Failed to refresh lease: error code: " + std::to_string(resp.error_code()) +
-                              ", message: " + resp.error_message());
+    throw std::runtime_error("Failed to refresh lease: error code: " +
+                             std::to_string(resp.error_code()) +
+                             ", message: " + resp.error_message());
   }
   if (resp.value().ttl() == 0) {
-    throw std::out_of_range("Failed to refresh lease due to expiration: the new TTL is 0.");
+    throw std::out_of_range(
+        "Failed to refresh lease due to expiration: the new TTL is 0.");
   }
 }

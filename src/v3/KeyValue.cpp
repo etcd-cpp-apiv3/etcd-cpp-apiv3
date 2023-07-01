@@ -1,16 +1,7 @@
 #include "etcd/v3/KeyValue.hpp"
 
-etcdv3::KeyValue::KeyValue()
-{
-  ttl = 0;
-}
+etcdv3::KeyValue::KeyValue() { ttl = 0; }
 
-void etcdv3::KeyValue::set_ttl(int ttl) 
-{
-  this->ttl = ttl;
-}
+void etcdv3::KeyValue::set_ttl(int ttl) { this->ttl = ttl; }
 
-int etcdv3::KeyValue::get_ttl() const
-{
-  return ttl;
-}
+int etcdv3::KeyValue::get_ttl() const { return ttl; }

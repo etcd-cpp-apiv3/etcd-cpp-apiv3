@@ -7,22 +7,21 @@
 
 #include "etcd/Client.hpp"
 
-static const std::string etcd_url = etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
+static const std::string etcd_url =
+    etcdv3::detail::resolve_etcd_endpoints("http://127.0.0.1:2379");
 
-TEST_CASE("setup")
-{
+TEST_CASE("setup") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
 }
 
-TEST_CASE("add a new key")
-{
+TEST_CASE("add a new key") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
   etcd::Response resp = etcd.add("/test/key1", "42").get();
   REQUIRE(0 == resp.error_code());
   CHECK("create" == resp.action());
-  etcd::Value const & val = resp.value();
+  etcd::Value const& val = resp.value();
   CHECK("42" == val.as_string());
   CHECK("/test/key1" == val.key());
   CHECK(!val.is_dir());
@@ -30,32 +29,35 @@ TEST_CASE("add a new key")
   CHECK(0 < val.modified_index());
   CHECK(1 == val.version());
   CHECK(0 < resp.index());
-  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd.add("/test/key1", "43").get().error_code()); // Key already exists
-  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS == etcd.add("/test/key1", "42").get().error_code()); // Key already exists
-  CHECK("etcd-cpp-apiv3: key already exists" == etcd.add("/test/key1", "42").get().error_message());
+  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS ==
+        etcd.add("/test/key1", "43").get().error_code());  // Key already exists
+  CHECK(etcd::ERROR_KEY_ALREADY_EXISTS ==
+        etcd.add("/test/key1", "42").get().error_code());  // Key already exists
+  CHECK("etcd-cpp-apiv3: key already exists" ==
+        etcd.add("/test/key1", "42").get().error_message());
 }
 
-TEST_CASE("read a value from etcd")
-{
+TEST_CASE("read a value from etcd") {
   etcd::Client etcd(etcd_url);
   etcd::Response resp = etcd.get("/test/key1").get();
   CHECK("get" == resp.action());
   REQUIRE(resp.is_ok());
   REQUIRE(0 == resp.error_code());
   CHECK("42" == resp.value().as_string());
-  CHECK("" == etcd.get("/test").get().value().as_string()); // key points to a directory
+  CHECK("" == etcd.get("/test").get().value().as_string());  // key points to a
+                                                             // directory
 }
 
-TEST_CASE("simplified read")
-{
+TEST_CASE("simplified read") {
   etcd::Client etcd(etcd_url);
   CHECK("42" == etcd.get("/test/key1").get().value().as_string());
-  CHECK(etcd::ERROR_KEY_NOT_FOUND  == etcd.get("/test/key2").get().error_code()); // Key not found
-  CHECK("" == etcd.get("/test/key2").get().value().as_string()); // Key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND ==
+        etcd.get("/test/key2").get().error_code());  // Key not found
+  CHECK("" ==
+        etcd.get("/test/key2").get().value().as_string());  // Key not found
 }
 
-TEST_CASE("modify a key")
-{
+TEST_CASE("modify a key") {
   etcd::Client etcd(etcd_url);
 
   // get
@@ -66,9 +68,10 @@ TEST_CASE("modify a key")
 
   // modify
   resp = etcd.modify("/test/key1", "43").get();
-  REQUIRE(0 == resp.error_code()); // overwrite
+  REQUIRE(0 == resp.error_code());  // overwrite
   CHECK("update" == resp.action());
-  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.modify("/test/key2", "43").get().error_code()); // Key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND ==
+        etcd.modify("/test/key2", "43").get().error_code());  // Key not found
   CHECK("43" == etcd.modify("/test/key1", "42").get().prev_value().as_string());
 
   // check previous
@@ -77,28 +80,26 @@ TEST_CASE("modify a key")
   CHECK("42" == resp.value().as_string());
 }
 
-TEST_CASE("set a key")
-{
+TEST_CASE("set a key") {
   etcd::Client etcd(etcd_url);
   etcd::Response resp = etcd.set("/test/key1", "43").get();
-  REQUIRE(0  == resp.error_code()); // overwrite
+  REQUIRE(0 == resp.error_code());  // overwrite
   CHECK("set" == resp.action());
-  CHECK(0  == etcd.set("/test/key2", "43").get().error_code()); // create new
+  CHECK(0 == etcd.set("/test/key2", "43").get().error_code());  // create new
   CHECK("43" == etcd.set("/test/key2", "44").get().prev_value().as_string());
   CHECK("" == etcd.set("/test/key3", "44").get().prev_value().as_string());
-  CHECK(0  == etcd.set("/test",      "42").get().error_code()); // Not a file
+  CHECK(0 == etcd.set("/test", "42").get().error_code());  // Not a file
 
-  //set with ttl
+  // set with ttl
   resp = etcd.set("/test/key1", "50", 10).get();
-  REQUIRE(0  == resp.error_code()); // overwrite
+  REQUIRE(0 == resp.error_code());  // overwrite
   CHECK("set" == resp.action());
   CHECK("43" == resp.prev_value().as_string());
   CHECK("50" == resp.value().as_string());
-  CHECK( 0 < resp.value().lease());
+  CHECK(0 < resp.value().lease());
 }
 
-TEST_CASE("atomic compare-and-swap")
-{
+TEST_CASE("atomic compare-and-swap") {
   etcd::Client etcd(etcd_url);
   etcd.set("/test/key1", "42").wait();
 
@@ -121,8 +122,7 @@ TEST_CASE("atomic compare-and-swap")
   CHECK("etcd-cpp-apiv3: key not found" == res.error_message());
 }
 
-TEST_CASE("delete a value")
-{
+TEST_CASE("delete a value") {
   etcd::Client etcd(etcd_url);
   etcd::Response resp = etcd.rm("/test/key11111").get();
   CHECK(!resp.is_ok());
@@ -139,20 +139,19 @@ TEST_CASE("delete a value")
 
   resp = etcd.rm("/test/key1").get();
   CHECK("43" == resp.prev_value().as_string());
-  CHECK( "/test/key1" == resp.prev_value().key());
-  CHECK( create_index == resp.prev_value().created_index());
-  CHECK( modify_index == resp.prev_value().modified_index());
-  CHECK( version == resp.prev_value().version());
+  CHECK("/test/key1" == resp.prev_value().key());
+  CHECK(create_index == resp.prev_value().created_index());
+  CHECK(modify_index == resp.prev_value().modified_index());
+  CHECK(version == resp.prev_value().version());
   CHECK("delete" == resp.action());
-  CHECK( modify_index == resp.value().modified_index());
-  CHECK( create_index == resp.value().created_index());
-  CHECK( version == resp.value().version());
+  CHECK(modify_index == resp.value().modified_index());
+  CHECK(create_index == resp.value().created_index());
+  CHECK(version == resp.value().version());
   CHECK("" == resp.value().as_string());
-  CHECK( "/test/key1" == resp.value().key());
+  CHECK("/test/key1" == resp.value().key());
 }
 
-TEST_CASE("atomic compare-and-delete based on prevValue")
-{
+TEST_CASE("atomic compare-and-delete based on prevValue") {
   etcd::Client etcd(etcd_url);
   etcd.set("/test/key1", "42").wait();
 
@@ -167,8 +166,7 @@ TEST_CASE("atomic compare-and-delete based on prevValue")
   CHECK("42" == res.prev_value().as_string());
 }
 
-TEST_CASE("atomic compare-and-delete based on prevIndex")
-{
+TEST_CASE("atomic compare-and-delete based on prevIndex") {
   etcd::Client etcd(etcd_url);
   int64_t index = etcd.set("/test/key1", "42").get().index();
 
@@ -183,8 +181,7 @@ TEST_CASE("atomic compare-and-delete based on prevIndex")
   CHECK("42" == res.prev_value().as_string());
 }
 
-TEST_CASE("deep atomic compare-and-swap")
-{
+TEST_CASE("deep atomic compare-and-swap") {
   etcd::Client etcd(etcd_url);
   etcd.set("/test/key1", "42").wait();
 
@@ -214,8 +211,7 @@ TEST_CASE("deep atomic compare-and-swap")
   CHECK("etcd-cpp-apiv3: compare failed" == res.error_message());
 }
 
-TEST_CASE("using binary keys and values, raw char pointer doesn't work")
-{
+TEST_CASE("using binary keys and values, raw char pointer doesn't work") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
   {
@@ -244,12 +240,13 @@ TEST_CASE("using binary keys and values, raw char pointer doesn't work")
   }
 }
 
-TEST_CASE("using binary keys and values, std::string is ok for \\0")
-{
+TEST_CASE("using binary keys and values, std::string is ok for \\0") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("/test", true).wait();
   {
-    etcd::Response resp = etcd.put(std::string("/test/key1\0xyz", 14), std::string("42\0foo", 6)).get();
+    etcd::Response resp =
+        etcd.put(std::string("/test/key1\0xyz", 14), std::string("42\0foo", 6))
+            .get();
     REQUIRE(resp.is_ok());
   }
   {
@@ -267,8 +264,7 @@ TEST_CASE("using binary keys and values, std::string is ok for \\0")
   }
 }
 
-TEST_CASE("list a directory")
-{
+TEST_CASE("list a directory") {
   etcd::Client etcd(etcd_url);
   CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
 
@@ -304,8 +300,7 @@ TEST_CASE("list a directory")
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
 
-TEST_CASE("list by range")
-{
+TEST_CASE("list by range") {
   etcd::Client etcd(etcd_url);
   CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
 
@@ -315,13 +310,15 @@ TEST_CASE("list by range")
   etcd.set("/test/new_dir/key3", "value3").wait();
   etcd.set("/test/new_dir/key4", "value4").wait();
 
-  etcd::Response resp1 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key3").get();
+  etcd::Response resp1 =
+      etcd.ls("/test/new_dir/key1", "/test/new_dir/key3").get();
   REQUIRE(resp1.is_ok());
   CHECK("get" == resp1.action());
   REQUIRE(2 == resp1.keys().size());
   REQUIRE(2 == resp1.values().size());
 
-  etcd::Response resp2 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key4").get();
+  etcd::Response resp2 =
+      etcd.ls("/test/new_dir/key1", "/test/new_dir/key4").get();
   REQUIRE(resp2.is_ok());
   CHECK("get" == resp2.action());
   REQUIRE(3 == resp2.keys().size());
@@ -333,7 +330,10 @@ TEST_CASE("list by range")
   REQUIRE(4 == resp3.keys().size());
   REQUIRE(4 == resp3.values().size());
 
-  etcd::Response resp4 = etcd.ls("/test/new_dir/key1", etcdv3::detail::string_plus_one("/test/new_dir/key")).get();
+  etcd::Response resp4 =
+      etcd.ls("/test/new_dir/key1",
+              etcdv3::detail::string_plus_one("/test/new_dir/key"))
+          .get();
   REQUIRE(resp4.is_ok());
   CHECK("get" == resp4.action());
   REQUIRE(4 == resp4.keys().size());
@@ -344,8 +344,7 @@ TEST_CASE("list by range")
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
 
-TEST_CASE("list by range, w/o values")
-{
+TEST_CASE("list by range, w/o values") {
   etcd::Client etcd(etcd_url);
   CHECK(0 == etcd.ls("/test/new_dir").get().keys().size());
 
@@ -355,14 +354,16 @@ TEST_CASE("list by range, w/o values")
   etcd.set("/test/new_dir/key3", "value3").wait();
   etcd.set("/test/new_dir/key4", "value4").wait();
 
-  etcd::Response resp1 = etcd.ls("/test/new_dir/key1", "/test/new_dir/key2").get();
+  etcd::Response resp1 =
+      etcd.ls("/test/new_dir/key1", "/test/new_dir/key2").get();
   REQUIRE(resp1.is_ok());
   CHECK("get" == resp1.action());
   REQUIRE(1 == resp1.keys().size());
   REQUIRE(1 == resp1.values().size());
   REQUIRE(resp1.values()[0].as_string() == "value1");
 
-  etcd::Response resp2 = etcd.keys("/test/new_dir/key1", "/test/new_dir/key2").get();
+  etcd::Response resp2 =
+      etcd.keys("/test/new_dir/key1", "/test/new_dir/key2").get();
   REQUIRE(resp1.is_ok());
   CHECK("get" == resp2.action());
   REQUIRE(1 == resp2.keys().size());
@@ -372,15 +373,15 @@ TEST_CASE("list by range, w/o values")
   CHECK(etcd.rmdir("/test/new_dir", true).get().is_ok());
 }
 
-TEST_CASE("delete a directory")
-{
+TEST_CASE("delete a directory") {
   etcd::Client etcd(etcd_url);
 
   etcd.set("/test/new_dir/key1", "value1").wait();
   etcd.set("/test/new_dir/key2", "value2").wait();
   etcd.set("/test/new_dir/key3", "value3").wait();
 
-  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.rmdir("/test/new_dir").get().error_code()); // key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND ==
+        etcd.rmdir("/test/new_dir").get().error_code());  // key not found
   etcd::Response resp = etcd.ls("/test/new_dir").get();
 
   resp = etcd.rmdir("/test/new_dir", true).get();
@@ -390,7 +391,6 @@ TEST_CASE("delete a directory")
   CHECK("/test/new_dir/key2" == resp.key(1));
   CHECK("value1" == resp.value(0).as_string());
   CHECK("value2" == resp.value(1).as_string());
-
 
   resp = etcd.rmdir("/test/dirnotfound", true).get();
   CHECK(!resp.is_ok());
@@ -403,8 +403,7 @@ TEST_CASE("delete a directory")
   CHECK("etcd-cpp-apiv3: key not found" == resp.error_message());
 }
 
-TEST_CASE("delete all keys with rmdir(\"\", true)")
-{
+TEST_CASE("delete all keys with rmdir(\"\", true)") {
   etcd::Client etcd(etcd_url);
   etcd.rmdir("", true).wait();
 
@@ -417,11 +416,11 @@ TEST_CASE("delete all keys with rmdir(\"\", true)")
   CHECK(resp.values().size() == 3);
 }
 
-TEST_CASE("delete by range")
-{
+TEST_CASE("delete by range") {
   etcd::Client etcd(etcd_url);
 
-  CHECK(etcd::ERROR_KEY_NOT_FOUND == etcd.rmdir("/test/new_dir").get().error_code()); // key not found
+  CHECK(etcd::ERROR_KEY_NOT_FOUND ==
+        etcd.rmdir("/test/new_dir").get().error_code());  // key not found
   etcd::Response resp = etcd.ls("/test/new_dir").get();
 
   etcd.set("/test/new_dir/key1", "value1").wait();
@@ -438,8 +437,7 @@ TEST_CASE("delete by range")
   CHECK("value2" == resp.value(1).as_string());
 }
 
-TEST_CASE("wait for a value change")
-{
+TEST_CASE("wait for a value change") {
   etcd::Client etcd(etcd_url);
   etcd.set("/test/key1", "42").wait();
 
@@ -447,7 +445,7 @@ TEST_CASE("wait for a value change")
   CHECK(!res.is_done());
   std::this_thread::sleep_for(std::chrono::seconds(1));
   CHECK(!res.is_done());
-  
+
   etcd.set("/test/key1", "43").get();
   std::this_thread::sleep_for(std::chrono::seconds(1));
   REQUIRE(res.is_done());
@@ -456,8 +454,7 @@ TEST_CASE("wait for a value change")
   CHECK("42" == res.get().prev_value().as_string());
 }
 
-TEST_CASE("wait for a directory change")
-{
+TEST_CASE("wait for a directory change") {
   etcd::Client etcd(etcd_url);
 
   pplx::task<etcd::Response> res = etcd.watch("/test", true);
@@ -483,8 +480,7 @@ TEST_CASE("wait for a directory change")
   CHECK("45" == res2.get().value().as_string());
 }
 
-TEST_CASE("watch changes in the past")
-{
+TEST_CASE("watch changes in the past") {
   etcd::Client etcd(etcd_url);
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
   int64_t index = etcd.set("/test/key1", "42").get().index();
@@ -510,8 +506,7 @@ TEST_CASE("watch changes in the past")
   CHECK("45" == res.value().as_string());
 }
 
-TEST_CASE("watch range changes in the past")
-{
+TEST_CASE("watch range changes in the past") {
   etcd::Client etcd(etcd_url);
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
   int64_t index = etcd.set("/test/key1", "42").get().index();
@@ -542,53 +537,53 @@ TEST_CASE("watch multiple keys and use promise") {
   int64_t start_index = etcd.set("/test/key1", "value1").get().index();
   etcd.set("/test/key2", "value2").get();
 
-  pplx::task<size_t> res = etcd.watch("/test", start_index, true)
-    .then([](pplx::task<etcd::Response> const &resp_task) -> size_t {
-      auto const &resp = resp_task.get();
-      return resp.events().size();
-    });
+  pplx::task<size_t> res =
+      etcd.watch("/test", start_index, true)
+          .then([](pplx::task<etcd::Response> const& resp_task) -> size_t {
+            auto const& resp = resp_task.get();
+            return resp.events().size();
+          });
   size_t event_size = res.get();
   CHECK(2 == event_size);
 }
 
-TEST_CASE("lease grant")
-{
+TEST_CASE("lease grant") {
   etcd::Client etcd(etcd_url);
   etcd::Response res = etcd.leasegrant(60).get();
   REQUIRE(res.is_ok());
   CHECK(60 == res.value().ttl());
-  CHECK(0 <  res.value().lease());
+  CHECK(0 < res.value().lease());
   int64_t leaseid = res.value().lease();
 
   res = etcd.set("/test/key1", "43", leaseid).get();
-  REQUIRE(0  == res.error_code()); // overwrite
+  REQUIRE(0 == res.error_code());  // overwrite
   CHECK("set" == res.action());
-  CHECK(leaseid ==  res.value().lease());
+  CHECK(leaseid == res.value().lease());
 
   // change with lease id
   res = etcd.leasegrant(10).get();
   leaseid = res.value().lease();
   res = etcd.set("/test/key1", "43", leaseid).get();
-  REQUIRE(0  == res.error_code()); // overwrite
+  REQUIRE(0 == res.error_code());  // overwrite
   CHECK("set" == res.action());
   CHECK(leaseid == res.value().lease());
 
   // failure to attach lease id
-  res = etcd.set("/test/key1", "43", leaseid+1).get();
+  res = etcd.set("/test/key1", "43", leaseid + 1).get();
   REQUIRE(!res.is_ok());
-  REQUIRE(5  == res.error_code()); 
+  REQUIRE(5 == res.error_code());
   CHECK("etcdserver: requested lease not found" == res.error_message());
 
   res = etcd.modify("/test/key1", "44", leaseid).get();
-  REQUIRE(0  == res.error_code()); // overwrite
+  REQUIRE(0 == res.error_code());  // overwrite
   CHECK("update" == res.action());
-  CHECK(leaseid ==  res.value().lease());
-  CHECK("44" ==  res.value().as_string());
+  CHECK(leaseid == res.value().lease());
+  CHECK("44" == res.value().as_string());
 
   // failure to attach invalid lease id
-  res = etcd.modify("/test/key1", "45", leaseid+1).get();
+  res = etcd.modify("/test/key1", "45", leaseid + 1).get();
   REQUIRE(!res.is_ok());
-  REQUIRE(5  == res.error_code()); 
+  REQUIRE(5 == res.error_code());
   CHECK("etcdserver: requested lease not found" == res.error_message());
 
   res = etcd.modify_if("/test/key1", "45", "44", leaseid).get();
@@ -598,9 +593,9 @@ TEST_CASE("lease grant")
   CHECK("45" == res.value().as_string());
 
   // failure to attach invalid lease id
-  res = etcd.modify_if("/test/key1", "46", "45", leaseid+1).get();
+  res = etcd.modify_if("/test/key1", "46", "45", leaseid + 1).get();
   REQUIRE(!res.is_ok());
-  REQUIRE(5  == res.error_code()); 
+  REQUIRE(5 == res.error_code());
   CHECK("etcdserver: requested lease not found" == res.error_message());
 
   // succes with the correct index & lease id
@@ -610,36 +605,35 @@ TEST_CASE("lease grant")
   CHECK("compareAndSwap" == res.action());
   CHECK("44" == res.value().as_string());
 
-  res = etcd.modify_if("/test/key1", "44", index, leaseid+1).get();
+  res = etcd.modify_if("/test/key1", "44", index, leaseid + 1).get();
   REQUIRE(!res.is_ok());
-  REQUIRE(5  == res.error_code()); 
+  REQUIRE(5 == res.error_code());
   CHECK("etcdserver: requested lease not found" == res.error_message());
 
   res = etcd.add("/test/key11111", "43", leaseid).get();
-  REQUIRE(0  == res.error_code()); 
+  REQUIRE(0 == res.error_code());
   CHECK("create" == res.action());
-  CHECK(leaseid ==  res.value().lease());
+  CHECK(leaseid == res.value().lease());
 
-  //failure to attach invalid lease id
-  res = etcd.set("/test/key11111", "43", leaseid+1).get();
+  // failure to attach invalid lease id
+  res = etcd.set("/test/key11111", "43", leaseid + 1).get();
   REQUIRE(!res.is_ok());
-  REQUIRE(5  == res.error_code()); 
+  REQUIRE(5 == res.error_code());
   CHECK("etcdserver: requested lease not found" == res.error_message());
 }
 
-TEST_CASE("lease list")
-{
+TEST_CASE("lease list") {
   etcd::Client etcd(etcd_url);
   etcd::Response res = etcd.leasegrant(60).get();
   REQUIRE(res.is_ok());
   CHECK(60 == res.value().ttl());
-  CHECK(0 <  res.value().lease());
+  CHECK(0 < res.value().lease());
   int64_t leaseid = res.value().lease();
 
   etcd::Response leasesresp = etcd.leases().get();
   if (leasesresp.is_ok()) {
     REQUIRE(leasesresp.is_ok());
-    auto const &leases = leasesresp.leases();
+    auto const& leases = leasesresp.leases();
     REQUIRE(leases.size() > 0);
     CHECK(std::find(leases.begin(), leases.end(), leaseid) != leases.end());
   } else {
@@ -647,8 +641,7 @@ TEST_CASE("lease list")
   }
 }
 
-TEST_CASE("cleanup")
-{
+TEST_CASE("cleanup") {
   etcd::Client etcd(etcd_url);
   REQUIRE(0 == etcd.rmdir("/test", true).get().error_code());
 }

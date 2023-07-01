@@ -3,13 +3,9 @@
 
 #include <iostream>
 
-etcd::Response::Response()
-  : _error_code(0),
-    _index(0)
-{
-}
+etcd::Response::Response() : _error_code(0), _index(0) {}
 
-etcd::Response::Response(const etcd::Response & response) {
+etcd::Response::Response(const etcd::Response& response) {
   this->_error_code = response._error_code;
   this->_error_message = response._error_message;
   this->_index = response._index;
@@ -20,7 +16,7 @@ etcd::Response::Response(const etcd::Response & response) {
   this->_keys = response._keys;
   this->_compact_revision = response._compact_revision;
   this->_lock_key = response._lock_key;
-  this->_name = response._name; 
+  this->_name = response._name;
   this->_events = response._events;
   this->_duration = response._duration;
 
@@ -31,23 +27,19 @@ etcd::Response::Response(const etcd::Response & response) {
   this->_leases = response._leases;
 }
 
-etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseconds const& duration)
-{
+etcd::Response::Response(const etcdv3::V3Response& reply,
+                         std::chrono::microseconds const& duration) {
   _index = reply.get_index();
   _action = reply.get_action();
   _error_code = reply.get_error_code();
   _error_message = reply.get_error_message();
-  if(reply.has_values())
-  {
+  if (reply.has_values()) {
     auto val = reply.get_values();
-    for(unsigned int index = 0; index < val.size(); index++)
-    {
+    for (unsigned int index = 0; index < val.size(); index++) {
       _values.push_back(Value(val[index]));
       _keys.push_back(val[index].kvs.key());
     }
-  }
-  else
-  {
+  } else {
     _value = Value(reply.get_value());
   }
   _prev_value = Value(reply.get_prev_value());
@@ -57,7 +49,7 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
   _lock_key = reply.get_lock_key();
   _name = reply.get_name();
 
-  for (auto const &ev: reply.get_events()) {
+  for (auto const& ev : reply.get_events()) {
     _events.emplace_back(etcd::Event(ev));
   }
 
@@ -74,103 +66,54 @@ etcd::Response::Response(const etcdv3::V3Response& reply, std::chrono::microseco
 }
 
 etcd::Response::Response(int error_code, std::string const& error_message)
-  : _error_code(error_code),
-    _error_message(error_message),
-    _index(0)
-{
-}
+    : _error_code(error_code), _error_message(error_message), _index(0) {}
 
-etcd::Response::Response(int error_code, char const * error_message)
-  : _error_code(error_code),
-    _error_message(error_message),
-    _index(0)
-{
-}
+etcd::Response::Response(int error_code, char const* error_message)
+    : _error_code(error_code), _error_message(error_message), _index(0) {}
 
-int etcd::Response::error_code() const
-{
-  return _error_code;
-}
+int etcd::Response::error_code() const { return _error_code; }
 
-std::string const & etcd::Response::error_message() const
-{
+std::string const& etcd::Response::error_message() const {
   return _error_message;
 }
 
-bool etcd::Response::is_ok() const
-{
-  return error_code() == 0;
-}
+bool etcd::Response::is_ok() const { return error_code() == 0; }
 
-bool etcd::Response::is_network_unavailable() const
-{
+bool etcd::Response::is_network_unavailable() const {
   return error_code() == ::grpc::StatusCode::UNAVAILABLE;
 }
 
-bool etcd::Response::is_grpc_timeout() const
-{
+bool etcd::Response::is_grpc_timeout() const {
   return _error_code == grpc::StatusCode::DEADLINE_EXCEEDED;
 }
 
-std::string const & etcd::Response::action() const
-{
-  return _action;
-}
+std::string const& etcd::Response::action() const { return _action; }
 
-int64_t etcd::Response::index() const
-{
-  return _index;
-}
+int64_t etcd::Response::index() const { return _index; }
 
-etcd::Value const & etcd::Response::value() const
-{
-  return _value;
-}
+etcd::Value const& etcd::Response::value() const { return _value; }
 
-etcd::Value const & etcd::Response::prev_value() const
-{
-  return _prev_value;
-}
+etcd::Value const& etcd::Response::prev_value() const { return _prev_value; }
 
-etcd::Values const & etcd::Response::values() const
-{
-  return _values;
-}
+etcd::Values const& etcd::Response::values() const { return _values; }
 
-etcd::Value const & etcd::Response::value(int index) const
-{
+etcd::Value const& etcd::Response::value(int index) const {
   return _values[index];
 }
 
-etcd::Keys const & etcd::Response::keys() const
-{
-  return _keys;
-}
+etcd::Keys const& etcd::Response::keys() const { return _keys; }
 
-std::string const & etcd::Response::key(int index) const
-{
-  return _keys[index];
-}
+std::string const& etcd::Response::key(int index) const { return _keys[index]; }
 
-int64_t etcd::Response::compact_revision() const
-{
-  return _compact_revision;
-}
+int64_t etcd::Response::compact_revision() const { return _compact_revision; }
 
-int64_t etcd::Response::watch_id() const
-{
-  return _watch_id;
-}
+int64_t etcd::Response::watch_id() const { return _watch_id; }
 
-std::string const & etcd::Response::lock_key() const {
-  return _lock_key;
-}
+std::string const& etcd::Response::lock_key() const { return _lock_key; }
 
-std::string const & etcd::Response::name() const {
-  return _name;
-}
+std::string const& etcd::Response::name() const { return _name; }
 
-std::vector<etcd::Event> const & etcd::Response::events() const {
+std::vector<etcd::Event> const& etcd::Response::events() const {
   return this->_events;
 }
 
@@ -178,18 +121,12 @@ std::chrono::microseconds const& etcd::Response::duration() const {
   return this->_duration;
 }
 
-uint64_t etcd::Response::cluster_id() const {
-  return this->_cluster_id;
-}
+uint64_t etcd::Response::cluster_id() const { return this->_cluster_id; }
 
-uint64_t etcd::Response::member_id() const {
-  return this->_member_id;
-}
+uint64_t etcd::Response::member_id() const { return this->_member_id; }
 
-uint64_t etcd::Response::raft_term() const {
-  return this->_raft_term;
-}
+uint64_t etcd::Response::raft_term() const { return this->_raft_term; }
 
-std::vector<int64_t> const & etcd::Response::leases() const {
+std::vector<int64_t> const& etcd::Response::leases() const {
   return this->_leases;
 }

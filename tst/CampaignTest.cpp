@@ -11,7 +11,7 @@
 #include "etcd/Value.hpp"
 
 static std::string etcd_uri = etcdv3::detail::resolve_etcd_endpoints(
-	"http://127.0.0.1:2379,http://127.0.0.1:2479,http://127.0.0.1:2579");
+    "http://127.0.0.1:2379,http://127.0.0.1:2479,http://127.0.0.1:2579");
 
 TEST_CASE("campaign and leadership using keepalive") {
   etcd::Client etcd(etcd_uri);
@@ -39,12 +39,13 @@ TEST_CASE("campaign and leadership using keepalive") {
 
   std::cout << "finish leader" << std::endl;
 
-  auto resp3 = etcd.resign("/leader", resp1.value().lease(), resp1.value().key(), resp1.value().created_index()).get();
+  auto resp3 = etcd.resign("/leader", resp1.value().lease(),
+                           resp1.value().key(), resp1.value().created_index())
+                   .get();
   CHECK(0 == resp3.error_code());
 
   std::cout << "finish resign" << std::endl;
 }
-
 
 TEST_CASE("concurrent campaign with grpc timeout") {
   std::string value1 = std::string("192.168.1.6:1880");
@@ -60,7 +61,9 @@ TEST_CASE("concurrent campaign with grpc timeout") {
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     // resign
-    auto resp2 = etcd.resign("/leader", resp1.value().lease(), resp1.value().key(), resp1.value().created_index()).get();
+    auto resp2 = etcd.resign("/leader", resp1.value().lease(),
+                             resp1.value().key(), resp1.value().created_index())
+                     .get();
     CHECK(0 == resp2.error_code());
   };
 
@@ -74,7 +77,7 @@ TEST_CASE("concurrent campaign with grpc timeout") {
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
     auto resp1 = etcd.campaign("/leader", lease_id, value2).get();
-    std::cout <<resp1.error_code() << resp1.error_message() << std::endl;
+    std::cout << resp1.error_code() << resp1.error_message() << std::endl;
     CHECK(0 != resp1.error_code());
 
     // wait until success
@@ -92,7 +95,9 @@ TEST_CASE("concurrent campaign with grpc timeout") {
       }
     }
 
-    auto resp2 = etcd.resign("/leader", resp1.value().lease(), resp1.value().key(), resp1.value().created_index()).get();
+    auto resp2 = etcd.resign("/leader", resp1.value().lease(),
+                             resp1.value().key(), resp1.value().created_index())
+                     .get();
     CHECK(0 == resp2.error_code());
   };
 
