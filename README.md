@@ -877,7 +877,7 @@ pplx::task<Response> proclaim(std::string const &name, int64_t lease_id,
 
 pplx::task<Response> leader(std::string const &name);
 
-std::unique_ptr<Observer> observe(std::string const &name);
+std::unique_ptr<SyncClient::Observer> observe(std::string const &name);
 
 pplx::task<Response> resign(std::string const &name, int64_t lease_id,
                             std::string const &key, int64_t revision);
@@ -891,7 +891,7 @@ The `Observer` returned by `observe()` can be use to monitor the changes of elec
 The observer stream will be canceled when been destructed.
 
 ```c++
-  std::unique_ptr<etcd::Observer> observer = etcd.observe("test");
+  std::unique_ptr<etcd::SyncClient::Observer> observer = etcd.observe("test");
 
   // wait one change event, blocked execution
   etcd::Response resp = observer->WaitOnce();
@@ -906,7 +906,7 @@ The observer stream will be canceled when been destructed.
   observer.reset(nullptr);
 ```
 
-for more details, please refer to [etcd/Client.hpp](./etcd/Client.hpp).
+for more details, please refer to [etcd/Client.hpp](./etcd/Client.hpp) and [tst/ElectionTest.cpp](./tst/ElectionTest.cpp).
 
 ### TODO
 

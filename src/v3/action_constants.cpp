@@ -42,6 +42,7 @@ char const * etcdv3::WATCH_WRITES_DONE = "watch writes done";
 char const * etcdv3::WATCH_FINISH = "watch finish";
 
 char const * etcdv3::ELECTION_OBSERVE_CREATE = "observe create";
+char const * etcdv3::ELECTION_OBSERVE_FINISH = "observe finish";
 
 const int etcdv3::ERROR_GRPC_OK = 0;
 const int etcdv3::ERROR_GRPC_CANCELLED = 1;

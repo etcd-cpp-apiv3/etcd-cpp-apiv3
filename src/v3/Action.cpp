@@ -73,7 +73,7 @@ void etcdv3::ActionParameters::dump(std::ostream &os) const {
   os << "  grpc_timeout:  " << grpc_timeout.count() << "(ms)" << std::endl;
 }
 
-void etcdv3::Action::waitForResponse() 
+void etcdv3::Action::waitForResponse()
 {
   void* got_tag;
   bool ok = false;
