@@ -1078,9 +1078,9 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
                                              (void*) etcdv3::WATCH_CREATE);
   this->watch_id =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-// #ifndef NDEBUG
-//   std::clog << "etcd-cpp-apiv3: watch_id: " << this->watch_id << std::endl;
-// #endif
+  // #ifndef NDEBUG
+  //   std::clog << "etcd-cpp-apiv3: watch_id: " << this->watch_id << std::endl;
+  // #endif
 
   WatchRequest watch_req;
   WatchCreateRequest watch_create_req;
