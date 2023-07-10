@@ -332,25 +332,10 @@ class SyncClient {
    * created if it does not exists.
    * @param key is the key to be created or modified
    * @param value is the new value to be set
-   */
-  Response set(std::string const& key, std::string const& value, int ttl = 0);
-
-  /**
-   * Sets the value of a key. The key will be modified if already exists or
-   * created if it does not exists.
-   * @param key is the key to be created or modified
-   * @param value is the new value to be set
    * @param leaseId is the lease attached to the key
    */
   Response set(std::string const& key, std::string const& value,
-               int64_t leaseId);
-
-  /**
-   * Creates a new key and sets it's value. Fails if the key already exists.
-   * @param key is the key to be created
-   * @param value is the value to be set
-   */
-  Response add(std::string const& key, std::string const& value, int ttl = 0);
+               const int64_t leaseId = 0);
 
   /**
    * Creates a new key and sets it's value. Fails if the key already exists.
@@ -359,7 +344,7 @@ class SyncClient {
    * @param leaseId is the lease attached to the key
    */
   Response add(std::string const& key, std::string const& value,
-               int64_t leaseId);
+               const int64_t leaseId = 0);
 
   /**
    * Put a new key-value pair.
@@ -369,12 +354,13 @@ class SyncClient {
   Response put(std::string const& key, std::string const& value);
 
   /**
-   * Modifies an existing key. Fails if the key does not exists.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
+   * Put a new key-value pair.
+   * @param key is the key to be put
+   * @param value is the value to be put
+   * @param leaseId is the lease id to be associated with the key
    */
-  Response modify(std::string const& key, std::string const& value,
-                  int ttl = 0);
+  Response put(std::string const& key, std::string const& value,
+               const int64_t leaseId);
 
   /**
    * Modifies an existing key. Fails if the key does not exists.
@@ -383,17 +369,7 @@ class SyncClient {
    * @param leaseId is the lease attached to the key
    */
   Response modify(std::string const& key, std::string const& value,
-                  int64_t leaseId);
-
-  /**
-   * Modifies an existing key only if it has a specific value. Fails if the key
-   * does not exists or the original value differs from the expected one.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
-   * @param old_value is the value to be replaced
-   */
-  Response modify_if(std::string const& key, std::string const& value,
-                     std::string const& old_value, int ttl = 0);
+                  const int64_t leaseId = 0);
 
   /**
    * Modifies an existing key only if it has a specific value. Fails if the key
@@ -404,18 +380,7 @@ class SyncClient {
    * @param leaseId is the lease attached to the key
    */
   Response modify_if(std::string const& key, std::string const& value,
-                     std::string const& old_value, int64_t leaseId);
-
-  /**
-   * Modifies an existing key only if it has a specific modification index
-   * value. Fails if the key does not exists or the modification index of the
-   * previous value differs from the expected one.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
-   * @param old_index is the expected index of the original value
-   */
-  Response modify_if(std::string const& key, std::string const& value,
-                     int64_t old_index, int ttl = 0);
+                     std::string const& old_value, const int64_t leaseId = 0);
 
   /**
    * Modifies an existing key only if it has a specific modification index
@@ -427,7 +392,7 @@ class SyncClient {
    * @param leaseId is the lease attached to the key
    */
   Response modify_if(std::string const& key, std::string const& value,
-                     int64_t old_index, int64_t leaseId);
+                     int64_t old_index, const int64_t leaseId = 0);
 
   /**
    * Removes a single key. The key has to point to a plain, non directory entry.
@@ -819,22 +784,21 @@ class SyncClient {
  private:
   // TODO: use std::unique_ptr<>
   std::shared_ptr<etcdv3::AsyncHeadAction> head_internal();
-  std::shared_ptr<etcdv3::AsyncRangeAction> get_internal(std::string const& key,
-                                                         int64_t revision = 0);
-  std::shared_ptr<etcdv3::AsyncSetAction> set_internal(std::string const& key,
-                                                       std::string const& value,
-                                                       int64_t leaseId);
-  std::shared_ptr<etcdv3::AsyncSetAction> add_internal(std::string const& key,
-                                                       std::string const& value,
-                                                       int64_t leaseId);
+  std::shared_ptr<etcdv3::AsyncRangeAction> get_internal(
+      std::string const& key, const int64_t revision = 0);
+  std::shared_ptr<etcdv3::AsyncSetAction> add_internal(
+      std::string const& key, std::string const& value,
+      const int64_t leaseId = 0);
   std::shared_ptr<etcdv3::AsyncPutAction> put_internal(
-      std::string const& key, std::string const& value);
+      std::string const& key, std::string const& value,
+      const int64_t leaseId = 0);
   std::shared_ptr<etcdv3::AsyncUpdateAction> modify_internal(
-      std::string const& key, std::string const& value, int64_t leaseId);
+      std::string const& key, std::string const& value,
+      const int64_t leaseId = 0);
   std::shared_ptr<etcdv3::AsyncCompareAndSwapAction> modify_if_internal(
       std::string const& key, std::string const& value, int64_t old_index,
-      std::string const& old_value, int64_t leaseId,
-      etcdv3::AtomicityType const& atomicity_type);
+      std::string const& old_value, etcdv3::AtomicityType const& atomicity_type,
+      const int64_t leaseId = 0);
   std::shared_ptr<etcdv3::AsyncDeleteAction> rm_internal(
       std::string const& key);
   std::shared_ptr<etcdv3::AsyncCompareAndDeleteAction> rm_if_internal(

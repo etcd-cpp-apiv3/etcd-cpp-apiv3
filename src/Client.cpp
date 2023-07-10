@@ -231,61 +231,15 @@ pplx::task<etcd::Response> etcd::Client::get(std::string const& key,
 
 pplx::task<etcd::Response> etcd::Client::set(std::string const& key,
                                              std::string const& value,
-                                             int ttl) {
-  if (ttl > 0) {
-    return this->leasegrant(ttl).then(
-        [this, key, value](pplx::task<etcd::Response> const& task) {
-          auto resp = task.get();
-          if (resp.error_code() == 0) {
-            return etcd::detail::asyncify(
-                static_cast<responser_t<etcdv3::AsyncSetAction>>(
-                    Response::create),
-                this->client->set_internal(key, value, resp.value().lease()));
-          } else {
-            return pplx::task_from_result(resp);
-          }
-        });
-  } else {
-    return etcd::detail::asyncify(
-        static_cast<responser_t<etcdv3::AsyncSetAction>>(Response::create),
-        this->client->set_internal(key, value, 0));
-  }
-}
-
-pplx::task<etcd::Response> etcd::Client::set(std::string const& key,
-                                             std::string const& value,
-                                             int64_t leaseid) {
+                                             const int64_t leaseid) {
   return etcd::detail::asyncify(
-      static_cast<responser_t<etcdv3::AsyncSetAction>>(Response::create),
-      this->client->set_internal(key, value, leaseid));
+      static_cast<responser_t<etcdv3::AsyncPutAction>>(Response::create),
+      this->client->put_internal(key, value, leaseid));
 }
 
 pplx::task<etcd::Response> etcd::Client::add(std::string const& key,
                                              std::string const& value,
-                                             int ttl) {
-  if (ttl > 0) {
-    return this->leasegrant(ttl).then(
-        [this, key, value](pplx::task<etcd::Response> const& task) {
-          auto resp = task.get();
-          if (resp.error_code() == 0) {
-            return etcd::detail::asyncify(
-                static_cast<responser_t<etcdv3::AsyncSetAction>>(
-                    Response::create),
-                this->client->add_internal(key, value, resp.value().lease()));
-          } else {
-            return pplx::task_from_result(resp);
-          }
-        });
-  } else {
-    return etcd::detail::asyncify(
-        static_cast<responser_t<etcdv3::AsyncSetAction>>(Response::create),
-        this->client->add_internal(key, value, 0));
-  }
-}
-
-pplx::task<etcd::Response> etcd::Client::add(std::string const& key,
-                                             std::string const& value,
-                                             int64_t leaseid) {
+                                             const int64_t leaseid) {
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncSetAction>>(Response::create),
       this->client->add_internal(key, value, leaseid));
@@ -298,33 +252,17 @@ pplx::task<etcd::Response> etcd::Client::put(std::string const& key,
       this->client->put_internal(key, value));
 }
 
-pplx::task<etcd::Response> etcd::Client::modify(std::string const& key,
-                                                std::string const& value,
-                                                int ttl) {
-  if (ttl > 0) {
-    return this->leasegrant(ttl).then(
-        [this, key, value](pplx::task<etcd::Response> const& task) {
-          auto resp = task.get();
-          if (resp.error_code() == 0) {
-            return etcd::detail::asyncify(
-                static_cast<responser_t<etcdv3::AsyncUpdateAction>>(
-                    Response::create),
-                this->client->modify_internal(key, value,
-                                              resp.value().lease()));
-          } else {
-            return pplx::task_from_result(resp);
-          }
-        });
-  } else {
-    return etcd::detail::asyncify(
-        static_cast<responser_t<etcdv3::AsyncUpdateAction>>(Response::create),
-        this->client->modify_internal(key, value, 0));
-  }
+pplx::task<etcd::Response> etcd::Client::put(std::string const& key,
+                                             std::string const& value,
+                                             const int64_t leaseId) {
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncPutAction>>(Response::create),
+      this->client->put_internal(key, value, leaseId));
 }
 
 pplx::task<etcd::Response> etcd::Client::modify(std::string const& key,
                                                 std::string const& value,
-                                                int64_t leaseid) {
+                                                const int64_t leaseid) {
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncUpdateAction>>(Response::create),
       this->client->modify_internal(key, value, leaseid));
@@ -333,78 +271,25 @@ pplx::task<etcd::Response> etcd::Client::modify(std::string const& key,
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const& key,
                                                    std::string const& value,
                                                    std::string const& old_value,
-                                                   int ttl) {
-  if (ttl > 0) {
-    return this->leasegrant(ttl).then(
-        [this, key, value, old_value](pplx::task<etcd::Response> const& task) {
-          auto resp = task.get();
-          if (resp.error_code() == 0) {
-            return etcd::detail::asyncify(
-                static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
-                    Response::create),
-                this->client->modify_if_internal(
-                    key, value, 0, old_value, resp.value().lease(),
-                    etcdv3::AtomicityType::PREV_VALUE));
-          } else {
-            return pplx::task_from_result(resp);
-          }
-        });
-  } else {
-    return etcd::detail::asyncify(
-        static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
-            Response::create),
-        this->client->modify_if_internal(key, value, 0, old_value, 0,
-                                         etcdv3::AtomicityType::PREV_VALUE));
-  }
-}
-
-pplx::task<etcd::Response> etcd::Client::modify_if(std::string const& key,
-                                                   std::string const& value,
-                                                   std::string const& old_value,
-                                                   int64_t leaseid) {
+                                                   const int64_t leaseid) {
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
           Response::create),
-      this->client->modify_if_internal(key, value, 0, old_value, leaseid,
-                                       etcdv3::AtomicityType::PREV_VALUE));
-}
-
-pplx::task<etcd::Response> etcd::Client::modify_if(std::string const& key,
-                                                   std::string const& value,
-                                                   int64_t old_index, int ttl) {
-  if (ttl > 0) {
-    return this->leasegrant(ttl).then(
-        [this, key, value, old_index](pplx::task<etcd::Response> const& task) {
-          auto resp = task.get();
-          if (resp.error_code() == 0) {
-            return etcd::detail::asyncify(
-                static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
-                    Response::create),
-                this->client->modify_if_internal(
-                    key, value, old_index, "", resp.value().lease(),
-                    etcdv3::AtomicityType::PREV_INDEX));
-          } else {
-            return pplx::task_from_result(resp);
-          }
-        });
-  } else {
-    return etcd::detail::asyncify(
-        static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
-            Response::create),
-        this->client->modify_if_internal(key, value, old_index, "", 0,
-                                         etcdv3::AtomicityType::PREV_INDEX));
-  }
+      this->client->modify_if_internal(key, value, 0, old_value,
+                                       etcdv3::AtomicityType::PREV_VALUE,
+                                       leaseid));
 }
 
 pplx::task<etcd::Response> etcd::Client::modify_if(std::string const& key,
                                                    std::string const& value,
                                                    int64_t old_index,
-                                                   int64_t leaseid) {
+                                                   const int64_t leaseid) {
   return etcd::detail::asyncify(
       static_cast<responser_t<etcdv3::AsyncCompareAndSwapAction>>(
           Response::create),
-      this->client->modify_if_internal(key, value, old_index, "", leaseid,
-                                       etcdv3::AtomicityType::PREV_INDEX));
+      this->client->modify_if_internal(key, value, old_index, "",
+                                       etcdv3::AtomicityType::PREV_INDEX,
+                                       leaseid));
 }
 
 pplx::task<etcd::Response> etcd::Client::rm(std::string const& key) {

@@ -39,6 +39,7 @@ etcd::Response::Response(const etcdv3::V3Response& reply,
       _values.push_back(Value(val[index]));
       _keys.push_back(val[index].kvs.key());
     }
+    _value = Value(reply.get_values()[0]);
   } else {
     _value = Value(reply.get_value());
   }

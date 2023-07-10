@@ -495,6 +495,7 @@ some specific conditions.
 Values can be deleted with the `rm` method passing the key to be deleted as a parameter. The key
 should point to an existing value. There are conditional variations for deletion too.
 
+* `rm(std::string const& key)` unconditionally deletes the given key
 * `rm_if(key, value, old_value)` deletes an already existing value but only if the previous
   value equals with old_value. If the values does not match returns with "Compare failed" error
   (code `ERROR_COMPARE_FAILED`)
@@ -852,11 +853,32 @@ Transactions in etcd supports set a set of comparison targets to specify the con
   etcdv3::Transaction txn;
 
   // setup the conditions
-  txn.reset_key("/test/x1");
-  txn.init_compare("1", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+  txn.add_compare_value("/test/x1", "1");
+  txn.add_compare_value("/test/x2", "2");
 
-  txn.reset_key("/test/x2");
-  txn.init_compare("2", etcdv3::CompareResult::EQUAL, etcdv3::CompareTarget::VALUE);
+  // or, compare the last modified revision
+  txn.add_compare_mod("/test/x3", 0);  // not exists
+  txn.add_compare_mod("/test/x4", etcdv3::CompareResult::GREATER, 1234);  // the modified revision is greater than 1234
+```
+
+High-level APIs (e.g., `compare_and_create`, `compare_and_swap`) are also provided, e.g.,
+`fetch-and-add` operation can be implemented as
+
+```cpp
+  auto fetch_and_add = [](etcd::Client& client,
+                          std::string const& key) -> void {
+    auto value = stoi(client.get(key).get().value().as_string());
+    while (true) {
+      auto txn = etcdv3::Transaction();
+      txn.setup_compare_and_swap(key, std::to_string(value),
+                                 std::to_string(value + 1));
+      etcd::Response resp = client.txn(txn).get();
+      if (resp.is_ok()) {
+        break;
+      }
+      value = stoi(resp.value().as_string());
+    }
+  };
 ```
 
 See full example of the usages of transaction APIs, please refer to [./tst/TransactionTest.cpp](./tst/TransactionTest.cpp),

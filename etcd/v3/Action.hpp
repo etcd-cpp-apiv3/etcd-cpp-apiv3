@@ -9,6 +9,8 @@
 #include "proto/v3election.grpc.pb.h"
 #include "proto/v3lock.grpc.pb.h"
 
+#include "etcd/v3/action_constants.hpp"
+
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
@@ -81,6 +83,27 @@ class Action {
 namespace detail {
 std::string string_plus_one(std::string const& value);
 std::string resolve_etcd_endpoints(std::string const& default_endpoints);
+
+template <typename Req>
+void make_request_with_ranges(Req& req, std::string const& key,
+                              std::string const& range_end,
+                              bool const recursive) {
+  if (!recursive) {
+    req.set_key(key);
+  } else {
+    if (key.empty()) {
+      req.set_key(etcdv3::NUL);
+      req.set_range_end(etcdv3::NUL);
+    } else {
+      req.set_key(key);
+      req.set_range_end(detail::string_plus_one(key));
+    }
+  }
+  if (!range_end.empty()) {
+    req.set_range_end(range_end);
+  }
+}
+
 }  // namespace detail
 }  // namespace etcdv3
 #endif

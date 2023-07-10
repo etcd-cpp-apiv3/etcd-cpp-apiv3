@@ -43,8 +43,7 @@ void etcdv3::AsyncCampaignResponse::ParseResponse(CampaignResponse& reply) {
   value.kvs.set_lease(leader.lease());
 }
 
-void etcdv3::AsyncDeleteResponse::ParseResponse(std::string const& key,
-                                                bool prefix,
+void etcdv3::AsyncDeleteResponse::ParseResponse(bool prefix,
                                                 DeleteRangeResponse& resp) {
   index = resp.header().revision();
 
@@ -167,38 +166,72 @@ void etcdv3::AsyncResignResponse::ParseResponse(ResignResponse& reply) {
 
 void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
   index = reply.header().revision();
-}
-
-void etcdv3::AsyncTxnResponse::ParseResponse(std::string const& key,
-                                             bool prefix, TxnResponse& reply) {
-  index = reply.header().revision();
   for (int index = 0; index < reply.responses_size(); index++) {
     auto resp = reply.responses(index);
     if (ResponseOp::ResponseCase::kResponseRange == resp.response_case()) {
       AsyncRangeResponse response;
-      response.ParseResponse(*(resp.mutable_response_range()), prefix);
+      response.ParseResponse(*(resp.mutable_response_range()), true);
 
-      error_code = response.get_error_code();
-      error_message = response.get_error_message();
-
-      values = response.get_values();
-      value = response.get_value();
+      if (error_code == 0) {
+        error_code = response.get_error_code();
+      }
+      if (!response.get_error_message().empty()) {
+        error_message += "\n" + response.get_error_message();
+      }
+      for (auto const& value : response.get_values()) {
+        values.emplace_back(value);
+      }
     } else if (ResponseOp::ResponseCase::kResponsePut == resp.response_case()) {
-      auto put_resp = resp.response_put();
-      if (put_resp.has_prev_kv()) {
-        prev_value.kvs.CopyFrom(put_resp.prev_kv());
+      AsyncPutResponse response;
+      response.ParseResponse(*(resp.mutable_response_put()));
+      prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
+
+      if (error_code == 0) {
+        error_code = response.get_error_code();
+      }
+      if (!response.get_error_message().empty()) {
+        error_message += "\n" + response.get_error_message();
+      }
+      for (auto const& value : response.get_values()) {
+        values.emplace_back(value);
       }
     } else if (ResponseOp::ResponseCase::kResponseDeleteRange ==
                resp.response_case()) {
       AsyncDeleteResponse response;
-      response.ParseResponse(key, prefix,
-                             *(resp.mutable_response_delete_range()));
-
+      response.ParseResponse(true, *(resp.mutable_response_delete_range()));
       prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
 
-      values = response.get_values();
-      value = response.get_value();
+      if (error_code == 0) {
+        error_code = response.get_error_code();
+      }
+      if (!response.get_error_message().empty()) {
+        error_message += "\n" + response.get_error_message();
+      }
+      for (auto const& value : response.get_values()) {
+        values.emplace_back(value);
+      }
+    } else if (ResponseOp::ResponseCase::kResponseTxn == resp.response_case()) {
+      AsyncTxnResponse response;
+      response.ParseResponse(*(resp.mutable_response_txn()));
+
+      if (error_code == 0) {
+        error_code = response.get_error_code();
+      }
+      if (!response.get_error_message().empty()) {
+        error_message += "\n" + response.get_error_message();
+      }
+
+      // skip
+      std::cerr << "Not implemented error: unable to parse nested transaction "
+                   "response"
+                << std::endl;
     }
+  }
+  if (!values.empty()) {
+    value = values[0];
+  }
+  if (!prev_values.empty()) {
+    prev_value = prev_values[0];
   }
 }
 
@@ -270,20 +303,17 @@ etcdv3::AsyncCampaignResponse etcdv3::AsyncCampaignAction::ParseResponse() {
 etcdv3::AsyncCompareAndDeleteAction::AsyncCompareAndDeleteAction(
     etcdv3::ActionParameters&& params, etcdv3::AtomicityType type)
     : etcdv3::Action(std::move(params)) {
-  etcdv3::Transaction transaction(parameters.key);
+  etcdv3::Transaction txn;
   if (type == etcdv3::AtomicityType::PREV_VALUE) {
-    transaction.init_compare(parameters.old_value, CompareResult::EQUAL,
-                             CompareTarget::VALUE);
+    txn.setup_compare_and_delete(parameters.key, parameters.old_value,
+                                 parameters.key);
   } else if (type == etcdv3::AtomicityType::PREV_INDEX) {
-    transaction.init_compare(parameters.old_revision, CompareResult::EQUAL,
-                             CompareTarget::MOD);
+    txn.setup_compare_and_delete(parameters.key, parameters.old_revision,
+                                 parameters.key);
   }
 
-  transaction.setup_compare_and_delete_operation(parameters.key);
-  transaction.setup_basic_failure_operation(parameters.key);
-
   response_reader =
-      parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
+      parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*) this);
 }
 
@@ -295,35 +325,30 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndDeleteAction::ParseResponse() {
     txn_resp.set_error_code(status.error_code());
     txn_resp.set_error_message(status.error_message());
   } else {
-    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
+    txn_resp.ParseResponse(reply);
 
     if (!reply.succeeded()) {
       txn_resp.set_error_code(ERROR_COMPARE_FAILED);
       txn_resp.set_error_message("etcd-cpp-apiv3: compare failed");
     }
   }
-
   return txn_resp;
 }
 
 etcdv3::AsyncCompareAndSwapAction::AsyncCompareAndSwapAction(
     etcdv3::ActionParameters&& params, etcdv3::AtomicityType type)
     : etcdv3::Action(std::move(params)) {
-  etcdv3::Transaction transaction(parameters.key);
+  etcdv3::Transaction txn;
   if (type == etcdv3::AtomicityType::PREV_VALUE) {
-    transaction.init_compare(parameters.old_value, CompareResult::EQUAL,
-                             CompareTarget::VALUE);
+    txn.setup_compare_and_swap(parameters.key, parameters.old_value,
+                               parameters.value);
   } else if (type == etcdv3::AtomicityType::PREV_INDEX) {
-    transaction.init_compare(parameters.old_revision, CompareResult::EQUAL,
-                             CompareTarget::MOD);
+    txn.setup_compare_and_swap(parameters.key, parameters.old_revision,
+                               parameters.value);
   }
 
-  transaction.setup_basic_failure_operation(parameters.key);
-  transaction.setup_compare_and_swap_sequence(parameters.value,
-                                              parameters.lease_id);
-
   response_reader =
-      parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
+      parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*) this);
 }
 
@@ -335,7 +360,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndSwapAction::ParseResponse() {
     txn_resp.set_error_code(status.error_code());
     txn_resp.set_error_message(status.error_message());
   } else {
-    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
+    txn_resp.ParseResponse(reply);
 
     // if there is an error code returned by parseResponse, we must
     // not overwrite it.
@@ -344,29 +369,14 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncCompareAndSwapAction::ParseResponse() {
       txn_resp.set_error_message("etcd-cpp-apiv3: compare failed");
     }
   }
-
   return txn_resp;
 }
 
 etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters&& params)
     : etcdv3::Action(std::move(params)) {
   DeleteRangeRequest del_request;
-  if (!parameters.withPrefix) {
-    del_request.set_key(parameters.key);
-  } else {
-    if (parameters.key.empty()) {
-      // see: WithFromKey in etcdv3/client
-      del_request.set_key(etcdv3::NUL);
-      del_request.set_range_end(etcdv3::NUL);
-    } else {
-      del_request.set_key(parameters.key);
-      del_request.set_range_end(detail::string_plus_one(parameters.key));
-    }
-  }
-  if (!parameters.range_end.empty()) {
-    del_request.set_range_end(parameters.range_end);
-  }
-
+  detail::make_request_with_ranges(del_request, parameters.key,
+                                   parameters.range_end, parameters.withPrefix);
   del_request.set_prev_kv(true);
 
   response_reader =
@@ -383,10 +393,8 @@ etcdv3::AsyncDeleteResponse etcdv3::AsyncDeleteAction::ParseResponse() {
     del_resp.set_error_message(status.error_message());
   } else {
     del_resp.ParseResponse(
-        parameters.key, parameters.withPrefix || !parameters.range_end.empty(),
-        reply);
+        parameters.withPrefix || !parameters.range_end.empty(), reply);
   }
-
   return del_resp;
 }
 
@@ -874,21 +882,8 @@ etcdv3::AsyncPutResponse etcdv3::AsyncPutAction::ParseResponse() {
 etcdv3::AsyncRangeAction::AsyncRangeAction(etcdv3::ActionParameters&& params)
     : etcdv3::Action(std::move(params)) {
   RangeRequest get_request;
-  if (!parameters.withPrefix) {
-    get_request.set_key(parameters.key);
-  } else {
-    if (parameters.key.empty()) {
-      // see: WithFromKey in etcdv3/client
-      get_request.set_key(etcdv3::NUL);
-      get_request.set_range_end(etcdv3::NUL);
-    } else {
-      get_request.set_key(parameters.key);
-      get_request.set_range_end(detail::string_plus_one(parameters.key));
-    }
-  }
-  if (!parameters.range_end.empty()) {
-    get_request.set_range_end(parameters.range_end);
-  }
+  detail::make_request_with_ranges(get_request, parameters.key,
+                                   parameters.range_end, parameters.withPrefix);
   if (parameters.revision > 0) {
     get_request.set_revision(parameters.revision);
   }
@@ -951,21 +946,17 @@ etcdv3::AsyncResignResponse etcdv3::AsyncResignAction::ParseResponse() {
 etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters&& params,
                                        bool create)
     : etcdv3::Action(std::move(params)) {
-  etcdv3::Transaction transaction(parameters.key);
+  etcdv3::Transaction txn;
   isCreate = create;
-  transaction.init_compare(CompareResult::EQUAL, CompareTarget::VERSION);
-
-  transaction.setup_basic_create_sequence(parameters.key, parameters.value,
-                                          parameters.lease_id);
-
-  if (isCreate) {
-    transaction.setup_basic_failure_operation(parameters.key);
+  txn.add_compare_mod(parameters.key, 0 /* not exists */);
+  txn.add_success_put(parameters.key, parameters.key, parameters.lease_id);
+  if (create) {
+    txn.add_failure_put(parameters.key, parameters.value, parameters.lease_id);
   } else {
-    transaction.setup_set_failure_operation(parameters.key, parameters.value,
-                                            parameters.lease_id);
+    txn.add_failure_range(parameters.key);
   }
   response_reader =
-      parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
+      parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*) this);
 }
 
@@ -977,7 +968,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncSetAction::ParseResponse() {
     txn_resp.set_error_code(status.error_code());
     txn_resp.set_error_message(status.error_message());
   } else {
-    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
+    txn_resp.ParseResponse(reply);
 
     if (!reply.succeeded() && isCreate) {
       txn_resp.set_error_code(etcdv3::ERROR_KEY_ALREADY_EXISTS);
@@ -1003,7 +994,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncTxnAction::ParseResponse() {
     txn_resp.set_error_code(status.error_code());
     txn_resp.set_error_message(status.error_message());
   } else {
-    txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
+    txn_resp.ParseResponse(reply);
 
     // if there is an error code returned by parseResponse, we must
     // not overwrite it.
@@ -1042,14 +1033,12 @@ etcdv3::AsyncUnlockResponse etcdv3::AsyncUnlockAction::ParseResponse() {
 
 etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters&& params)
     : etcdv3::Action(std::move(params)) {
-  etcdv3::Transaction transaction(parameters.key);
-  transaction.init_compare(CompareResult::GREATER, CompareTarget::VERSION);
-
-  transaction.setup_compare_and_swap_sequence(parameters.value,
-                                              parameters.lease_id);
-
+  etcdv3::Transaction txn;
+  txn.add_compare_version(parameters.key, CompareResult::GREATER, 0);  // exists
+  txn.add_success_put(parameters.key, parameters.value, parameters.lease_id);
+  txn.add_failure_range(parameters.key);
   response_reader =
-      parameters.kv_stub->AsyncTxn(&context, *transaction.txn_request, &cq_);
+      parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
   response_reader->Finish(&reply, &status, (void*) this);
 }
 
@@ -1061,7 +1050,7 @@ etcdv3::AsyncTxnResponse etcdv3::AsyncUpdateAction::ParseResponse() {
     txn_resp.set_error_message(status.error_message());
   } else {
     if (reply.succeeded()) {
-      txn_resp.ParseResponse(parameters.key, parameters.withPrefix, reply);
+      txn_resp.ParseResponse(reply);
       txn_resp.set_action(etcdv3::UPDATE_ACTION);
     } else {
       txn_resp.set_error_code(etcdv3::ERROR_KEY_NOT_FOUND);
@@ -1084,22 +1073,8 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
 
   WatchRequest watch_req;
   WatchCreateRequest watch_create_req;
-
-  if (!parameters.withPrefix) {
-    watch_create_req.set_key(parameters.key);
-  } else {
-    if (parameters.key.empty()) {
-      watch_create_req.set_key(etcdv3::NUL);
-      watch_create_req.set_range_end(etcdv3::NUL);
-    } else {
-      watch_create_req.set_key(parameters.key);
-      watch_create_req.set_range_end(detail::string_plus_one(parameters.key));
-    }
-  }
-  if (!parameters.range_end.empty()) {
-    watch_create_req.set_range_end(parameters.range_end);
-  }
-
+  detail::make_request_with_ranges(watch_create_req, parameters.key,
+                                   parameters.range_end, parameters.withPrefix);
   watch_create_req.set_prev_kv(true);
   watch_create_req.set_start_revision(parameters.revision);
   watch_create_req.set_watch_id(this->watch_id);

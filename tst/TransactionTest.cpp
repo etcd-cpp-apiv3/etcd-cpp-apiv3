@@ -50,13 +50,8 @@ TEST_CASE("add a new key") {
     etcdv3::Transaction txn;
 
     // setup the conditions
-    txn.reset_key("/test/x1");
-    txn.init_compare("1", etcdv3::CompareResult::EQUAL,
-                     etcdv3::CompareTarget::VALUE);
-
-    txn.reset_key("/test/x2");
-    txn.init_compare("2", etcdv3::CompareResult::EQUAL,
-                     etcdv3::CompareTarget::VALUE);
+    txn.add_compare_value("/test/x1", "1");
+    txn.add_compare_value("/test/x2", "2");
 
     txn.setup_put("/test/x1", "111");
     txn.setup_delete("/test/x2");
@@ -81,6 +76,51 @@ TEST_CASE("add a new key") {
     resp = etcd.get("/test/x4").get();
     REQUIRE(0 == resp.error_code());
     CHECK(resp.value().as_string() == "4");
+  }
+}
+
+TEST_CASE("fetch & add") {
+  etcd::Client etcd(etcd_url);
+  etcd.rmdir("/test", true).wait();
+
+  etcd.set("/test/key", "0").wait();
+
+  auto fetch_and_add = [](etcd::Client& client,
+                          std::string const& key) -> void {
+    auto value = stoi(client.get(key).get().value().as_string());
+    while (true) {
+      auto txn = etcdv3::Transaction();
+      txn.setup_compare_and_swap(key, std::to_string(value),
+                                 std::to_string(value + 1));
+      etcd::Response resp = client.txn(txn).get();
+      if (resp.is_ok()) {
+        break;
+      }
+      value = stoi(resp.value().as_string());
+    }
+  };
+
+  // run 1000 times
+  const size_t rounds = 100;
+  std::atomic_size_t counter(0);
+
+  std::vector<std::thread> threads;
+  for (size_t i = 0; i < 10; ++i) {
+    threads.emplace_back([&]() {
+      while (counter.fetch_add(1) < rounds) {
+        fetch_and_add(etcd, "/test/key");
+      }
+    });
+  }
+  for (auto& thr : threads) {
+    thr.join();
+  }
+
+  // check the value
+  {
+    etcd::Response resp = etcd.get("/test/key").get();
+    REQUIRE(0 == resp.error_code());
+    CHECK(resp.value().as_string() == std::to_string(rounds));
   }
 }
 
