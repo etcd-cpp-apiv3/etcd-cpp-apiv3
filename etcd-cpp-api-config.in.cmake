@@ -32,5 +32,8 @@ set(ETCD_CPP_INCLUDE_DIRS "${ETCD_CPP_INCLUDE_DIR}")
 include(FindPackageMessage)
 find_package_message(etcd
     "Found etcd: ${CMAKE_CURRENT_LIST_FILE} (found version \"@etcd-cpp-api_VERSION@\")"
-    "etcd-cpp-apiv3 version: @etcd-cpp-api_VERSION@\netcd-cpp-apiv3 libraries: ${ETCD_CPP_LIBRARIES}, \netcd-cpp-apiv3 core libraries: ${ETCD_CPP_CORE_LIBRARIES}\ninclude directories: ${ETCD_CPP_INCLUDE_DIRS}"
+    "etcd-cpp-apiv3 version: @etcd-cpp-api_VERSION@\n"
+    "etcd-cpp-apiv3 libraries: ${ETCD_CPP_LIBRARIES}\n"
+    "etcd-cpp-apiv3 core libraries: ${ETCD_CPP_CORE_LIBRARIES}\n"
+    "include directories: ${ETCD_CPP_INCLUDE_DIRS}"
 )

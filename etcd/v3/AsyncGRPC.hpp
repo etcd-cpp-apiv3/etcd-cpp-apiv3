@@ -76,8 +76,7 @@ class AsyncCampaignResponse : public etcdv3::V3Response {
 class AsyncDeleteResponse : public etcdv3::V3Response {
  public:
   AsyncDeleteResponse(){};
-  void ParseResponse(std::string const& key, bool prefix,
-                     DeleteRangeResponse& resp);
+  void ParseResponse(DeleteRangeResponse& resp);
 };
 
 class AsyncHeadResponse : public etcdv3::V3Response {
@@ -162,7 +161,6 @@ class AsyncTxnResponse : public etcdv3::V3Response {
  public:
   AsyncTxnResponse(){};
   void ParseResponse(TxnResponse& resp);
-  void ParseResponse(std::string const& key, bool prefix, TxnResponse& resp);
 };
 
 class AsyncUnlockResponse : public etcdv3::V3Response {

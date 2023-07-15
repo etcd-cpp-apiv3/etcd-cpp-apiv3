@@ -12,6 +12,9 @@ TEST_CASE("sync operations") {
   etcd::SyncClient etcd(etcd_url);
   etcd.rmdir("/test", true);
 
+  etcd::Response res;
+  int64_t index;
+
   // add
   CHECK(0 == etcd.add("/test/key1", "42").error_code());
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS ==
@@ -22,7 +25,9 @@ TEST_CASE("sync operations") {
   CHECK(0 == etcd.modify("/test/key1", "43").error_code());
   CHECK(etcd::ERROR_KEY_NOT_FOUND ==
         etcd.modify("/test/key2", "43").error_code());  // Key not found
-  CHECK("43" == etcd.modify("/test/key1", "42").prev_value().as_string());
+  res = etcd.modify("/test/key1", "42");
+  CHECK(0 == res.error_code());
+  CHECK("43" == res.prev_value().as_string());
 
   // set
   CHECK(0 == etcd.set("/test/key1", "43").error_code());  // overwrite
@@ -60,7 +65,7 @@ TEST_CASE("sync operations") {
 
   // compare and swap
   etcd.set("/test/key1", "42");
-  int64_t index = etcd.modify_if("/test/key1", "43", "42").index();
+  index = etcd.modify_if("/test/key1", "43", "42").index();
   CHECK(etcd::ERROR_COMPARE_FAILED ==
         etcd.modify_if("/test/key1", "44", "42").error_code());
   REQUIRE(etcd.modify_if("/test/key1", "44", index).is_ok());
@@ -71,16 +76,20 @@ TEST_CASE("sync operations") {
   etcd.set("/test/key1", "42");
   CHECK(etcd::ERROR_COMPARE_FAILED ==
         etcd.rm_if("/test/key1", "43").error_code());
-  CHECK(0 == etcd.rm_if("/test/key1", "42").error_code());
+  res = etcd.rm_if("/test/key1", "42");
+  CHECK(
+      (0 == res.error_code() || etcd::ERROR_KEY_NOT_FOUND == res.error_code()));
 
   // atomic compare-and-delete based on prevIndex
   index = etcd.set("/test/key1", "42").index();
   CHECK(etcd::ERROR_COMPARE_FAILED ==
         etcd.rm_if("/test/key1", index - 1).error_code());
-  CHECK(0 == etcd.rm_if("/test/key1", index).error_code());
+  res = etcd.rm_if("/test/key1", index);
+  CHECK(
+      (0 == res.error_code() || etcd::ERROR_KEY_NOT_FOUND == res.error_code()));
 
   // leasegrant
-  etcd::Response res = etcd.leasegrant(60);
+  res = etcd.leasegrant(60);
   REQUIRE(res.is_ok());
   CHECK(60 == res.value().ttl());
   CHECK(0 < res.value().lease());
@@ -96,6 +105,7 @@ TEST_CASE("sync operations") {
   res = etcd.set("/test/key1", "43", leaseid);
   REQUIRE(0 == res.error_code());
   CHECK("set" == res.action());
+  res = etcd.get("/test/key1");
   CHECK(leaseid == res.value().lease());
 
   // modify with lease

@@ -276,27 +276,10 @@ class Client {
    * created if it does not exists.
    * @param key is the key to be created or modified
    * @param value is the new value to be set
-   */
-  pplx::task<Response> set(std::string const& key, std::string const& value,
-                           int ttl = 0);
-
-  /**
-   * Sets the value of a key. The key will be modified if already exists or
-   * created if it does not exists.
-   * @param key is the key to be created or modified
-   * @param value is the new value to be set
    * @param leaseId is the lease attached to the key
    */
   pplx::task<Response> set(std::string const& key, std::string const& value,
-                           int64_t leaseId);
-
-  /**
-   * Creates a new key and sets it's value. Fails if the key already exists.
-   * @param key is the key to be created
-   * @param value is the value to be set
-   */
-  pplx::task<Response> add(std::string const& key, std::string const& value,
-                           int ttl = 0);
+                           const int64_t leaseId = 0);
 
   /**
    * Creates a new key and sets it's value. Fails if the key already exists.
@@ -305,7 +288,7 @@ class Client {
    * @param leaseId is the lease attached to the key
    */
   pplx::task<Response> add(std::string const& key, std::string const& value,
-                           int64_t leaseId);
+                           const int64_t leaseId = 0);
 
   /**
    * Put a new key-value pair.
@@ -315,12 +298,13 @@ class Client {
   pplx::task<Response> put(std::string const& key, std::string const& value);
 
   /**
-   * Modifies an existing key. Fails if the key does not exists.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
+   * Put a new key-value pair.
+   * @param key is the key to be put
+   * @param value is the value to be put
+   * @param leaseId is the lease id to be associated with the key
    */
-  pplx::task<Response> modify(std::string const& key, std::string const& value,
-                              int ttl = 0);
+  pplx::task<Response> put(std::string const& key, std::string const& value,
+                           const int64_t leaseId);
 
   /**
    * Modifies an existing key. Fails if the key does not exists.
@@ -329,18 +313,7 @@ class Client {
    * @param leaseId is the lease attached to the key
    */
   pplx::task<Response> modify(std::string const& key, std::string const& value,
-                              int64_t leaseId);
-
-  /**
-   * Modifies an existing key only if it has a specific value. Fails if the key
-   * does not exists or the original value differs from the expected one.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
-   * @param old_value is the value to be replaced
-   */
-  pplx::task<Response> modify_if(std::string const& key,
-                                 std::string const& value,
-                                 std::string const& old_value, int ttl = 0);
+                              const int64_t leaseId = 0);
 
   /**
    * Modifies an existing key only if it has a specific value. Fails if the key
@@ -352,19 +325,8 @@ class Client {
    */
   pplx::task<Response> modify_if(std::string const& key,
                                  std::string const& value,
-                                 std::string const& old_value, int64_t leaseId);
-
-  /**
-   * Modifies an existing key only if it has a specific modification index
-   * value. Fails if the key does not exists or the modification index of the
-   * previous value differs from the expected one.
-   * @param key is the key to be modified
-   * @param value is the new value to be set
-   * @param old_index is the expected index of the original value
-   */
-  pplx::task<Response> modify_if(std::string const& key,
-                                 std::string const& value, int64_t old_index,
-                                 int ttl = 0);
+                                 std::string const& old_value,
+                                 const int64_t leaseId = 0);
 
   /**
    * Modifies an existing key only if it has a specific modification index
@@ -377,11 +339,13 @@ class Client {
    */
   pplx::task<Response> modify_if(std::string const& key,
                                  std::string const& value, int64_t old_index,
-                                 int64_t leaseId);
+                                 const int64_t leaseId = 0);
 
   /**
    * Removes a single key. The key has to point to a plain, non directory entry.
    * @param key is the key to be deleted
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm(std::string const& key);
 
@@ -389,6 +353,8 @@ class Client {
    * Removes a single key but only if it has a specific value. Fails if the key
    * does not exists or the its value differs from the expected one.
    * @param key is the key to be deleted
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm_if(std::string const& key,
                              std::string const& old_value);
@@ -399,6 +365,8 @@ class Client {
    * from the expected one.
    * @param key is the key to be deleted
    * @param old_index is the expected index of the existing value
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm_if(std::string const& key, int64_t old_index);
 
@@ -408,6 +376,8 @@ class Client {
    * @param key is the directory to be created to be listed
    * @param recursive if true then delete a whole subtree, otherwise deletes
    * only an empty directory.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key, bool recursive = false);
 
@@ -419,6 +389,8 @@ class Client {
    *
    * @param key is the directory to be created to be listed
    * @param range_end is the end of key range to be removed.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key, const char* range_end);
 
@@ -427,6 +399,8 @@ class Client {
    *
    * @param key is the directory to be created to be listed
    * @param range_end is the end of key range to be removed.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key,
                              std::string const& range_end);

@@ -474,18 +474,6 @@ etcd::SyncClient::~SyncClient() {
   channel.reset();
 }
 
-/**
- * Note [lease with TTL and issue the actual request]
- *
- * We sometime use the request like `set(key, value, TTL)`, we explain the TTL
- * as the time between the user call the `set()` method between the request is
- * actually executed in etcd server. Thus, we issue a lease request with that
- * TTL value immediately, and pass it to the `set_internal()` method, the later
- * may be issues asynchronously.
- *
- * Thus the TTL could keep the expected semantic even in the async runtime.
- */
-
 etcd::Response etcd::SyncClient::head() {
   return Response::create(this->head_internal());
 }
@@ -502,7 +490,8 @@ etcd::Response etcd::SyncClient::get(std::string const& key) {
   return Response::create(this->get_internal(key));
 }
 
-etcd::Response etcd::SyncClient::get(std::string const& key, int64_t revision) {
+etcd::Response etcd::SyncClient::get(std::string const& key,
+                                     const int64_t revision) {
   return Response::create(this->get_internal(key, revision));
 }
 
@@ -519,61 +508,19 @@ std::shared_ptr<etcdv3::AsyncRangeAction> etcd::SyncClient::get_internal(
 }
 
 etcd::Response etcd::SyncClient::set(std::string const& key,
-                                     std::string const& value, int ttl) {
-  // See Note [lease with TTL and issue the actual request]
-  int64_t leaseId = 0;
-  if (ttl > 0) {
-    auto res = this->leasegrant(ttl);
-    if (!res.is_ok()) {
-      return etcd::Response(res.error_code(), res.error_message());
-    } else {
-      leaseId = res.value().lease();
-    }
-  }
-  return Response::create(this->set_internal(key, value, leaseId));
-}
-
-etcd::Response etcd::SyncClient::set(std::string const& key,
                                      std::string const& value,
-                                     int64_t leaseid) {
-  return Response::create(this->set_internal(key, value, leaseid));
-}
-
-std::shared_ptr<etcdv3::AsyncSetAction> etcd::SyncClient::set_internal(
-    std::string const& key, std::string const& value, int64_t leaseid) {
-  etcdv3::ActionParameters params;
-  params.key.assign(key);
-  params.value.assign(value);
-  params.lease_id = leaseid;
-  params.auth_token.assign(this->token_authenticator->renew_if_expired());
-  params.grpc_timeout = this->grpc_timeout;
-  params.kv_stub = stubs->kvServiceStub.get();
-  return std::make_shared<etcdv3::AsyncSetAction>(std::move(params), false);
-}
-
-etcd::Response etcd::SyncClient::add(std::string const& key,
-                                     std::string const& value, int ttl) {
-  // See Note [lease with TTL and issue the actual request]
-  int64_t leaseId = 0;
-  if (ttl > 0) {
-    auto res = this->leasegrant(ttl);
-    if (!res.is_ok()) {
-      return etcd::Response(res.error_code(), res.error_message());
-    } else {
-      leaseId = res.value().lease();
-    }
-  }
-  return Response::create(this->add_internal(key, value, leaseId));
+                                     const int64_t leaseid) {
+  return Response::create(this->put_internal(key, value, leaseid));
 }
 
 etcd::Response etcd::SyncClient::add(std::string const& key,
                                      std::string const& value,
-                                     int64_t leaseid) {
+                                     const int64_t leaseid) {
   return Response::create(this->add_internal(key, value, leaseid));
 }
 
 std::shared_ptr<etcdv3::AsyncSetAction> etcd::SyncClient::add_internal(
-    std::string const& key, std::string const& value, int64_t leaseid) {
+    std::string const& key, std::string const& value, const int64_t leaseid) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.value.assign(value);
@@ -589,11 +536,18 @@ etcd::Response etcd::SyncClient::put(std::string const& key,
   return Response::create(this->put_internal(key, value));
 }
 
+etcd::Response etcd::SyncClient::put(std::string const& key,
+                                     std::string const& value,
+                                     const int64_t leaseId) {
+  return Response::create(this->put_internal(key, value, leaseId));
+}
+
 std::shared_ptr<etcdv3::AsyncPutAction> etcd::SyncClient::put_internal(
-    std::string const& key, std::string const& value) {
+    std::string const& key, std::string const& value, const int64_t leaseId) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.value.assign(value);
+  params.lease_id = leaseId;
   params.auth_token.assign(this->token_authenticator->renew_if_expired());
   params.grpc_timeout = this->grpc_timeout;
   params.kv_stub = stubs->kvServiceStub.get();
@@ -601,28 +555,13 @@ std::shared_ptr<etcdv3::AsyncPutAction> etcd::SyncClient::put_internal(
 }
 
 etcd::Response etcd::SyncClient::modify(std::string const& key,
-                                        std::string const& value, int ttl) {
-  // See Note [lease with TTL and issue the actual request]
-  int64_t leaseId = 0;
-  if (ttl > 0) {
-    auto res = leasegrant(ttl);
-    if (!res.is_ok()) {
-      return etcd::Response(res.error_code(), res.error_message());
-    } else {
-      leaseId = res.value().lease();
-    }
-  }
-  return Response::create(this->modify_internal(key, value, leaseId));
-}
-
-etcd::Response etcd::SyncClient::modify(std::string const& key,
                                         std::string const& value,
-                                        int64_t leaseid) {
+                                        const int64_t leaseid) {
   return Response::create(this->modify_internal(key, value, leaseid));
 }
 
 std::shared_ptr<etcdv3::AsyncUpdateAction> etcd::SyncClient::modify_internal(
-    std::string const& key, std::string const& value, int64_t leaseid) {
+    std::string const& key, std::string const& value, const int64_t leaseid) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.value.assign(value);
@@ -636,58 +575,23 @@ std::shared_ptr<etcdv3::AsyncUpdateAction> etcd::SyncClient::modify_internal(
 etcd::Response etcd::SyncClient::modify_if(std::string const& key,
                                            std::string const& value,
                                            std::string const& old_value,
-                                           int ttl) {
-  // See Note [lease with TTL and issue the actual request]
-  int64_t leaseId = 0;
-  if (ttl > 0) {
-    auto res = leasegrant(ttl);
-    if (!res.is_ok()) {
-      return etcd::Response(res.error_code(), res.error_message());
-    } else {
-      leaseId = res.value().lease();
-    }
-  }
+                                           const int64_t leaseid) {
   return Response::create(this->modify_if_internal(
-      key, value, 0, old_value, leaseId, etcdv3::AtomicityType::PREV_VALUE));
-}
-
-etcd::Response etcd::SyncClient::modify_if(std::string const& key,
-                                           std::string const& value,
-                                           std::string const& old_value,
-                                           int64_t leaseid) {
-  return Response::create(this->modify_if_internal(
-      key, value, 0, old_value, leaseid, etcdv3::AtomicityType::PREV_VALUE));
-}
-
-etcd::Response etcd::SyncClient::modify_if(std::string const& key,
-                                           std::string const& value,
-                                           int64_t old_index, int ttl) {
-  // See Note [lease with TTL and issue the actual request]
-  int64_t leaseId = 0;
-  if (ttl > 0) {
-    auto res = leasegrant(ttl);
-    if (!res.is_ok()) {
-      return etcd::Response(res.error_code(), res.error_message());
-    } else {
-      leaseId = res.value().lease();
-    }
-  }
-  return Response::create(this->modify_if_internal(
-      key, value, old_index, "", leaseId, etcdv3::AtomicityType::PREV_INDEX));
+      key, value, 0, old_value, etcdv3::AtomicityType::PREV_VALUE, leaseid));
 }
 
 etcd::Response etcd::SyncClient::modify_if(std::string const& key,
                                            std::string const& value,
                                            int64_t old_index, int64_t leaseid) {
   return Response::create(this->modify_if_internal(
-      key, value, old_index, "", leaseid, etcdv3::AtomicityType::PREV_INDEX));
+      key, value, old_index, "", etcdv3::AtomicityType::PREV_INDEX, leaseid));
 }
 
 std::shared_ptr<etcdv3::AsyncCompareAndSwapAction>
 etcd::SyncClient::modify_if_internal(
     std::string const& key, std::string const& value, int64_t old_index,
-    std::string const& old_value, int64_t leaseId,
-    etcdv3::AtomicityType const& atomicity_type) {
+    std::string const& old_value, etcdv3::AtomicityType const& atomicity_type,
+    const int64_t leaseId) {
   etcdv3::ActionParameters params;
   params.key.assign(key);
   params.value.assign(value);

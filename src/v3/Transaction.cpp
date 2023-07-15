@@ -2,11 +2,7 @@
 
 #include "proto/rpc.grpc.pb.h"
 
-using etcdserverpb::Compare;
-using etcdserverpb::DeleteRangeRequest;
-using etcdserverpb::PutRequest;
-using etcdserverpb::RangeRequest;
-using etcdserverpb::RequestOp;
+#include "etcd/v3/Action.hpp"
 
 namespace etcdv3 {
 
@@ -28,185 +24,337 @@ etcdv3::Transaction::Transaction() {
   txn_request.reset(new etcdserverpb::TxnRequest{});
 }
 
-etcdv3::Transaction::Transaction(const std::string& key) : key(key) {
-  txn_request.reset(new etcdserverpb::TxnRequest{});
+etcdv3::Transaction::~Transaction() {}
+
+void etcdv3::Transaction::add_compare(std::string const& key,
+                                      CompareTarget const& target,
+                                      CompareResult const& result,
+                                      Value const& target_value,
+                                      std::string const& range_end) {
+  switch (target) {
+  case CompareTarget::VERSION:
+    add_compare_version(key, result, target_value.version, range_end);
+    break;
+  case CompareTarget::CREATE:
+    add_compare_create(key, result, target_value.create_revision, range_end);
+    break;
+  case CompareTarget::MOD:
+    add_compare_mod(key, result, target_value.mod_revision, range_end);
+    break;
+  case CompareTarget::VALUE:
+    add_compare_value(key, result, target_value.value, range_end);
+    break;
+  case CompareTarget::LEASE:
+    add_compare_lease(key, result, target_value.lease, range_end);
+    break;
+  default:
+    // ignore invalid compare target
+    break;
+  }
 }
 
-void etcdv3::Transaction::reset_key(std::string const& newkey) { key = newkey; }
+void etcdv3::Transaction::add_compare_version(std::string const& key,
+                                              int64_t const& version,
+                                              std::string const& range_end) {
+  this->add_compare_version(key, CompareResult::EQUAL, version, range_end);
+}
 
-void etcdv3::Transaction::init_compare(CompareResult result,
-                                       CompareTarget target) {
-  Compare* compare = txn_request->add_compare();
+void etcdv3::Transaction::add_compare_version(std::string const& key,
+                                              CompareResult const& result,
+                                              int64_t const& version,
+                                              std::string const& range_end) {
+  auto compare = txn_request->add_compare();
   compare->set_result(detail::to_compare_result(result));
-  compare->set_target(detail::to_compare_target(target));
+  compare->set_target(detail::to_compare_target(CompareTarget::VERSION));
   compare->set_key(key);
-
-  compare->set_version(0);
+  compare->set_version(version);
+  compare->set_range_end(range_end);
 }
 
-void etcdv3::Transaction::init_compare(std::string const& old_value,
-                                       CompareResult result,
-                                       CompareTarget target) {
-  Compare* compare = txn_request->add_compare();
+void etcdv3::Transaction::add_compare_create(std::string const& key,
+                                             int64_t const& create_revision,
+                                             std::string const& range_end) {
+  this->add_compare_create(key, CompareResult::EQUAL, create_revision,
+                           range_end);
+}
+
+void etcdv3::Transaction::add_compare_create(std::string const& key,
+                                             CompareResult const& result,
+                                             int64_t const& create_revision,
+                                             std::string const& range_end) {
+  auto compare = txn_request->add_compare();
   compare->set_result(detail::to_compare_result(result));
-  compare->set_target(detail::to_compare_target(target));
+  compare->set_target(detail::to_compare_target(CompareTarget::CREATE));
   compare->set_key(key);
-
-  compare->set_value(old_value);
+  compare->set_create_revision(create_revision);
+  compare->set_range_end(range_end);
 }
 
-void etcdv3::Transaction::init_compare(int64_t old_index, CompareResult result,
-                                       CompareTarget target) {
-  Compare* compare = txn_request->add_compare();
+void etcdv3::Transaction::add_compare_mod(std::string const& key,
+                                          int64_t const& mod_revision,
+                                          std::string const& range_end) {
+  this->add_compare_mod(key, CompareResult::EQUAL, mod_revision, range_end);
+}
+
+void etcdv3::Transaction::add_compare_mod(std::string const& key,
+                                          CompareResult const& result,
+                                          int64_t const& mod_revision,
+                                          std::string const& range_end) {
+  auto compare = txn_request->add_compare();
   compare->set_result(detail::to_compare_result(result));
-  compare->set_target(detail::to_compare_target(target));
+  compare->set_target(detail::to_compare_target(CompareTarget::MOD));
   compare->set_key(key);
-
-  compare->set_mod_revision(old_index);
+  compare->set_mod_revision(mod_revision);
+  compare->set_range_end(range_end);
 }
 
-/**
- * get key on failure
- */
-void etcdv3::Transaction::setup_basic_failure_operation(
-    std::string const& key) {
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  RequestOp* req_failure = txn_request->add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
+void etcdv3::Transaction::add_compare_value(std::string const& key,
+                                            std::string const& value,
+                                            std::string const& range_end) {
+  this->add_compare_value(key, CompareResult::EQUAL, value, range_end);
 }
 
-/**
- * get key on failure, get key before put, modify and then get updated key
- */
-void etcdv3::Transaction::setup_set_failure_operation(std::string const& key,
-                                                      std::string const& value,
-                                                      int64_t leaseid) {
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
+void etcdv3::Transaction::add_compare_value(std::string const& key,
+                                            CompareResult const& result,
+                                            std::string const& value,
+                                            std::string const& range_end) {
+  auto compare = txn_request->add_compare();
+  compare->set_result(detail::to_compare_result(result));
+  compare->set_target(detail::to_compare_target(CompareTarget::VALUE));
+  compare->set_key(key);
+  compare->set_value(value);
+  compare->set_range_end(range_end);
+}
+
+void etcdv3::Transaction::add_compare_lease(std::string const& key,
+                                            int64_t const& lease,
+                                            std::string const& range_end) {
+  this->add_compare_lease(key, CompareResult::EQUAL, lease, range_end);
+}
+
+void etcdv3::Transaction::add_compare_lease(std::string const& key,
+                                            CompareResult const& result,
+                                            int64_t const& lease,
+                                            std::string const& range_end) {
+  auto compare = txn_request->add_compare();
+  compare->set_result(detail::to_compare_result(result));
+  compare->set_target(detail::to_compare_target(CompareTarget::LEASE));
+  compare->set_key(key);
+  compare->set_lease(lease);
+  compare->set_range_end(range_end);
+}
+
+void etcdv3::Transaction::add_success_range(std::string const& key,
+                                            std::string const& range_end,
+                                            bool const recursive,
+                                            const int64_t limit) {
+  auto succ = txn_request->add_success();
+  auto get_request = succ->mutable_request_range();
+  etcdv3::detail::make_request_with_ranges(*get_request, key, range_end,
+                                           recursive);
+  get_request->set_limit(limit);
+}
+
+void etcdv3::Transaction::add_success_put(std::string const& key,
+                                          std::string const& value,
+                                          int64_t const leaseid,
+                                          const bool prev_kv) {
+  auto succ = txn_request->add_success();
+  auto put_request = succ->mutable_request_put();
   put_request->set_key(key);
   put_request->set_value(value);
-  put_request->set_prev_kv(true);
+  put_request->set_prev_kv(prev_kv);
   put_request->set_lease(leaseid);
-  RequestOp* req_failure = txn_request->add_failure();
-  req_failure->set_allocated_request_put(put_request.release());
-
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  req_failure = txn_request->add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
 }
 
-/**
- * add key and then get new value of key
- */
-void etcdv3::Transaction::setup_basic_create_sequence(std::string const& key,
-                                                      std::string const& value,
-                                                      int64_t leaseid) {
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
+void etcdv3::Transaction::add_success_delete(std::string const& key,
+                                             std::string const& range_end,
+                                             bool const recursive,
+                                             const bool prev_kv) {
+  auto succ = txn_request->add_success();
+  auto del_request = succ->mutable_request_delete_range();
+  etcdv3::detail::make_request_with_ranges(*del_request, key, range_end,
+                                           recursive);
+  del_request->set_prev_kv(prev_kv);
+}
+
+void etcdv3::Transaction::add_success_txn(
+    const std::shared_ptr<Transaction> txn) {
+  auto succ = txn_request->add_success();
+  auto txn_request = succ->mutable_request_txn();
+  txn_request->CopyFrom(*txn->txn_request);
+}
+
+void etcdv3::Transaction::add_failure_range(std::string const& key,
+                                            std::string const& range_end,
+                                            bool const recursive,
+                                            const int64_t limit) {
+  auto fail = txn_request->add_failure();
+  auto get_request = fail->mutable_request_range();
+  etcdv3::detail::make_request_with_ranges(*get_request, key, range_end,
+                                           recursive);
+  get_request->set_limit(limit);
+}
+
+void etcdv3::Transaction::add_failure_put(std::string const& key,
+                                          std::string const& value,
+                                          int64_t const leaseid,
+                                          const bool prev_kv) {
+  auto fail = txn_request->add_failure();
+  auto put_request = fail->mutable_request_put();
   put_request->set_key(key);
   put_request->set_value(value);
-  put_request->set_prev_kv(true);
+  put_request->set_prev_kv(prev_kv);
   put_request->set_lease(leaseid);
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request->add_success();
-  req_success->set_allocated_request_range(get_request.release());
 }
 
-/**
- * get key value then modify and get new value
- */
-void etcdv3::Transaction::setup_compare_and_swap_sequence(
-    std::string const& value, int64_t leaseid) {
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  put_request->set_prev_kv(true);
-  put_request->set_lease(leaseid);
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_put(put_request.release());
-
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  get_request->set_key(key);
-  req_success = txn_request->add_success();
-  req_success->set_allocated_request_range(get_request.release());
+void etcdv3::Transaction::add_failure_delete(std::string const& key,
+                                             std::string const& range_end,
+                                             bool const recursive,
+                                             const bool prev_kv) {
+  auto fail = txn_request->add_failure();
+  auto del_request = fail->mutable_request_delete_range();
+  etcdv3::detail::make_request_with_ranges(*del_request, key, range_end,
+                                           recursive);
+  del_request->set_prev_kv(prev_kv);
 }
 
-/**
- * get key, delete
- */
-void etcdv3::Transaction::setup_delete_sequence(std::string const& key,
-                                                std::string const& range_end,
-                                                bool recursive) {
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  del_request->set_prev_kv(true);
-  if (recursive) {
-    del_request->set_range_end(range_end);
-  }
-
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
+void etcdv3::Transaction::add_failure_txn(
+    const std::shared_ptr<Transaction> txn) {
+  auto fail = txn_request->add_failure();
+  auto txn_request = fail->mutable_request_txn();
+  txn_request->CopyFrom(*txn->txn_request);
 }
 
-/**
- * get key, delete
- */
-void etcdv3::Transaction::setup_delete_failure_operation(
-    std::string const& key, std::string const& range_end, bool recursive) {
-  std::unique_ptr<RangeRequest> get_request(new RangeRequest());
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  get_request.reset(new RangeRequest());
-  get_request->set_key(key);
-  if (recursive) {
-    get_request->set_range_end(range_end);
-    get_request->set_sort_target(
-        RangeRequest::SortTarget::RangeRequest_SortTarget_KEY);
-    get_request->set_sort_order(
-        RangeRequest::SortOrder::RangeRequest_SortOrder_ASCEND);
-  }
-  RequestOp* req_failure = txn_request->add_failure();
-  req_failure->set_allocated_request_range(get_request.release());
-
-  del_request.reset(new DeleteRangeRequest());
-  del_request->set_key(key);
-  if (recursive) {
-    del_request->set_range_end(range_end);
-  }
-
-  req_failure = txn_request->add_failure();
-  req_failure->set_allocated_request_delete_range(del_request.release());
+void etcdv3::Transaction::setup_compare_and_create(
+    std::string const& key, std::string const& prev_value,
+    std::string const& create_key, std::string const& value,
+    int64_t const leaseid) {
+  this->add_compare_value(key, CompareResult::EQUAL, prev_value);
+  this->add_success_put(create_key, value, leaseid);
+  this->add_failure_range(key);
 }
 
-void etcdv3::Transaction::setup_compare_and_delete_operation(
-    std::string const& key) {
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  del_request->set_prev_kv(true);
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
+void etcdv3::Transaction::setup_compare_or_create(std::string const& key,
+                                                  std::string const& prev_value,
+                                                  std::string const& create_key,
+                                                  std::string const& value,
+                                                  int64_t const leaseid) {
+  this->add_compare_value(key, CompareResult::NOT_EQUAL, prev_value);
+  this->add_success_put(create_key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_and_swap(std::string const& key,
+                                                 std::string const& prev_value,
+                                                 std::string const& value,
+                                                 int64_t const leaseid) {
+  this->add_compare_value(key, CompareResult::EQUAL, prev_value);
+  this->add_success_put(key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_or_swap(std::string const& key,
+                                                std::string const& prev_value,
+                                                std::string const& value,
+                                                int64_t const leaseid) {
+  this->add_compare_value(key, CompareResult::NOT_EQUAL, prev_value);
+  this->add_success_put(key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_and_delete(
+    std::string const& key, std::string const& prev_value,
+    std::string const& delete_key, std::string const& range_end,
+    const bool recursive) {
+  this->add_compare_value(key, CompareResult::EQUAL, prev_value);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_or_delete(std::string const& key,
+                                                  std::string const& prev_value,
+                                                  std::string const& delete_key,
+                                                  std::string const& range_end,
+                                                  const bool recursive) {
+  this->add_compare_value(key, CompareResult::NOT_EQUAL, prev_value);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_and_create(
+    std::string const& key, const int64_t prev_revision,
+    std::string const& create_key, std::string const& value,
+    int64_t const leaseid) {
+  this->add_compare_mod(key, CompareResult::EQUAL, prev_revision);
+  this->add_success_put(create_key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_or_create(std::string const& key,
+                                                  const int64_t prev_revision,
+                                                  std::string const& create_key,
+                                                  std::string const& value,
+                                                  int64_t const leaseid) {
+  this->add_compare_mod(key, CompareResult::NOT_EQUAL, prev_revision);
+  this->add_success_put(create_key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_and_swap(std::string const& key,
+                                                 const int64_t prev_revision,
+                                                 std::string const& value,
+                                                 int64_t const leaseid) {
+  this->add_compare_mod(key, CompareResult::EQUAL, prev_revision);
+  this->add_success_put(key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_or_swap(std::string const& key,
+                                                const int64_t prev_revision,
+                                                std::string const& value,
+                                                int64_t const leaseid) {
+  this->add_compare_mod(key, CompareResult::NOT_EQUAL, prev_revision);
+  this->add_success_put(key, value, leaseid);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_and_delete(
+    std::string const& key, const int64_t prev_revision,
+    std::string const& delete_key, std::string const& range_end,
+    const bool recursive) {
+  this->add_compare_mod(key, CompareResult::EQUAL, prev_revision);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
+  this->add_failure_range(key);
+}
+
+void etcdv3::Transaction::setup_compare_or_delete(std::string const& key,
+                                                  const int64_t prev_revision,
+                                                  std::string const& delete_key,
+                                                  std::string const& range_end,
+                                                  const bool recursive) {
+  this->add_compare_mod(key, CompareResult::NOT_EQUAL, prev_revision);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
+  this->add_failure_range(key);
 }
 
 void etcdv3::Transaction::setup_put(std::string const& key,
                                     std::string const& value) {
-  std::unique_ptr<PutRequest> put_request(new PutRequest());
-  put_request->set_key(key);
-  put_request->set_value(value);
-  put_request->set_prev_kv(false);
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_put(put_request.release());
+  this->add_success_put(key, value);
 }
 
 void etcdv3::Transaction::setup_delete(std::string const& key) {
-  std::unique_ptr<DeleteRangeRequest> del_request(new DeleteRangeRequest());
-  del_request->set_key(key);
-  del_request->set_prev_kv(false);
-
-  RequestOp* req_success = txn_request->add_success();
-  req_success->set_allocated_request_delete_range(del_request.release());
+  this->add_success_delete(key, "", false,
+                           true /* for backwards compatibility */);
 }
 
-etcdv3::Transaction::~Transaction() {}
+void etcdv3::Transaction::setup_delete(std::string const& key,
+                                       std::string const& range_end,
+                                       const bool recursive) {
+  this->add_success_delete(key, range_end, recursive,
+                           true /* for backwards compatibility */);
+}
