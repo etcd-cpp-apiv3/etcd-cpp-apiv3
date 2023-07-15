@@ -91,12 +91,13 @@ TEST_CASE("set a key") {
   CHECK(0 == etcd.set("/test", "42").get().error_code());  // Not a file
 
   // set with ttl
-  resp = etcd.set("/test/key1", "50", 10).get();
+  resp = etcd.set("/test/key1", "50").get();
   REQUIRE(0 == resp.error_code());  // overwrite
   CHECK("set" == resp.action());
   CHECK("43" == resp.prev_value().as_string());
+  resp = etcd.get("/test/key1").get();
   CHECK("50" == resp.value().as_string());
-  CHECK(0 < resp.value().lease());
+  CHECK(0 == resp.value().lease());
 }
 
 TEST_CASE("atomic compare-and-swap") {
@@ -115,11 +116,11 @@ TEST_CASE("atomic compare-and-swap") {
   CHECK(etcd::ERROR_COMPARE_FAILED == res.error_code());
   CHECK("etcd-cpp-apiv3: compare failed" == res.error_message());
 
-  // modify fails the second time
+  // modify fails on non-existing keys
   res = etcd.modify_if("/test/key222", "44", "42").get();
   CHECK(!res.is_ok());
-  CHECK(etcd::ERROR_KEY_NOT_FOUND == res.error_code());
-  CHECK("etcd-cpp-apiv3: key not found" == res.error_message());
+  CHECK(etcd::ERROR_COMPARE_FAILED == res.error_code());
+  CHECK("etcd-cpp-apiv3: compare failed" == res.error_message());
 }
 
 TEST_CASE("delete a value") {
@@ -144,10 +145,10 @@ TEST_CASE("delete a value") {
   CHECK(modify_index == resp.prev_value().modified_index());
   CHECK(version == resp.prev_value().version());
   CHECK("delete" == resp.action());
-  CHECK(modify_index == resp.value().modified_index());
   CHECK(create_index == resp.value().created_index());
+  CHECK(modify_index == resp.value().modified_index());
   CHECK(version == resp.value().version());
-  CHECK("" == resp.value().as_string());
+  CHECK("43" == resp.value().as_string());
   CHECK("/test/key1" == resp.value().key());
 }
 
@@ -558,6 +559,8 @@ TEST_CASE("lease grant") {
   res = etcd.set("/test/key1", "43", leaseid).get();
   REQUIRE(0 == res.error_code());  // overwrite
   CHECK("set" == res.action());
+  res = etcd.get("/test/key1").get();
+  REQUIRE(0 == res.error_code());  // overwrite
   CHECK(leaseid == res.value().lease());
 
   // change with lease id
@@ -566,6 +569,8 @@ TEST_CASE("lease grant") {
   res = etcd.set("/test/key1", "43", leaseid).get();
   REQUIRE(0 == res.error_code());  // overwrite
   CHECK("set" == res.action());
+  res = etcd.get("/test/key1").get();
+  REQUIRE(0 == res.error_code());  // overwrite
   CHECK(leaseid == res.value().lease());
 
   // failure to attach lease id

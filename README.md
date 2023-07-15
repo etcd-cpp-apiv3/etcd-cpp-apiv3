@@ -83,6 +83,36 @@ dependencies have been successfully installed:
     cmake ..
     make -j$(nproc) && make install
 
+## Using this package in your CMake project
+
+To use this package in your CMake project, you can either
+
+- install, then find the library using `find_package()`:
+
+  ```cmake
+  find_package(etcd-cpp-apiv3 REQUIRED)
+  target_link_libraries(your_target PRIVATE etcd-cpp-api)
+  ```
+
+- or, add this repository as a subdirectory in your project, and link the library directly:
+
+  ```cmake
+  add_subdirectory(thirdparty/etcd-cpp-apiv3)
+  target_link_libraries(your_target PRIVATE etcd-cpp-api)
+  ```
+
+- or, use [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html):
+
+  ```cmake
+  include(FetchContent)
+  FetchContent_Declare(
+    etcd-cpp-apiv3
+    https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3.git
+  )
+  FetchContent_MakeAvailable(etcd-cpp-apiv3)
+  target_link_libraries(your_target PRIVATE etcd-cpp-api)
+  ```
+
 ## Compatible etcd version
 
 The _etcd-cpp-apiv3_ should work well with etcd > 3.0. Feel free to issue an issue to us on

@@ -76,7 +76,7 @@ class AsyncCampaignResponse : public etcdv3::V3Response {
 class AsyncDeleteResponse : public etcdv3::V3Response {
  public:
   AsyncDeleteResponse(){};
-  void ParseResponse(bool prefix, DeleteRangeResponse& resp);
+  void ParseResponse(DeleteRangeResponse& resp);
 };
 
 class AsyncHeadResponse : public etcdv3::V3Response {

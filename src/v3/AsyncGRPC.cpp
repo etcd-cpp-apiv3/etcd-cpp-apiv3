@@ -43,8 +43,7 @@ void etcdv3::AsyncCampaignResponse::ParseResponse(CampaignResponse& reply) {
   value.kvs.set_lease(leader.lease());
 }
 
-void etcdv3::AsyncDeleteResponse::ParseResponse(bool prefix,
-                                                DeleteRangeResponse& resp) {
+void etcdv3::AsyncDeleteResponse::ParseResponse(DeleteRangeResponse& resp) {
   index = resp.header().revision();
 
   if (resp.prev_kvs_size() == 0) {
@@ -56,13 +55,15 @@ void etcdv3::AsyncDeleteResponse::ParseResponse(bool prefix,
       etcdv3::KeyValue kv;
       kv.kvs.CopyFrom(resp.prev_kvs(cnt));
       values.push_back(kv);
+      prev_values.push_back(kv);
     }
 
-    if (!prefix) {
-      prev_value = values[0];
+    // flatten values/prev_values 0 to value/prev_value
+    if (!values.empty()) {
       value = values[0];
-      value.kvs.clear_value();
-      values.clear();
+    }
+    if (!prev_values.empty()) {
+      prev_value = prev_values[0];
     }
   }
 }
@@ -136,6 +137,7 @@ void etcdv3::AsyncPutResponse::ParseResponse(PutResponse& resp) {
   // get all previous values
   etcdv3::KeyValue kv;
   kv.kvs.CopyFrom(resp.prev_kv());
+  prev_values.push_back(kv);
   prev_value = kv;
 }
 
@@ -176,39 +178,54 @@ void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
         error_code = response.get_error_code();
       }
       if (!response.get_error_message().empty()) {
-        error_message += "\n" + response.get_error_message();
+        if (!error_message.empty()) {
+          error_message += "\n";
+        }
+        error_message += response.get_error_message();
       }
       for (auto const& value : response.get_values()) {
         values.emplace_back(value);
+      }
+      for (auto const& prev_value : response.get_prev_values()) {
+        prev_values.emplace_back(prev_value);
       }
     } else if (ResponseOp::ResponseCase::kResponsePut == resp.response_case()) {
       AsyncPutResponse response;
       response.ParseResponse(*(resp.mutable_response_put()));
-      prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
-
       if (error_code == 0) {
         error_code = response.get_error_code();
       }
       if (!response.get_error_message().empty()) {
-        error_message += "\n" + response.get_error_message();
+        if (!error_message.empty()) {
+          error_message += "\n";
+        }
+        error_message += response.get_error_message();
       }
       for (auto const& value : response.get_values()) {
         values.emplace_back(value);
+      }
+      for (auto const& prev_value : response.get_prev_values()) {
+        prev_values.emplace_back(prev_value);
       }
     } else if (ResponseOp::ResponseCase::kResponseDeleteRange ==
                resp.response_case()) {
       AsyncDeleteResponse response;
-      response.ParseResponse(true, *(resp.mutable_response_delete_range()));
-      prev_value.kvs.CopyFrom(response.get_prev_value().kvs);
+      response.ParseResponse(*(resp.mutable_response_delete_range()));
 
       if (error_code == 0) {
         error_code = response.get_error_code();
       }
       if (!response.get_error_message().empty()) {
-        error_message += "\n" + response.get_error_message();
+        if (!error_message.empty()) {
+          error_message += "\n";
+        }
+        error_message += response.get_error_message();
       }
       for (auto const& value : response.get_values()) {
         values.emplace_back(value);
+      }
+      for (auto const& prev_value : response.get_prev_values()) {
+        prev_values.emplace_back(prev_value);
       }
     } else if (ResponseOp::ResponseCase::kResponseTxn == resp.response_case()) {
       AsyncTxnResponse response;
@@ -218,7 +235,10 @@ void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
         error_code = response.get_error_code();
       }
       if (!response.get_error_message().empty()) {
-        error_message += "\n" + response.get_error_message();
+        if (!error_message.empty()) {
+          error_message += "\n";
+        }
+        error_message += response.get_error_message();
       }
 
       // skip
@@ -341,11 +361,13 @@ etcdv3::AsyncCompareAndSwapAction::AsyncCompareAndSwapAction(
   etcdv3::Transaction txn;
   if (type == etcdv3::AtomicityType::PREV_VALUE) {
     txn.setup_compare_and_swap(parameters.key, parameters.old_value,
-                               parameters.value);
+                               parameters.value, parameters.lease_id);
   } else if (type == etcdv3::AtomicityType::PREV_INDEX) {
     txn.setup_compare_and_swap(parameters.key, parameters.old_revision,
-                               parameters.value);
+                               parameters.value, parameters.lease_id);
   }
+  // backwards compatibility
+  txn.add_success_range(parameters.key);
 
   response_reader =
       parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
@@ -377,7 +399,7 @@ etcdv3::AsyncDeleteAction::AsyncDeleteAction(ActionParameters&& params)
   DeleteRangeRequest del_request;
   detail::make_request_with_ranges(del_request, parameters.key,
                                    parameters.range_end, parameters.withPrefix);
-  del_request.set_prev_kv(true);
+  del_request.set_prev_kv(true /* fetch prev values */);
 
   response_reader =
       parameters.kv_stub->AsyncDeleteRange(&context, del_request, &cq_);
@@ -392,8 +414,7 @@ etcdv3::AsyncDeleteResponse etcdv3::AsyncDeleteAction::ParseResponse() {
     del_resp.set_error_code(status.error_code());
     del_resp.set_error_message(status.error_message());
   } else {
-    del_resp.ParseResponse(
-        parameters.withPrefix || !parameters.range_end.empty(), reply);
+    del_resp.ParseResponse(reply);
   }
   return del_resp;
 }
@@ -949,7 +970,9 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters&& params,
   etcdv3::Transaction txn;
   isCreate = create;
   txn.add_compare_mod(parameters.key, 0 /* not exists */);
-  txn.add_success_put(parameters.key, parameters.key, parameters.lease_id);
+  txn.add_success_put(parameters.key, parameters.value, parameters.lease_id);
+  // backwards compatibility
+  txn.add_success_range(parameters.key);
   if (create) {
     txn.add_failure_put(parameters.key, parameters.value, parameters.lease_id);
   } else {
@@ -1035,7 +1058,10 @@ etcdv3::AsyncUpdateAction::AsyncUpdateAction(etcdv3::ActionParameters&& params)
     : etcdv3::Action(std::move(params)) {
   etcdv3::Transaction txn;
   txn.add_compare_version(parameters.key, CompareResult::GREATER, 0);  // exists
-  txn.add_success_put(parameters.key, parameters.value, parameters.lease_id);
+  txn.add_success_put(parameters.key, parameters.value, parameters.lease_id,
+                      true /* for backwards compatibility */);
+  // backwards compatibility
+  txn.add_success_range(parameters.key);
   txn.add_failure_range(parameters.key);
   response_reader =
       parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
@@ -1065,8 +1091,17 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
   isCancelled.store(false);
   stream = parameters.watch_stub->AsyncWatch(&context, &cq_,
                                              (void*) etcdv3::WATCH_CREATE);
-  this->watch_id =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  // The unique watcher id causes the watcher cannot be cancelled as expected
+  // on Ubuntu 20.04.
+  //
+  // See CI failures:
+  // https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/actions/runs/5561397273/jobs/10159051536
+  //
+  // Added in https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/pull/232
+  // Removed in https://github.com/etcd-cpp-apiv3/etcd-cpp-apiv3/pull/236
+  //
+  // this->watch_id =
+  //     std::chrono::high_resolution_clock::now().time_since_epoch().count();
   // #ifndef NDEBUG
   //   std::clog << "etcd-cpp-apiv3: watch_id: " << this->watch_id << std::endl;
   // #endif

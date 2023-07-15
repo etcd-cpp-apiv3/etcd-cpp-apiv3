@@ -344,6 +344,8 @@ class Client {
   /**
    * Removes a single key. The key has to point to a plain, non directory entry.
    * @param key is the key to be deleted
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm(std::string const& key);
 
@@ -351,6 +353,8 @@ class Client {
    * Removes a single key but only if it has a specific value. Fails if the key
    * does not exists or the its value differs from the expected one.
    * @param key is the key to be deleted
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm_if(std::string const& key,
                              std::string const& old_value);
@@ -361,6 +365,8 @@ class Client {
    * from the expected one.
    * @param key is the key to be deleted
    * @param old_index is the expected index of the existing value
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the key does not exist.
    */
   pplx::task<Response> rm_if(std::string const& key, int64_t old_index);
 
@@ -370,6 +376,8 @@ class Client {
    * @param key is the directory to be created to be listed
    * @param recursive if true then delete a whole subtree, otherwise deletes
    * only an empty directory.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key, bool recursive = false);
 
@@ -381,6 +389,8 @@ class Client {
    *
    * @param key is the directory to be created to be listed
    * @param range_end is the end of key range to be removed.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key, const char* range_end);
 
@@ -389,6 +399,8 @@ class Client {
    *
    * @param key is the directory to be created to be listed
    * @param range_end is the end of key range to be removed.
+   *
+   * @return Returns etcdv3::ERROR_KEY_NOT_FOUND if the no key been deleted.
    */
   pplx::task<Response> rmdir(std::string const& key,
                              std::string const& range_end);

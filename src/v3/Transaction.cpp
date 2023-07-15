@@ -268,7 +268,8 @@ void etcdv3::Transaction::setup_compare_and_delete(
     std::string const& delete_key, std::string const& range_end,
     const bool recursive) {
   this->add_compare_value(key, CompareResult::EQUAL, prev_value);
-  this->add_success_delete(delete_key, range_end, recursive);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
   this->add_failure_range(key);
 }
 
@@ -278,7 +279,8 @@ void etcdv3::Transaction::setup_compare_or_delete(std::string const& key,
                                                   std::string const& range_end,
                                                   const bool recursive) {
   this->add_compare_value(key, CompareResult::NOT_EQUAL, prev_value);
-  this->add_success_delete(delete_key, range_end, recursive);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
   this->add_failure_range(key);
 }
 
@@ -324,7 +326,8 @@ void etcdv3::Transaction::setup_compare_and_delete(
     std::string const& delete_key, std::string const& range_end,
     const bool recursive) {
   this->add_compare_mod(key, CompareResult::EQUAL, prev_revision);
-  this->add_success_delete(delete_key, range_end, recursive);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
   this->add_failure_range(key);
 }
 
@@ -334,7 +337,8 @@ void etcdv3::Transaction::setup_compare_or_delete(std::string const& key,
                                                   std::string const& range_end,
                                                   const bool recursive) {
   this->add_compare_mod(key, CompareResult::NOT_EQUAL, prev_revision);
-  this->add_success_delete(delete_key, range_end, recursive);
+  this->add_success_delete(delete_key, range_end, recursive,
+                           true /* for backwards compatibility */);
   this->add_failure_range(key);
 }
 
@@ -344,11 +348,13 @@ void etcdv3::Transaction::setup_put(std::string const& key,
 }
 
 void etcdv3::Transaction::setup_delete(std::string const& key) {
-  this->add_success_delete(key);
+  this->add_success_delete(key, "", false,
+                           true /* for backwards compatibility */);
 }
 
 void etcdv3::Transaction::setup_delete(std::string const& key,
                                        std::string const& range_end,
                                        const bool recursive) {
-  this->add_success_delete(key, range_end, recursive);
+  this->add_success_delete(key, range_end, recursive,
+                           true /* for backwards compatibility */);
 }
