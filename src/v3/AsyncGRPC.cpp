@@ -212,14 +212,20 @@ void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
       AsyncDeleteResponse response;
       response.ParseResponse(*(resp.mutable_response_delete_range()));
 
-      if (error_code == 0) {
+      // Ignore "key not found" error for delete in txn, keep backwards
+      // compatibility.
+      if (response.get_error_code() != 0 &&
+          response.get_error_code() != etcdv3::ERROR_KEY_NOT_FOUND) {
         error_code = response.get_error_code();
       }
       if (!response.get_error_message().empty()) {
-        if (!error_message.empty()) {
-          error_message += "\n";
+        if (response.get_error_code() != 0 &&
+            response.get_error_code() != etcdv3::ERROR_KEY_NOT_FOUND) {
+          if (!error_message.empty()) {
+            error_message += "\n";
+          }
+          error_message += response.get_error_message();
         }
-        error_message += response.get_error_message();
       }
       for (auto const& value : response.get_values()) {
         values.emplace_back(value);
