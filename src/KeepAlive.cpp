@@ -28,6 +28,10 @@ etcd::KeepAlive::KeepAlive(SyncClient const& client, int ttl, int64_t lease_id)
       lease_id(lease_id),
       continue_next(true),
       grpc_timeout(client.get_grpc_timeout()) {
+  if (ttl > 0 && lease_id == 0) {
+    this->lease_id =
+        const_cast<SyncClient&>(client).leasegrant(ttl).value().lease();
+  }
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 
@@ -79,6 +83,10 @@ etcd::KeepAlive::KeepAlive(
       lease_id(lease_id),
       continue_next(true),
       grpc_timeout(client.get_grpc_timeout()) {
+  if (ttl > 0 && lease_id == 0) {
+    this->lease_id =
+        const_cast<SyncClient&>(client).leasegrant(ttl).value().lease();
+  }
   stubs.reset(new EtcdServerStubs{});
   stubs->leaseServiceStub = Lease::NewStub(client.grpc_channel());
 

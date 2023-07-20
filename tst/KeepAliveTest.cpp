@@ -60,3 +60,16 @@ TEST_CASE("keepalive won't expire") {
   etcd::KeepAlive keepalive(etcd, handler, ttl, lease_id);
   std::this_thread::sleep_for(std::chrono::seconds(5));
 }
+
+TEST_CASE("keepalive auto-grant") {
+  etcd::Client etcd(etcd_uri);
+
+  // create a lease without pre-granted lease id
+  auto keepalive = std::make_shared<etcd::KeepAlive>(etcd, 10 /* ttl */);
+  auto lease_id = keepalive->Lease();
+  REQUIRE(lease_id != 0);
+
+  // sleep for a while, and cancel
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  keepalive->Cancel();
+}
