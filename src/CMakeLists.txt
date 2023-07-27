@@ -22,7 +22,7 @@ use_cxx(etcd-cpp-api-core-objects)
 add_dependencies(etcd-cpp-api-core-objects protobuf_generates)
 include_generated_protobuf_files(etcd-cpp-api-core-objects)
 target_link_libraries(etcd-cpp-api-core-objects PUBLIC
-                      ${PROTOBUF_LIBRARIES}
+                      protobuf::libprotobuf
                       ${OPENSSL_LIBRARIES}
                       ${GRPC_LIBRARIES}
 )
@@ -32,7 +32,7 @@ if(BUILD_ETCD_CORE_ONLY)
     add_library(etcd-cpp-api-core $<TARGET_OBJECTS:etcd-cpp-api-core-objects>)
     use_cxx(etcd-cpp-api-core)
     target_link_libraries(etcd-cpp-api-core PUBLIC
-                         ${PROTOBUF_LIBRARIES}
+                         protobuf::libprotobuf
                          ${OPENSSL_LIBRARIES}
                          ${GRPC_LIBRARIES}
     )
@@ -44,7 +44,7 @@ else()
     use_cxx(etcd-cpp-api)
     target_link_libraries(etcd-cpp-api PUBLIC
                           ${CPPREST_LIB}  # n.b.: the asynchronous client requires pplx in cpprestsdk
-                          ${PROTOBUF_LIBRARIES}
+                          protobuf::libprotobuf
                           ${OPENSSL_LIBRARIES}
                           ${GRPC_LIBRARIES}
     )

@@ -4,6 +4,10 @@
 #define NOMINMAX
 #endif
 
+#ifdef __ANDROID__
+#include <netinet/in.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
