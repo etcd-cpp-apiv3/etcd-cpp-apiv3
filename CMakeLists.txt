@@ -120,10 +120,34 @@ if(Protobuf_PROTOC_EXECUTABLE)
     endif()
 endif()
 
+# When cross compiling we look for the native protoc compiler
+# overwrite protobuf::protoc with the proper protoc
+if(CMAKE_CROSSCOMPILING)
+    find_program(Protobuf_PROTOC_EXECUTABLE REQUIRED NAMES protoc)
+    if(NOT TARGET protobuf::protoc)
+        add_executable(protobuf::protoc IMPORTED)
+    endif()
+    set_target_properties(protobuf::protoc PROPERTIES
+        IMPORTED_LOCATION "${Protobuf_PROTOC_EXECUTABLE}")
+endif()
+
 find_package(gRPC QUIET)
-if(gRPC_FOUND AND TARGET gRPC::grpc AND TARGET gRPC::grpc_cpp_plugin)
+if(gRPC_FOUND AND TARGET gRPC::grpc)
+    # When cross compiling we look for the native grpc_cpp_plugin
+    if(CMAKE_CROSSCOMPILING)
+        find_program(GRPC_CPP_PLUGIN REQUIRED NAMES grpc_cpp_plugin)
+        if(NOT TARGET gRPC::grpc_cpp_plugin)
+            add_executable(gRPC::grpc_cpp_plugin IMPORTED)
+        endif()
+        set_target_properties(gRPC::grpc_cpp_plugin PROPERTIES
+                IMPORTED_LOCATION "${GRPC_CPP_PLUGIN}")
+    elseif(TARGET gRPC::grpc_cpp_plugin)
+        get_target_property(GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin LOCATION)
+    else()
+        message(FATAL_ERROR "Found gRPC but no gRPC CPP plugin defined")
+    endif()
+
     set(GRPC_LIBRARIES gRPC::gpr gRPC::grpc gRPC::grpc++)
-    get_target_property(GRPC_CPP_PLUGIN gRPC::grpc_cpp_plugin LOCATION)
     get_target_property(GRPC_INCLUDE_DIR gRPC::grpc INTERFACE_INCLUDE_DIRECTORIES)
 else()
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindGRPC.cmake)
