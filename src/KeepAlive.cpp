@@ -72,7 +72,7 @@ etcd::KeepAlive::KeepAlive(
     std::function<void(std::exception_ptr)> const& handler, int ttl,
     int64_t lease_id, std::string const& target_name_override)
     : KeepAlive(SyncClient(address, ca, cert, privkey, target_name_override),
-                ttl, lease_id) {}
+                handler, ttl, lease_id) {}
 
 etcd::KeepAlive::KeepAlive(
     SyncClient const& client,
