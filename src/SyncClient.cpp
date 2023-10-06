@@ -148,9 +148,8 @@ const std::string strip_and_resolve_addresses(std::string const& address) {
 }
 
 bool authenticate(std::shared_ptr<grpc::Channel> const& channel,
-                        std::string const& username,
-                        std::string const& password,
-                        std::string& token_or_message) {
+                  std::string const& username, std::string const& password,
+                  std::string& token_or_message) {
   // run a round of auth
   auto auth_stub = etcdserverpb::Auth::NewStub(channel);
   ClientContext context;
