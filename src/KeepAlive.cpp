@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iostream>
 #include <ratio>
 
 #include "etcd/KeepAlive.hpp"
@@ -177,7 +178,11 @@ void etcd::KeepAlive::refresh() {
       std::unique_lock<std::mutex> lock(mutex_for_refresh_);
       if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) ==
           std::cv_status::no_timeout) {
-        return;
+        if (!continue_next.load()) {
+          return;
+        }
+        std::cerr << "Warn: awaked from condition_variable" +
+            " but continue_next is not set, maybe due to clock drift." << std::endl;
       }
     }
 
