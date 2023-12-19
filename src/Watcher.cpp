@@ -229,13 +229,18 @@ bool etcd::Watcher::Wait() {
   return stubs->call->Cancelled();
 }
 
-void etcd::Watcher::Wait(std::function<void(bool)> callback) {
+bool etcd::Watcher::Wait(std::function<void(bool)> callback) {
   if (wait_callback == nullptr) {
     wait_callback = callback;
+    return true;
   } else {
-    std::cerr << "Failed to set a asynchronous wait callback since it has "
-                 "already been set"
-              << std::endl;
+#ifndef NDEBUG
+    std::cerr
+        << "[warn] failed to set a asynchronous wait callback since it has "
+           "already been set"
+        << std::endl;
+#endif
+    return false;
   }
 }
 

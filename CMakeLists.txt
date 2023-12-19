@@ -166,6 +166,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobufGRPC.cmake)
 if(gRPC_VERSION VERSION_LESS "1.21" OR gRPC_VERSION VERSION_GREATER "1.31")
     add_definitions(-DWITH_GRPC_CHANNEL_CLASS)
 endif()
+if(gRPC_VERSION VERSION_LESS "1.17")
+    add_definitions(-DWITH_GRPC_CREATE_CHANNEL_INTERNAL_UNIQUE_POINTER)
+endif()
 
 # will set `PROTOBUF_GENERATES`, indicates all generated .cc files, and a target `protobuf_generates`.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateProtobuf.cmake)
