@@ -248,9 +248,12 @@ void etcdv3::AsyncTxnResponse::ParseResponse(TxnResponse& reply) {
       }
 
       // skip
-      std::cerr << "Not implemented error: unable to parse nested transaction "
+#ifndef NDEBUG
+      std::cerr << "[debug] not implemented error: unable to parse nested "
+                   "transaction "
                    "response"
                 << std::endl;
+#endif
     }
   }
   if (!values.empty()) {
@@ -629,17 +632,22 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive() {
         got_tag == (void*) etcdv3::KEEPALIVE_DONE) {
       // ok
     } else {
-      std::cerr << "Failed to mark a lease keep-alive connection as DONE: "
-                << context.debug_error_string() << std::endl;
+#ifndef NDEBUG
+      std::cerr
+          << "[debug] failed to mark a lease keep-alive connection as DONE: "
+          << context.debug_error_string() << std::endl;
+#endif
     }
 
     stream->Finish(&status, (void*) KEEPALIVE_FINISH);
     if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void*) KEEPALIVE_FINISH) {
       // ok
     } else {
-      std::cerr << "Failed to finish a lease keep-alive connection: "
+#ifndef NDEBUG
+      std::cerr << "[debug] failed to finish a lease keep-alive connection: "
                 << status.error_message() << ", "
                 << context.debug_error_string() << std::endl;
+#endif
     }
 
     // cancel on-the-fly calls
@@ -820,8 +828,10 @@ void etcdv3::AsyncObserveAction::CancelObserve() {
       break;
     case CompletionQueue::NextStatus::GOT_EVENT:
       if (!ok || got_tag != (void*) ELECTION_OBSERVE_FINISH) {
-        std::cerr << "Failed to finish a election observing connection"
+#ifndef NDEBUG
+        std::cerr << "[debug] failed to finish a election observing connection"
                   << std::endl;
+#endif
       }
     }
 
@@ -1165,7 +1175,9 @@ void etcdv3::AsyncWatchAction::waitForResponse() {
       switch (cq_.AsyncNext(&got_tag, &ok, deadline)) {
       case CompletionQueue::NextStatus::TIMEOUT:
       case CompletionQueue::NextStatus::SHUTDOWN: {
+#ifndef NDEBUG
         std::cerr << "[warn] watcher does't exit normally" << std::endl;
+#endif
         // pretend to be received a "WATCH_FINISH" tag: shutdown
         context.TryCancel();
         cq_.Shutdown();
@@ -1219,7 +1231,6 @@ void etcdv3::AsyncWatchAction::waitForResponse() {
               << std::endl;
         }
 
-        std::cout << "issue a watch cancel" << std::endl;
         // cancel the watcher after receiving the good response
         this->CancelWatch();
 

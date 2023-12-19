@@ -181,8 +181,12 @@ void etcd::KeepAlive::refresh() {
         if (!continue_next.load()) {
           return;
         }
-        std::cerr << "Warn: awaked from condition_variable" +
-            " but continue_next is not set, maybe due to clock drift." << std::endl;
+#ifndef NDEBUG
+        std::cerr
+            << "[warn] awaked from condition_variable but continue_next is "
+               "not set, maybe due to clock drift."
+            << std::endl;
+#endif
       }
     }
 

@@ -162,8 +162,11 @@ class Watcher {
    * Note that you shouldn't use the watcher itself inside the `Wait()` callback
    * as the callback will be invoked in a separate **detached** thread where the
    * watcher may have been destroyed.
+   *
+   * @return true if the callback has been set successfully (no existing
+   * callback).
    */
-  void Wait(std::function<void(bool)> callback);
+  bool Wait(std::function<void(bool)> callback);
 
   /**
    * Stop the watching action.
