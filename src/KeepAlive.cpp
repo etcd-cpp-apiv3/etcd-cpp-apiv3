@@ -46,6 +46,7 @@ etcd::KeepAlive::KeepAlive(SyncClient const& client, int ttl, int64_t lease_id)
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
   refresh_task_ = std::thread([this]() {
+#ifndef _ETCD_NO_EXCEPTIONS
     try {
       // start refresh
       this->refresh();
@@ -53,6 +54,12 @@ etcd::KeepAlive::KeepAlive(SyncClient const& client, int ttl, int64_t lease_id)
       // propagate the exception
       eptr_ = std::current_exception();
     }
+#else
+    const std::string err = this->refresh();
+    if (!err.empty()) {
+      eptr_ = std::make_exception_ptr(std::runtime_error(err));
+    }
+#endif
   });
 }
 
@@ -99,15 +106,22 @@ etcd::KeepAlive::KeepAlive(
 
   stubs->call.reset(new etcdv3::AsyncLeaseKeepAliveAction(std::move(params)));
   refresh_task_ = std::thread([this]() {
+#ifndef _ETCD_NO_EXCEPTIONS
     try {
       // start refresh
       this->refresh();
     } catch (...) {
-      // propogate the exception
+      // propagate the exception
       eptr_ = std::current_exception();
-      if (handler_) {
-        handler_(eptr_);
-      }
+    }
+#else
+    const std::string err = this->refresh();
+    if (!err.empty()) {
+      eptr_ = std::make_exception_ptr(std::runtime_error(err));
+    }
+#endif
+    if (eptr_ && handler_) {
+      handler_(eptr_);
     }
   });
 }
@@ -149,6 +163,7 @@ void etcd::KeepAlive::Check() {
     std::rethrow_exception(eptr_);
   }
   // issue an refresh to make sure it still alive
+#ifndef _ETCD_NO_EXCEPTIONS
   try {
     this->refresh_once();
   } catch (...) {
@@ -158,19 +173,35 @@ void etcd::KeepAlive::Check() {
     // propagate the exception, as we throw in `Check()`, the `handler` won't be
     // touched
     eptr_ = std::current_exception();
-    if (handler_) {
-      handler_(eptr_);
-    }
+  }
+#else
+  const std::string err = this->refresh_once();
+  if (!err.empty()) {
+    // run canceller first
+    this->Cancel();
 
+    // propagate the exception, as we throw in `Check()`, the `handler` won't be
+    // touched
+    eptr_ = std::make_exception_ptr(std::runtime_error(err));
+  }
+#endif
+  if (eptr_ && handler_) {
+    handler_(eptr_);
+  }
+
+#ifndef _ETCD_NO_EXCEPTIONS
+  if (eptr_) {
     // rethrow in `Check()` to keep the consistent semantics
     std::rethrow_exception(eptr_);
   }
+#endif
+  return;
 }
 
-void etcd::KeepAlive::refresh() {
+std::string etcd::KeepAlive::refresh() {
   while (true) {
     if (!continue_next.load()) {
-      return;
+      return std::string{};
     }
     // minimal resolution: 1 second
     int keepalive_ttl = std::max(ttl - 1, 1);
@@ -179,7 +210,7 @@ void etcd::KeepAlive::refresh() {
       if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) ==
           std::cv_status::no_timeout) {
         if (!continue_next.load()) {
-          return;
+          return std::string{};
         }
 #ifndef NDEBUG
         std::cerr
@@ -191,24 +222,37 @@ void etcd::KeepAlive::refresh() {
     }
 
     // execute refresh
-    this->refresh_once();
+    const std::string err = this->refresh_once();
+    if (!err.empty()) {
+      return err;
+    }
   }
+  return std::string{};
 }
 
-void etcd::KeepAlive::refresh_once() {
+std::string etcd::KeepAlive::refresh_once() {
   std::lock_guard<std::mutex> scope_lock(mutex_for_refresh_);
   if (!continue_next.load()) {
-    return;
+    return std::string{};
   }
   this->stubs->call->mutable_parameters().grpc_timeout = this->grpc_timeout;
   auto resp = this->stubs->call->Refresh();
   if (!resp.is_ok()) {
-    throw std::runtime_error("Failed to refresh lease: error code: " +
-                             std::to_string(resp.error_code()) +
-                             ", message: " + resp.error_message());
+    const std::string err = "Failed to refresh lease: error code: " +
+                            std::to_string(resp.error_code()) +
+                            ", message: " + resp.error_message();
+#ifndef _ETCD_NO_EXCEPTIONS
+    throw std::runtime_error(err);
+#endif
+    return err;
   }
   if (resp.value().ttl() == 0) {
-    throw std::out_of_range(
-        "Failed to refresh lease due to expiration: the new TTL is 0.");
+    const std::string err =
+        "Failed to refresh lease due to expiration: the new TTL is 0.";
+#ifndef _ETCD_NO_EXCEPTIONS
+    throw std::out_of_range(err);
+#endif
+    return err;
   }
+  return std::string{};
 }

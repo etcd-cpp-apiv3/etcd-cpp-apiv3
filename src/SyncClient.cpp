@@ -288,7 +288,11 @@ class etcd::SyncClient::TokenAuthenticator {
         // auth
         if (!etcd::detail::authenticate(this->channel_, username_, password_,
                                         token_)) {
-          throw std::invalid_argument("Etcd authentication failed: " + token_);
+          // n.b.: no throw here as the failure of auth will be propagated
+          // to client when it is asked to issue requests.
+          //
+          // throw std::invalid_argument("Etcd authentication failed: " +
+          // token_);
         }
       }
     }

@@ -117,6 +117,7 @@ TEST_CASE("lock using lease") {
 
   bool failed = false;
 
+#ifndef _ETCD_NO_EXCEPTIONS
   std::function<void(std::exception_ptr)> handler =
       [&failed](std::exception_ptr eptr) {
         try {
@@ -128,6 +129,9 @@ TEST_CASE("lock using lease") {
           failed = true;
         }
       };
+#else
+  std::function<void(std::exception_ptr)> handler;
+#endif
 
   // with handler
   {

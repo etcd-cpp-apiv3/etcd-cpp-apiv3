@@ -31,7 +31,9 @@ TEST_CASE("keepalive revoke and check if alive") {
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   // expect keep_alive->Check() to throw exception
+#ifndef _ETCD_NO_EXCEPTIONS
   REQUIRE_THROWS(keepalive->Check());
+#endif
 }
 
 TEST_CASE("keepalive won't expire") {
@@ -45,6 +47,7 @@ TEST_CASE("keepalive won't expire") {
   auto lease_id = resp.value().lease();
   etcd.add(key, meta_str, lease_id);
 
+#ifndef _ETCD_NO_EXCEPTIONS
   std::function<void(std::exception_ptr)> handler =
       [](std::exception_ptr eptr) {
         try {
@@ -57,6 +60,9 @@ TEST_CASE("keepalive won't expire") {
           std::cerr << "Lease expiry \"" << e.what() << "\"\n";
         }
       };
+#else
+  std::function<void(std::exception_ptr)> handler;
+#endif
   etcd::KeepAlive keepalive(etcd, handler, ttl, lease_id);
   std::this_thread::sleep_for(std::chrono::seconds(5));
 }

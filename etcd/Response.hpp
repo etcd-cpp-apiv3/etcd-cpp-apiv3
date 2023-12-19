@@ -34,7 +34,7 @@ class KeepAlive;
 class Watcher;
 
 /**
- * The Reponse object received for the requests of etcd::Client
+ * The Response object received for the requests of etcd::Client
  */
 class Response {
  public:

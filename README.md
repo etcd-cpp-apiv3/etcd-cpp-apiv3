@@ -863,6 +863,8 @@ Without handler, the internal state can be checked via `KeepAlive::Check()` and 
 the async exception when there are errors during keeping the lease alive.
 
 Note that even with `handler`, the `KeepAlive::Check()` still rethrow if there's an async exception.
+When the library is built with `-fno-exceptions`, the `handler` argument and the `Check()` method
+will abort the program when there are errors during keeping the lease alive.
 
 ### Etcd transactions
 
@@ -960,7 +962,15 @@ The observer stream will be canceled when been destructed.
 
 for more details, please refer to [etcd/Client.hpp](./etcd/Client.hpp) and [tst/ElectionTest.cpp](./tst/ElectionTest.cpp).
 
-### TODO
+## `-fno-exceptions`
+
+The _etcd-cpp-apiv3_ library supports to be built with `-fno-exceptions` flag, controlled by the
+cmake option `BUILD_WITH_NO_EXCEPTIONS=ON/OFF` (defaults to `OFF`).
+
+When building with `-fno-exceptions`, the library will abort the program under certain circumstances,
+e.g., when calling `.Check()` method of `KeepAlive` and there are errors during keeping the lease alive,
+
+## TODO
 
 1. Cancellation of asynchronous calls(except for watch)
 

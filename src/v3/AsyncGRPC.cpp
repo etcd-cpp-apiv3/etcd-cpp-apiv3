@@ -512,7 +512,10 @@ etcdv3::AsyncLeaseKeepAliveAction::AsyncLeaseKeepAliveAction(
       got_tag == (void*) etcdv3::KEEPALIVE_CREATE) {
     // ok
   } else {
-    throw std::runtime_error("Failed to create a lease keep-alive connection");
+    status = grpc::Status(grpc::StatusCode::CANCELLED,
+                          "Failed to create a lease keep-alive connection");
+    // cannot continue for further refresh
+    isCancelled.store(true);
   }
 }
 
@@ -534,7 +537,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh() {
   std::lock_guard<std::recursive_mutex> scope_lock(this->protect_is_cancelled);
 
   auto start_timepoint = std::chrono::high_resolution_clock::now();
-  if (isCancelled) {
+  if (isCancelled.load()) {
     status = grpc::Status::CANCELLED;
     return etcd::Response(ParseResponse(),
                           etcd::detail::duration_till_now(start_timepoint));
@@ -621,9 +624,7 @@ etcd::Response etcdv3::AsyncLeaseKeepAliveAction::Refresh() {
 
 void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive() {
   std::lock_guard<std::recursive_mutex> scope_lock(this->protect_is_cancelled);
-  if (isCancelled == false) {
-    isCancelled = true;
-
+  if (!isCancelled.exchange(true)) {
     void* got_tag = nullptr;
     bool ok = false;
 
@@ -658,7 +659,7 @@ void etcdv3::AsyncLeaseKeepAliveAction::CancelKeepAlive() {
 }
 
 bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const {
-  return isCancelled;
+  return isCancelled.load();
 }
 
 etcdv3::ActionParameters&
@@ -782,7 +783,10 @@ etcdv3::AsyncObserveAction::AsyncObserveAction(
       got_tag == (void*) etcdv3::ELECTION_OBSERVE_CREATE) {
     // n.b.: leave the issue of `Read` to the `waitForResponse`
   } else {
-    throw std::runtime_error("failed to create a observe connection");
+    status = grpc::Status(grpc::StatusCode::CANCELLED,
+                          "failed to create a observe connection");
+    // cannot continue for further observing
+    isCancelled.store(true);
   }
 }
 
@@ -810,7 +814,7 @@ void etcdv3::AsyncObserveAction::waitForResponse() {
 }
 
 void etcdv3::AsyncObserveAction::CancelObserve() {
-  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancalled);
+  std::lock_guard<std::mutex> scope_lock(this->protect_is_cancelled);
   if (!isCancelled.exchange(true)) {
     void* got_tag;
     bool ok = false;
@@ -1130,7 +1134,14 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
       got_tag == (void*) etcdv3::WATCH_CREATE) {
     stream->Write(watch_req, (void*) etcdv3::WATCH_WRITE);
   } else {
-    throw std::runtime_error("failed to create a watch connection");
+    status = grpc::Status(grpc::StatusCode::CANCELLED,
+                          "failed to create a watch connection");
+    // cannot continue for further watching
+    isCancelled.store(true);
+  }
+
+  if (!status.ok()) {
+    return;
   }
 
   // wait "write" (WatchCreateRequest) success, and start to read the first
@@ -1138,7 +1149,10 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
   if (cq_.Next(&got_tag, &ok) && ok && got_tag == (void*) etcdv3::WATCH_WRITE) {
     stream->Read(&reply, (void*) this);
   } else {
-    throw std::runtime_error("failed to write WatchCreateRequest to server");
+    status = grpc::Status(grpc::StatusCode::CANCELLED,
+                          "failed to write WatchCreateRequest to server");
+    // cannot continue for further watching
+    isCancelled.store(true);
   }
 }
 
@@ -1163,6 +1177,11 @@ void etcdv3::AsyncWatchAction::waitForResponse() {
   void* got_tag;
   bool ok = false;
   bool the_final_round = false;
+
+  // failed to create the watcher
+  if (!status.ok()) {
+    return;
+  }
 
   while (true) {
     if (!the_final_round) {
@@ -1255,6 +1274,14 @@ void etcdv3::AsyncWatchAction::waitForResponse(
   void* got_tag;
   bool ok = false;
   bool the_final_round = false;
+
+  // failed to create the watcher
+  if (!status.ok()) {
+    auto resp = ParseResponse();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::high_resolution_clock::now() - start_timepoint);
+    callback(etcd::Response(resp, duration));
+  }
 
   while (true) {
     if (!the_final_round) {

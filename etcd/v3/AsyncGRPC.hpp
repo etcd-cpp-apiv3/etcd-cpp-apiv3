@@ -269,7 +269,7 @@ class AsyncLeaseKeepAliveAction : public etcdv3::Action {
       stream;
 
   LeaseKeepAliveRequest req;
-  bool isCancelled;
+  std::atomic_bool isCancelled;
   std::recursive_mutex protect_is_cancelled;
 
   friend class etcd::KeepAlive;
@@ -330,7 +330,7 @@ class AsyncObserveAction : public etcdv3::Action {
   LeaderResponse reply;
   std::unique_ptr<ClientAsyncReader<LeaderResponse>> response_reader;
   std::atomic_bool isCancelled;
-  std::mutex protect_is_cancalled;
+  std::mutex protect_is_cancelled;
 };
 
 class AsyncProclaimAction : public etcdv3::Action {
