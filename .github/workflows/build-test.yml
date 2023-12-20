@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04, macos-11, macos-12]
-        etcd: [v3.2.26, v3.3.11, v3.4.13, v3.5.7]
+        etcd: [v3.2.32, v3.3.27, v3.4.27, v3.5.9]
         exclude:
           - os: ubuntu-20.04
             etcd: v3.2.26
@@ -242,6 +242,10 @@ jobs:
           sleep 5
 
           # tests without auth
+
+          echo "Run the etcd resolver test ........................."
+          # there's no ipv6 on github CI runner
+          # ./build/bin/EtcdResolverTest
 
           echo "Run the etcd sync test ........................."
           ./build/bin/EtcdSyncTest

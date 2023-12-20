@@ -99,19 +99,19 @@ static std::string string_join(std::vector<std::string> const& srcs,
 }
 
 static bool dns_resolve(std::string const& target,
-                        std::vector<std::string>& endpoints) {
-  struct addrinfo hints = {}, *addrs;
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = IPPROTO_TCP;
-
+                        std::vector<std::string>& endpoints, bool ipv4 = true) {
   std::vector<std::string> target_parts;
-  string_split(target_parts, target, ":");
-  if (target_parts.size() != 2) {
+  {
+    size_t rindex = target.rfind(':');
+    if (rindex == target.npos) {
 #ifndef NDEBUG
-    std::cerr << "[warn] invalid URL: " << target << std::endl;
+      std::cerr << "[warn] invalid URL: " << target << ", expects 'host:port'"
+                << std::endl;
 #endif
-    return false;
+      return false;
+    }
+    target_parts.push_back(target.substr(0, rindex));
+    target_parts.push_back(target.substr(rindex + 1));
   }
 
 #if defined(_WIN32)
@@ -132,22 +132,42 @@ static bool dns_resolve(std::string const& target,
   }
 #endif
 
+  struct addrinfo hints = {}, *addrs;
+  hints.ai_family = ipv4 ? AF_INET : AF_INET6;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+
   int r = getaddrinfo(target_parts[0].c_str(), target_parts[1].c_str(), &hints,
                       &addrs);
   if (r != 0) {
 #ifndef NDEBUG
-    std::cerr << "[warn] getaddrinfo() failed for endpoint " << target
-              << " with error: " << r << std::endl;
+    std::cerr << "[warn] getaddrinfo() as " << (ipv4 ? "ipv4" : "ipv6")
+              << " failed for endpoint " << target << " with error: " << r
+              << ", " << strerror(errno) << std::endl;
 #endif
     return false;
   }
 
   char host[16] = {'\0'};
   for (struct addrinfo* addr = addrs; addr != nullptr; addr = addr->ai_next) {
+    if (addr->ai_family != AF_INET && addr->ai_family != AF_INET6) {
+      continue;
+    }
     memset(host, '\0', sizeof(host));
-    getnameinfo(addr->ai_addr, addr->ai_addrlen, host, sizeof(host), NULL, 0,
-                NI_NUMERICHOST);
-    endpoints.emplace_back(std::string(host) + ":" + target_parts[1]);
+    int r = getnameinfo(addr->ai_addr, addr->ai_addrlen, host, sizeof(host),
+                        NULL, 0, NI_NUMERICHOST);
+    if (r != 0) {
+#ifndef NDEBUG
+      std::cerr << "[warn] getnameinfo() failed for endpoint " << target
+                << " with error: " << r << ", " << strerror(errno) << std::endl;
+#endif
+      continue;
+    }
+    std::string host_string = host;
+    if (addr->ai_family == AF_INET6) {
+      host_string = "[" + host_string + "]";
+    }
+    endpoints.emplace_back(host_string + ":" + target_parts[1]);
   }
   freeaddrinfo(addrs);
   return true;
@@ -156,19 +176,28 @@ static bool dns_resolve(std::string const& target,
 const std::string strip_and_resolve_addresses(std::string const& address) {
   std::vector<std::string> addresses;
   string_split(addresses, address, ",;");
-  std::string stripped_address;
+  std::string stripped_v4_address, stripped_v6_address;
   {
-    std::vector<std::string> stripped_addresses;
+    std::vector<std::string> stripped_v4_addresses, stripped_v6_addresses;
     std::string substr("://");
     for (auto const& addr : addresses) {
       std::string::size_type idx = addr.find(substr);
       std::string target =
           idx == std::string::npos ? addr : addr.substr(idx + substr.length());
-      etcd::detail::dns_resolve(target, stripped_addresses);
+      etcd::detail::dns_resolve(target, stripped_v4_addresses, true);
+      etcd::detail::dns_resolve(target, stripped_v6_addresses, false);
     }
-    stripped_address = string_join(stripped_addresses, ",");
+    stripped_v4_address = string_join(stripped_v4_addresses, ",");
+    stripped_v6_address = string_join(stripped_v6_addresses, ",");
   }
-  return "ipv4:///" + stripped_address;
+  // prefer resolved ipv4 addresses
+  if (!stripped_v4_address.empty()) {
+    return "ipv4:///" + stripped_v4_address;
+  }
+  if (!stripped_v6_address.empty()) {
+    return "ipv6:///" + stripped_v6_address;
+  }
+  return std::string{};
 }
 
 bool authenticate(std::shared_ptr<grpc::Channel> const& channel,
@@ -227,7 +256,10 @@ static std::shared_ptr<grpc::Channel> create_grpc_channel(
     const grpc::ChannelArguments& grpc_args) {
   const std::string addresses =
       etcd::detail::strip_and_resolve_addresses(address);
-  if (addresses.empty() || addresses == "ipv4:///") {
+#ifndef NDEBUG
+  std::cerr << "[debug] resolved addresses: " << addresses << std::endl;
+#endif
+  if (addresses.empty() || addresses == "ipv4:///" || addresses == "ipv6:///") {
     // bypass grpc initialization to avoid noisy logs from grpc
     return grpc::CreateChannelInternal(
         "",

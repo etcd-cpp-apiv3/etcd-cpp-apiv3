@@ -222,6 +222,14 @@ Connecting to multiple endpoints is supported:
   etcd::Client etcd("http://a.com:2379;http://b.com:2379;http://c.com:2379");
 ```
 
+### IPv6
+
+Connecting to IPv6 endpoints is supported:
+
+```c++
+  etcd::Client etcd("http://::1:2379");
+```
+
 Behind the screen, gRPC's load balancer is used and the round-robin strategy will
 be used by default.
 
