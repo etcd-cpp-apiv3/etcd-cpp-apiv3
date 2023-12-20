@@ -37,6 +37,7 @@ void print_response(etcd::Response const& resp) {
 void wait_for_connection(std::string endpoints) {
   // wait until the client connects to etcd server
   while (true) {
+#ifndef _ETCD_NO_EXCEPTIONS
     try {
       etcd::Client client(endpoints);
       if (client.head().get().is_ok()) {
@@ -45,6 +46,12 @@ void wait_for_connection(std::string endpoints) {
     } catch (...) {
       // pass
     }
+#else
+    etcd::Client client(endpoints);
+    if (client.head().get().is_ok()) {
+      break;
+    }
+#endif
     sleep(1);
   }
 }
@@ -85,6 +92,7 @@ TEST_CASE("watch should can be re-established") {
 
   // issue some changes to see if the watcher works
   for (int round = 0; round < 100000; ++round) {
+#ifndef _ETCD_NO_EXCEPTIONS
     try {
       etcd::Client client(etcd_url);
       auto response =
@@ -92,6 +100,11 @@ TEST_CASE("watch should can be re-established") {
     } catch (...) {
       // pass
     }
+#else
+    etcd::Client client(etcd_url);
+    auto response =
+        client.set(my_prefix + "/foo", "bar-" + std::to_string(round)).get();
+#endif
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
   }
@@ -101,6 +114,7 @@ TEST_CASE("watch should can be re-established") {
 
   // the watcher has been cancelled and shouldn't work anymore
   for (int round = 10; round < 20; ++round) {
+#ifndef _ETCD_NO_EXCEPTIONS
     try {
       etcd::Client client(etcd_url);
       auto response =
@@ -108,6 +122,11 @@ TEST_CASE("watch should can be re-established") {
     } catch (...) {
       // pass
     }
+#else
+    etcd::Client client(etcd_url);
+    auto response =
+        client.set(my_prefix + "/foo", "bar-" + std::to_string(round)).get();
+#endif
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
   }

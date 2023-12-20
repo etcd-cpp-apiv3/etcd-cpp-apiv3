@@ -19,6 +19,7 @@ foreach(testfile ${TEST_FILES})
         add_executable(${test_name} EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/${testfile})
     endif()
     use_cxx(${test_name})
+    set_exceptions(${test_name})
     add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
 
     target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../proto/gen)

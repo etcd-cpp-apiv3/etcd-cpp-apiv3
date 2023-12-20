@@ -85,10 +85,10 @@ class KeepAlive {
   ~KeepAlive();
 
  protected:
-  // automatically refresh loop
-  void refresh();
-  // refresh once immediately
-  void refresh_once();
+  // automatically refresh loop, returns the error message if failed
+  std::string refresh();
+  // refresh once immediately, returns the error message if failed
+  std::string refresh_once();
 
   struct EtcdServerStubs;
   struct EtcdServerStubsDeleter {

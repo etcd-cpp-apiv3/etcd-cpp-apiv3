@@ -24,37 +24,31 @@ class DistributedLock {
 DistributedLock::DistributedLock(const std::string& lock_name, uint timeout) {
   _etcd_client = std::unique_ptr<etcd::Client>(new etcd::Client(etcd_url));
 
-  try {
-    if (timeout == 0) {
+  if (timeout == 0) {
+    etcd::Response resp = _etcd_client->lock(lock_name).get();
+    if (resp.is_ok()) {
+      _lock_key = resp.lock_key();
+      _acquired = true;
+    }
+  } else {
+    std::future<etcd::Response> future = std::async(std::launch::async, [&]() {
       etcd::Response resp = _etcd_client->lock(lock_name).get();
+      return resp;
+    });
+
+    std::future_status status = future.wait_for(std::chrono::seconds(timeout));
+    if (status == std::future_status::ready) {
+      auto resp = future.get();
       if (resp.is_ok()) {
         _lock_key = resp.lock_key();
         _acquired = true;
       }
+    } else if (status == std::future_status::timeout) {
+      std::cerr << "failed to acquire distributed because of lock timeout"
+                << std::endl;
     } else {
-      std::future<etcd::Response> future =
-          std::async(std::launch::async, [&]() {
-            etcd::Response resp = _etcd_client->lock(lock_name).get();
-            return resp;
-          });
-
-      std::future_status status =
-          future.wait_for(std::chrono::seconds(timeout));
-      if (status == std::future_status::ready) {
-        auto resp = future.get();
-        if (resp.is_ok()) {
-          _lock_key = resp.lock_key();
-          _acquired = true;
-        }
-      } else if (status == std::future_status::timeout) {
-        std::cerr << "failed to acquire distributed because of lock timeout"
-                  << std::endl;
-      } else {
-        std::cerr << "failed to acquire distributed lock" << std::endl;
-      }
+      std::cerr << "failed to acquire distributed lock" << std::endl;
     }
-  } catch (std::exception& e) {
-    std::cerr << "failed to construct: " << e.what() << std::endl;
   }
 }
 
@@ -63,13 +57,9 @@ DistributedLock::~DistributedLock() noexcept {
     return;
   }
 
-  try {
-    auto resp = _etcd_client->unlock(_lock_key).get();
-    if (!resp.is_ok()) {
-      std::cout << resp.error_code() << std::endl;
-    }
-  } catch (std::exception& e) {
-    std::cerr << "failed to destruct: " << e.what() << std::endl;
+  auto resp = _etcd_client->unlock(_lock_key).get();
+  if (!resp.is_ok()) {
+    std::cout << resp.error_code() << std::endl;
   }
 }
 
