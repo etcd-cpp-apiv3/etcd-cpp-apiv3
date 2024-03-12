@@ -994,9 +994,9 @@ etcdv3::AsyncSetAction::AsyncSetAction(etcdv3::ActionParameters&& params,
   // backwards compatibility
   txn.add_success_range(parameters.key);
   if (create) {
-    txn.add_failure_put(parameters.key, parameters.value, parameters.lease_id);
-  } else {
     txn.add_failure_range(parameters.key);
+  } else {
+    txn.add_failure_put(parameters.key, parameters.value, parameters.lease_id);
   }
   response_reader =
       parameters.kv_stub->AsyncTxn(&context, *txn.txn_request, &cq_);
