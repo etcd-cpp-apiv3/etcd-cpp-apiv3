@@ -44,6 +44,19 @@ int etcd::Value::ttl() const { return _ttl; }
 
 int64_t etcd::Value::lease() const { return leaseId; }
 
+std::ostream& etcd::operator<<(std::ostream& os, const etcd::Value& value) {
+  os << "Event: {";
+  os << "Key: " << value.key() << ", ";
+  os << "Value: " << value.as_string() << ", ";
+  os << "Created: " << value.created_index() << ", ";
+  os << "Modified: " << value.modified_index() << ", ";
+  os << "Version: " << value.version() << ", ";
+  os << "TTL: " << value.ttl() << ", ";
+  os << "Lease: " << value.lease() << ", ";
+  os << "}";
+  return os;
+}
+
 etcd::Event::Event(mvccpb::Event const& event) {
   _has_kv = event.has_kv();
   _has_prev_kv = event.has_prev_kv();
@@ -73,3 +86,30 @@ bool etcd::Event::has_prev_kv() const { return _has_prev_kv; }
 const etcd::Value& etcd::Event::kv() const { return _kv; }
 
 const etcd::Value& etcd::Event::prev_kv() const { return _prev_kv; }
+
+std::ostream& etcd::operator<<(std::ostream& os,
+                               const etcd::Event::EventType& value) {
+  switch (value) {
+  case etcd::Event::EventType::PUT:
+    os << "PUT";
+    break;
+  case etcd::Event::EventType::DELETE_:
+    os << "DELETE";
+    break;
+  case etcd::Event::EventType::INVALID:
+    os << "INVALID";
+    break;
+  }
+  return os;
+}
+
+std::ostream& etcd::operator<<(std::ostream& os, const etcd::Event& event) {
+  os << "Event type: " << event.event_type();
+  if (event.has_kv()) {
+    os << ", KV: " << event.kv();
+  }
+  if (event.has_prev_kv()) {
+    os << ", Prev KV: " << event.prev_kv();
+  }
+  return os;
+}

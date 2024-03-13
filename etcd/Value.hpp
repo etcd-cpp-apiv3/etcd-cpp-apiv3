@@ -91,7 +91,9 @@ class Value {
   int64_t leaseId;
 };
 
-typedef std::vector<Value> Values;
+using Values = std::vector<Value>;
+
+std::ostream& operator<<(std::ostream& os, const Value& value);
 
 class Event {
  public:
@@ -122,7 +124,12 @@ class Event {
   bool _has_kv, _has_prev_kv;
 };
 
-typedef std::vector<Event> Events;
+using Events = std::vector<Event>;
+
+std::ostream& operator<<(std::ostream& os, const Event::EventType& value);
+
+std::ostream& operator<<(std::ostream& os, const Event& event);
+
 }  // namespace etcd
 
 #endif

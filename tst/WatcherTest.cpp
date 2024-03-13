@@ -191,6 +191,41 @@ TEST_CASE("create two watcher") {
   std::this_thread::sleep_for(std::chrono::seconds(5));
 }
 
+TEST_CASE("using two watcher") {
+  etcd::SyncClient etcd(etcd_url);
+
+  int watched1 = 0;
+  int watched2 = 0;
+
+  etcd::Watcher w1(
+      etcd, "/test/def",
+      [&](etcd::Response const& resp) {
+        std::cout << "w1 called: " << resp.events().at(0).event_type() << " on "
+                  << resp.events().at(0).kv().key() << std::endl;
+        ++watched1;
+      },
+      true);
+  etcd::Watcher w2(
+      etcd, "/test",
+      [&](etcd::Response const& resp) {
+        std::cout << "w2 called: " << resp.events().at(0).event_type() << " on "
+                  << resp.events().at(0).kv().key() << std::endl;
+        ++watched2;
+      },
+      true);
+
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+
+  etcd.put("/test/def/xxx", "42");
+  etcd.put("/test/abc", "42");
+  etcd.rm("/test/def/xxx");
+  etcd.rm("/test/abc");
+
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  CHECK(2 == watched1);
+  CHECK(4 == watched2);
+}
+
 // TEST_CASE("request cancellation")
 // {
 //   etcd::Client etcd(etcd_url);
