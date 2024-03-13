@@ -18,7 +18,7 @@ TEST_CASE("sync operations") {
   // add
   CHECK(0 == etcd.add("/test/key1", "42").error_code());
   CHECK(etcd::ERROR_KEY_ALREADY_EXISTS ==
-        etcd.add("/test/key1", "42").error_code());  // Key already exists
+        etcd.add("/test/key1", "41").error_code());  // Key already exists
   CHECK("42" == etcd.get("/test/key1").value().as_string());
 
   // modify
