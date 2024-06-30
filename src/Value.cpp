@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <cstdint>
 
 #include "etcd/Value.hpp"
 #include "etcd/v3/KeyValue.hpp"
