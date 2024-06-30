@@ -90,7 +90,7 @@ macro(use_cxx target)
 endmacro(use_cxx)
 
 macro(set_exceptions target)
-    if(BUILD_NO_EXCEPTIONS)
+    if(BUILD_WITH_NO_EXCEPTIONS)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
             target_compile_options(${target} PRIVATE "-fno-exceptions")
         elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
