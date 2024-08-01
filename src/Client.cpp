@@ -494,6 +494,27 @@ pplx::task<etcd::Response> etcd::Client::leases() {
       this->client->leases_internal());
 }
 
+pplx::task<etcd::Response> etcd::Client::add_member(
+    std::string const& peer_urls, bool is_learner) {
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncAddMemberAction>>(Response::create),
+      this->client->add_member_internal(peer_urls, is_learner));
+}
+
+pplx::task<etcd::Response> etcd::Client::list_member() {
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncListMemberAction>>(Response::create),
+      this->client->list_member_internal());
+}
+
+pplx::task<etcd::Response> etcd::Client::remove_member(
+    const uint64_t member_id) {
+  return etcd::detail::asyncify(
+      static_cast<responser_t<etcdv3::AsyncRemoveMemberAction>>(
+          Response::create),
+      this->client->remove_member_internal(member_id));
+}
+
 pplx::task<etcd::Response> etcd::Client::lock(std::string const& key) {
   static const int DEFAULT_LEASE_TTL_FOR_LOCK =
       10;  // see also etcd::SyncClient::lock

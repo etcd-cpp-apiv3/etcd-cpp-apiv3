@@ -15,6 +15,7 @@ using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
 
+using etcdserverpb::Cluster;
 using etcdserverpb::KV;
 using etcdserverpb::Lease;
 using etcdserverpb::Watch;
@@ -44,9 +45,16 @@ struct ActionParameters {
   std::string value;
   std::string old_value;
   std::string auth_token;
+
+  // for cluster management apis
+  std::vector<std::string> peer_urls;
+  bool is_learner;
+  uint64_t member_id;
+
   std::chrono::microseconds grpc_timeout = std::chrono::microseconds::zero();
   KV::Stub* kv_stub;
   Watch::Stub* watch_stub;
+  Cluster::Stub* cluster_stub;
   Lease::Stub* lease_stub;
   Lock::Stub* lock_stub;
   Election::Stub* election_stub;

@@ -403,6 +403,26 @@ jobs:
           killall -TERM etcd
           sleep 5
 
+      - name: Etcd Member test
+        run: |
+          killall -TERM etcd || true
+          sleep 5
+
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
+
+          # use etcd v3 api
+          export ETCDCTL_API="3"
+          
+
+          rm -rf default.etcd
+          /usr/local/bin/etcd &
+          sleep 5
+
+          ./build/bin/EtcdMemberTest
+
+          killall -TERM etcd
+          sleep 5
+        
       - name: Check ccache
         run: |
           ccache --show-stats

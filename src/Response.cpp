@@ -25,6 +25,7 @@ etcd::Response::Response(const etcd::Response& response) {
   this->_raft_term = response._raft_term;
 
   this->_leases = response._leases;
+  this->_members = response._members;
 }
 
 etcd::Response::Response(const etcdv3::V3Response& reply,
@@ -64,6 +65,8 @@ etcd::Response::Response(const etcdv3::V3Response& reply,
 
   // lease list
   this->_leases = reply.get_leases();
+  // member list
+  this->_members = reply.get_members();
 }
 
 etcd::Response::Response(int error_code, std::string const& error_message)
@@ -130,4 +133,8 @@ uint64_t etcd::Response::raft_term() const { return this->_raft_term; }
 
 std::vector<int64_t> const& etcd::Response::leases() const {
   return this->_leases;
+}
+
+std::vector<etcdv3::Member> const& etcd::Response::members() const {
+  return this->_members;
 }

@@ -95,6 +95,43 @@ void etcdv3::AsyncLeaseKeepAliveResponse::ParseResponse(
   value.set_ttl(resp.ttl());
 }
 
+void etcdv3::AsyncMemberAddResponse::ParseResponse(MemberAddResponse& resp) {
+  index = resp.header().revision();
+  std::string member_type = "Member";
+  if (resp.member().islearner()) {
+    member_type = "Learner";
+  }
+  std::cout << "Member (" << resp.member().id() << ")"
+            << " Added to the etcd cluster as " << member_type << std::endl;
+}
+
+void etcdv3::AsyncMemberListResponse::ParseResponse(MemberListResponse& resp) {
+  index = resp.header().revision();
+  for (auto member : resp.members()) {
+    etcdv3::Member m;
+    m.set_id(member.id());
+    m.set_name(member.name());
+
+    std::vector<std::string> clientUrlsVec, peerUrlsVec;
+    for (const auto& clientUrl : member.clienturls()) {
+      clientUrlsVec.push_back(clientUrl);
+    }
+    for (const auto& peerUrl : member.peerurls()) {
+      peerUrlsVec.push_back(peerUrl);
+    }
+
+    m.set_clientURLs(clientUrlsVec);
+    m.set_peerURLs(peerUrlsVec);
+
+    members.push_back(m);
+  }
+}
+
+void etcdv3::AsyncMemberRemoveResponse::ParseResponse(
+    MemberRemoveResponse& resp) {
+  index = resp.header().revision();
+}
+
 void etcdv3::AsyncLeaseLeasesResponse::ParseResponse(
     LeaseLeasesResponse& resp) {
   index = resp.header().revision();
@@ -665,6 +702,81 @@ bool etcdv3::AsyncLeaseKeepAliveAction::Cancelled() const {
 etcdv3::ActionParameters&
 etcdv3::AsyncLeaseKeepAliveAction::mutable_parameters() {
   return this->parameters;
+}
+
+etcdv3::AsyncAddMemberAction::AsyncAddMemberAction(
+    etcdv3::ActionParameters&& params)
+    : etcdv3::Action(std::move(params)) {
+  MemberAddRequest add_member_request;
+
+  for (const auto& url : parameters.peer_urls) {
+    add_member_request.add_peerurls(url);
+  }
+  add_member_request.set_islearner(parameters.is_learner);
+  response_reader = parameters.cluster_stub->AsyncMemberAdd(
+      &context, add_member_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*) this);
+}
+
+etcdv3::AsyncMemberAddResponse etcdv3::AsyncAddMemberAction::ParseResponse() {
+  AsyncMemberAddResponse add_member_resp;
+  add_member_resp.set_action(etcdv3::ADDMEMBER);
+
+  if (!status.ok()) {
+    add_member_resp.set_error_code(status.error_code());
+    add_member_resp.set_error_message(status.error_message());
+  } else {
+    add_member_resp.ParseResponse(reply);
+  }
+  return add_member_resp;
+}
+
+etcdv3::AsyncListMemberAction::AsyncListMemberAction(
+    etcdv3::ActionParameters&& params)
+    : etcdv3::Action(std::move(params)) {
+  MemberListRequest member_list_request;
+
+  response_reader = parameters.cluster_stub->AsyncMemberList(
+      &context, member_list_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*) this);
+}
+
+etcdv3::AsyncMemberListResponse etcdv3::AsyncListMemberAction::ParseResponse() {
+  AsyncMemberListResponse list_member_resp;
+  list_member_resp.set_action(etcdv3::LISTMEMBER);
+
+  if (!status.ok()) {
+    list_member_resp.set_error_code(status.error_code());
+    list_member_resp.set_error_message(status.error_message());
+  } else {
+    list_member_resp.ParseResponse(reply);
+  }
+  return list_member_resp;
+}
+
+etcdv3::AsyncRemoveMemberAction::AsyncRemoveMemberAction(
+    etcdv3::ActionParameters&& params)
+    : etcdv3::Action(std::move(params)) {
+  MemberRemoveRequest remove_member_request;
+
+  remove_member_request.set_id(parameters.member_id);
+  response_reader = parameters.cluster_stub->AsyncMemberRemove(
+      &context, remove_member_request, &cq_);
+  response_reader->Finish(&reply, &status, (void*) this);
+}
+
+etcdv3::AsyncMemberRemoveResponse
+etcdv3::AsyncRemoveMemberAction::ParseResponse() {
+  AsyncMemberRemoveResponse remove_member_resp;
+  remove_member_resp.set_action(etcdv3::REMOVEMEMBER);
+
+  if (!status.ok()) {
+    remove_member_resp.set_error_code(status.error_code());
+    remove_member_resp.set_error_message(status.error_message());
+  } else {
+    remove_member_resp.ParseResponse(reply);
+  }
+  return remove_member_resp;
 }
 
 etcdv3::AsyncLeaseLeasesAction::AsyncLeaseLeasesAction(

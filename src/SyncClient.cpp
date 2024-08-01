@@ -342,6 +342,7 @@ void etcd::SyncClient::TokenAuthenticatorDeleter::operator()(
 struct etcd::SyncClient::EtcdServerStubs {
   std::unique_ptr<etcdserverpb::KV::Stub> kvServiceStub;
   std::unique_ptr<etcdserverpb::Watch::Stub> watchServiceStub;
+  std::unique_ptr<etcdserverpb::Cluster::Stub> clusterServiceStub;
   std::unique_ptr<etcdserverpb::Lease::Stub> leaseServiceStub;
   std::unique_ptr<v3lockpb::Lock::Stub> lockServiceStub;
   std::unique_ptr<v3electionpb::Election::Stub> electionServiceStub;
@@ -370,6 +371,7 @@ etcd::SyncClient::SyncClient(std::string const& address,
   stubs.reset(new EtcdServerStubs{});
   stubs->kvServiceStub = KV::NewStub(this->channel);
   stubs->watchServiceStub = Watch::NewStub(this->channel);
+  stubs->clusterServiceStub = Cluster::NewStub(this->channel);
   stubs->leaseServiceStub = Lease::NewStub(this->channel);
   stubs->lockServiceStub = Lock::NewStub(this->channel);
   stubs->electionServiceStub = Election::NewStub(this->channel);
@@ -993,6 +995,60 @@ etcd::SyncClient::leases_internal() {
   params.grpc_timeout = this->grpc_timeout;
   params.lease_stub = stubs->leaseServiceStub.get();
   return std::make_shared<etcdv3::AsyncLeaseLeasesAction>(std::move(params));
+}
+
+etcd::Response etcd::SyncClient::add_member(std::string const& peer_urls,
+                                            bool is_learner) {
+  return Response::create(this->add_member_internal(peer_urls, is_learner));
+}
+
+std::shared_ptr<etcdv3::AsyncAddMemberAction>
+etcd::SyncClient::add_member_internal(std::string const& peer_urls,
+                                      bool is_learner) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
+  params.cluster_stub = stubs->clusterServiceStub.get();
+
+  std::vector<std::string> peer_urls_vector;
+  std::istringstream iss(peer_urls);
+  std::string peer_url;
+  while (std::getline(iss, peer_url, ',')) {
+    peer_urls_vector.push_back(peer_url);
+  }
+
+  params.is_learner = is_learner;
+  params.peer_urls = peer_urls_vector;
+
+  return std::make_shared<etcdv3::AsyncAddMemberAction>(std::move(params));
+}
+
+etcd::Response etcd::SyncClient::list_member() {
+  return Response::create(this->list_member_internal());
+}
+
+std::shared_ptr<etcdv3::AsyncListMemberAction>
+etcd::SyncClient::list_member_internal() {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
+  params.cluster_stub = stubs->clusterServiceStub.get();
+  return std::make_shared<etcdv3::AsyncListMemberAction>(std::move(params));
+}
+
+etcd::Response etcd::SyncClient::remove_member(const uint64_t member_id) {
+  return Response::create(this->remove_member_internal(member_id));
+}
+
+std::shared_ptr<etcdv3::AsyncRemoveMemberAction>
+etcd::SyncClient::remove_member_internal(const uint64_t member_id) {
+  etcdv3::ActionParameters params;
+  params.auth_token.assign(this->token_authenticator->renew_if_expired());
+  params.grpc_timeout = this->grpc_timeout;
+  params.cluster_stub = stubs->clusterServiceStub.get();
+  params.member_id = member_id;
+
+  return std::make_shared<etcdv3::AsyncRemoveMemberAction>(std::move(params));
 }
 
 etcd::Response etcd::SyncClient::lock(std::string const& key) {

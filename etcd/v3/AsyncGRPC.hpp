@@ -37,6 +37,12 @@ using etcdserverpb::LeaseRevokeRequest;
 using etcdserverpb::LeaseRevokeResponse;
 using etcdserverpb::LeaseTimeToLiveRequest;
 using etcdserverpb::LeaseTimeToLiveResponse;
+using etcdserverpb::MemberAddRequest;
+using etcdserverpb::MemberAddResponse;
+using etcdserverpb::MemberListRequest;
+using etcdserverpb::MemberListResponse;
+using etcdserverpb::MemberRemoveRequest;
+using etcdserverpb::MemberRemoveResponse;
 using etcdserverpb::PutRequest;
 using etcdserverpb::PutResponse;
 using etcdserverpb::RangeRequest;
@@ -101,6 +107,24 @@ class AsyncLeaseKeepAliveResponse : public etcdv3::V3Response {
  public:
   AsyncLeaseKeepAliveResponse(){};
   void ParseResponse(LeaseKeepAliveResponse& resp);
+};
+
+class AsyncMemberAddResponse : public etcdv3::V3Response {
+ public:
+  AsyncMemberAddResponse(){};
+  void ParseResponse(MemberAddResponse& resp);
+};
+
+class AsyncMemberListResponse : public etcdv3::V3Response {
+ public:
+  AsyncMemberListResponse(){};
+  void ParseResponse(MemberListResponse& resp);
+};
+
+class AsyncMemberRemoveResponse : public etcdv3::V3Response {
+ public:
+  AsyncMemberRemoveResponse(){};
+  void ParseResponse(MemberRemoveResponse& resp);
 };
 
 class AsyncLeaseLeasesResponse : public etcdv3::V3Response {
@@ -273,6 +297,38 @@ class AsyncLeaseKeepAliveAction : public etcdv3::Action {
   std::recursive_mutex protect_is_cancelled;
 
   friend class etcd::KeepAlive;
+};
+
+class AsyncAddMemberAction : public etcdv3::Action {
+ public:
+  AsyncAddMemberAction(etcdv3::ActionParameters&& params);
+  AsyncMemberAddResponse ParseResponse();
+
+ private:
+  MemberAddResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<MemberAddResponse>> response_reader;
+};
+
+class AsyncListMemberAction : public etcdv3::Action {
+ public:
+  AsyncListMemberAction(etcdv3::ActionParameters&& params);
+  AsyncMemberListResponse ParseResponse();
+
+ private:
+  MemberListResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<MemberListResponse>>
+      response_reader;
+};
+
+class AsyncRemoveMemberAction : public etcdv3::Action {
+ public:
+  AsyncRemoveMemberAction(etcdv3::ActionParameters&& params);
+  AsyncMemberRemoveResponse ParseResponse();
+
+ private:
+  MemberRemoveResponse reply;
+  std::unique_ptr<ClientAsyncResponseReader<MemberRemoveResponse>>
+      response_reader;
 };
 
 class AsyncLeaseLeasesAction : public etcdv3::Action {

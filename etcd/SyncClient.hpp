@@ -29,6 +29,9 @@ class AsyncLeaseKeepAliveAction;
 class AsyncLeaseTimeToLiveAction;
 class AsyncLeaseLeasesAction;
 class AsyncLockAction;
+class AsyncAddMemberAction;
+class AsyncListMemberAction;
+class AsyncRemoveMemberAction;
 class AsyncUnlockAction;
 class AsyncPutAction;
 class AsyncRangeAction;
@@ -680,6 +683,24 @@ class SyncClient {
   Response leases();
 
   /**
+   * Add an etcd member to the etcd cluster, equivalent to `etcdctl member add`.
+   * @param peer_urls is comma separated list of URLs for the new member.
+   * @param is_learner is true if the added member is a learner.
+   */
+  Response add_member(std::string const& peer_urls, bool is_learner);
+
+  /**
+   * List all members, equivalent to `etcdctl member list`.
+   */
+  Response list_member();
+
+  /**
+   * Remove a member of an etcd cluster, equivalent to `etcdctl member remove`.
+   * @param member_id is the id of the member to be removed.
+   */
+  Response remove_member(uint64_t member_id);
+
+  /**
    * Gains a lock at a key, using a default created lease, using the default
    * lease (10 seconds), with keeping alive has already been taken care of by
    * the library.
@@ -835,6 +856,11 @@ class SyncClient {
   std::shared_ptr<etcdv3::AsyncLeaseTimeToLiveAction> leasetimetolive_internal(
       int64_t lease_id);
   std::shared_ptr<etcdv3::AsyncLeaseLeasesAction> leases_internal();
+  std::shared_ptr<etcdv3::AsyncAddMemberAction> add_member_internal(
+      std::string const& peer_urls, bool is_learner);
+  std::shared_ptr<etcdv3::AsyncListMemberAction> list_member_internal();
+  std::shared_ptr<etcdv3::AsyncRemoveMemberAction> remove_member_internal(
+      const uint64_t member_id);
   Response lock_internal(std::string const& key,
                          std::shared_ptr<etcd::KeepAlive> const& keepalive);
   std::shared_ptr<etcdv3::AsyncLockAction> lock_with_lease_internal(
