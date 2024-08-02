@@ -245,7 +245,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/KeepAlive.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Response.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Value.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Watcher.hpp
-              
               DESTINATION include/etcd)
 if(NOT BUILD_ETCD_CORE_ONLY)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/Client.hpp
