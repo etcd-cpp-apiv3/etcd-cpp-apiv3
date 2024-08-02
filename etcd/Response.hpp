@@ -10,7 +10,6 @@
 
 #include "etcd/Value.hpp"
 #include "etcd/v3/Member.hpp"
-#include "rpc.pb.h"
 
 namespace etcdv3 {
 class AsyncWatchAction;

@@ -252,6 +252,7 @@ if(NOT BUILD_ETCD_CORE_ONLY)
 endif()
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/action_constants.hpp
               ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Transaction.hpp
+              ${CMAKE_CURRENT_SOURCE_DIR}/etcd/v3/Member.hpp
               DESTINATION include/etcd/v3)
 
 configure_file(etcd-cpp-api-config.in.cmake
@@ -337,6 +338,7 @@ set(CPACK_DEBIAN_PACKAGE_INSTALL "/usr/lib/lib*.so*"
                                  "/usr/include/etcd/*.hpp"
                                  "/usr/include/etcd/v3/action_constants.hpp"
                                  "/usr/include/etcd/v3/Transaction.hpp"
+                                 "/usr/include/etcd/v3/Member.hpp"
 )
 
 set(CPACK_DEBIAN_PACKAGE_BUILD_NUMBER_PREFIX "")
