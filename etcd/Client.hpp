@@ -631,6 +631,25 @@ class Client {
   pplx::task<Response> leases();
 
   /**
+   * Add an etcd member to the etcd cluster, equivalent to `etcdctl member add`.
+   * @param peer_urls is comma separated list of URLs for the new member.
+   * @param is_learner is true if the added member is a learner.
+   */
+  pplx::task<Response> add_member(std::string const& peer_urls,
+                                  bool is_learner);
+
+  /**
+   * List all members, equivalent to `etcdctl member list`.
+   */
+  pplx::task<Response> list_member();
+
+  /**
+   * Add an etcd member to the etcd cluster, equivalent to `etcdctl member add`.
+   * @param member_id is the ID of the member to be removed.
+   */
+  pplx::task<Response> remove_member(const uint64_t member_id);
+
+  /**
    * Gains a lock at a key, using a default created lease, using the default
    * lease (10 seconds), with keeping alive has already been taken care of by
    * the library.

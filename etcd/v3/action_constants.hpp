@@ -23,6 +23,10 @@ extern char const* LEASEKEEPALIVE;
 extern char const* LEASETIMETOLIVE;
 extern char const* LEASELEASES;
 
+extern char const* ADDMEMBER;
+extern char const* LISTMEMBER;
+extern char const* REMOVEMEMBER;
+
 extern char const* CAMPAIGN_ACTION;
 extern char const* PROCLAIM_ACTION;
 extern char const* LEADER_ACTION;

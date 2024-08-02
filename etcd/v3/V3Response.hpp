@@ -6,6 +6,7 @@
 #include "proto/v3election.pb.h"
 
 #include "etcd/v3/KeyValue.hpp"
+#include "etcd/v3/Member.hpp"
 
 namespace etcdv3 {
 class V3Response {
@@ -36,6 +37,7 @@ class V3Response {
   uint64_t get_member_id() const;
   uint64_t get_raft_term() const;
   std::vector<int64_t> const& get_leases() const;
+  std::vector<etcdv3::Member> const& get_members() const;
 
  protected:
   int error_code;
@@ -59,6 +61,8 @@ class V3Response {
 
   // for lease list
   std::vector<int64_t> leases;
+  // for member list
+  std::vector<etcdv3::Member> members;
 };
 }  // namespace etcdv3
 #endif

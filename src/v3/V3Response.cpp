@@ -1,4 +1,5 @@
 #include "etcd/v3/V3Response.hpp"
+#include "etcd/v3/Member.hpp"
 #include "etcd/v3/action_constants.hpp"
 
 void etcdv3::V3Response::set_error_code(int code) { error_code = code; }
@@ -78,4 +79,8 @@ uint64_t etcdv3::V3Response::get_raft_term() const { return this->raft_term; }
 
 std::vector<int64_t> const& etcdv3::V3Response::get_leases() const {
   return this->leases;
+}
+
+std::vector<etcdv3::Member> const& etcdv3::V3Response::get_members() const {
+  return this->members;
 }

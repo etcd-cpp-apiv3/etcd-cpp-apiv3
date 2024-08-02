@@ -19,6 +19,10 @@ char const* etcdv3::LEASEKEEPALIVE = "leasekeepalive";
 char const* etcdv3::LEASETIMETOLIVE = "leasetimetolive";
 char const* etcdv3::LEASELEASES = "leaseleases";
 
+char const* etcdv3::ADDMEMBER = "addmember";
+char const* etcdv3::LISTMEMBER = "listmember";
+char const* etcdv3::REMOVEMEMBER = "removemember";
+
 char const* etcdv3::CAMPAIGN_ACTION = "campaign";
 char const* etcdv3::PROCLAIM_ACTION = "preclaim";
 char const* etcdv3::LEADER_ACTION = "leader";
