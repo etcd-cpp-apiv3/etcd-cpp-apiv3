@@ -534,10 +534,10 @@ Values can be deleted with the `rm` method passing the key to be deleted as a pa
 should point to an existing value. There are conditional variations for deletion too.
 
 * `rm(std::string const& key)` unconditionally deletes the given key
-* `rm_if(key, value, old_value)` deletes an already existing value but only if the previous
+* `rm_if(key, old_value)` deletes an already existing value but only if the previous
   value equals with old_value. If the values does not match returns with "Compare failed" error
   (code `ERROR_COMPARE_FAILED`)
-* `rm_if(key, value, old_index)` deletes an already existing value but only if the index of
+* `rm_if(key, old_index)` deletes an already existing value but only if the index of
   the previous value equals with old_index. If the indices does not match returns with "Compare
   failed" error (code `ERROR_COMPARE_FAILED`)
 
