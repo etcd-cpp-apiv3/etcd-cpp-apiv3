@@ -113,10 +113,11 @@ static bool dns_resolve(std::string const& target,
       return false;
     }
 
-    std::string host(target.substr(0,rindex));
+    std::string host(target.substr(0, rindex));
 
     // host format is [ipv6]
-    if(!ipv4 && !host.empty() && host[0] == '[' && host[host.size()-1] == ']') {
+    if (!ipv4 && !host.empty() && host[0] == '[' &&
+        host[host.size() - 1] == ']') {
       host = target.substr(1, rindex - 2);
       ipv6_url = true;
     }
