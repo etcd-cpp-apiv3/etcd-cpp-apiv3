@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #endif
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -101,6 +102,7 @@ static std::string string_join(std::vector<std::string> const& srcs,
 static bool dns_resolve(std::string const& target,
                         std::vector<std::string>& endpoints, bool ipv4 = true) {
   std::vector<std::string> target_parts;
+  bool ipv6_url{false};
   {
     size_t rindex = target.rfind(':');
     if (rindex == target.npos) {
@@ -110,7 +112,17 @@ static bool dns_resolve(std::string const& target,
 #endif
       return false;
     }
-    target_parts.push_back(target.substr(0, rindex));
+
+    std::string host(target.substr(0, rindex));
+
+    // host format is [ipv6]
+    if (!ipv4 && !host.empty() && host[0] == '[' &&
+        host[host.size() - 1] == ']') {
+      host = target.substr(1, rindex - 2);
+      ipv6_url = true;
+    }
+
+    target_parts.push_back(host);
     target_parts.push_back(target.substr(rindex + 1));
   }
 
@@ -131,6 +143,16 @@ static bool dns_resolve(std::string const& target,
     }
   }
 #endif
+
+  if (ipv6_url) {
+    // check valid ipv6
+    struct sockaddr_in6 sa6;
+    if (inet_pton(AF_INET6, target_parts[0].c_str(), &(sa6.sin6_addr)) == 1) {
+      endpoints.emplace_back(target);
+      return true;
+    }
+    return false;
+  }
 
   struct addrinfo hints = {}, *addrs;
   hints.ai_family = ipv4 ? AF_INET : AF_INET6;
