@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #endif
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -112,10 +113,11 @@ static bool dns_resolve(std::string const& target,
     }
 
     std::string host(target.substr(0,rindex));
-    // check target is '[ipv6]:port'
+
+    // host format is [ipv6]
     if(!ipv4 && !host.empty() && host[0] == '[' && host[host.size()-1] == ']') {
-      endpoints.emplace_back(target);
-      return true;
+      host = target.substr(1, rindex - 2);
+      ipv6_url = true;
     }
 
     target_parts.push_back(host);
@@ -139,6 +141,16 @@ static bool dns_resolve(std::string const& target,
     }
   }
 #endif
+
+  if (ipv6_url) {
+    // check valid ipv6
+    struct sockaddr_in6 sa6;
+    if (inet_pton(AF_INET6, target_parts[0].c_str(), &(sa6.sin6_addr)) == 1) {
+      endpoints.emplace_back(target);
+      return true;
+    }
+    return false;
+  }
 
   struct addrinfo hints = {}, *addrs;
   hints.ai_family = ipv4 ? AF_INET : AF_INET6;
