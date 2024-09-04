@@ -102,6 +102,7 @@ static std::string string_join(std::vector<std::string> const& srcs,
 static bool dns_resolve(std::string const& target,
                         std::vector<std::string>& endpoints, bool ipv4 = true) {
   std::vector<std::string> target_parts;
+  bool ipv6_url{false};
   {
     size_t rindex = target.rfind(':');
     if (rindex == target.npos) {
