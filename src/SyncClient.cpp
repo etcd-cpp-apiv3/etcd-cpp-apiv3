@@ -110,7 +110,15 @@ static bool dns_resolve(std::string const& target,
 #endif
       return false;
     }
-    target_parts.push_back(target.substr(0, rindex));
+
+    std::string host(target.substr(0,rindex));
+    // check target is '[ipv6]:port'
+    if(!ipv4 && !host.empty() && host[0] == '[' && host[host.size()-1] == ']') {
+      endpoints.emplace_back(target);
+      return true;
+    }
+
+    target_parts.push_back(host);
     target_parts.push_back(target.substr(rindex + 1));
   }
 
