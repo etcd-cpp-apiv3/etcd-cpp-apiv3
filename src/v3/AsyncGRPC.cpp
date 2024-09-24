@@ -1237,7 +1237,7 @@ etcdv3::AsyncWatchAction::AsyncWatchAction(etcdv3::ActionParameters&& params)
   watch_create_req.set_start_revision(parameters.revision);
   watch_create_req.set_watch_id(this->watch_id);
 
-  watch_req.mutable_create_request()->CopyFrom(watch_create_req);
+  *watch_req.mutable_create_request() = std::move(watch_create_req);
 
   // wait "create" success (the stream becomes ready)
   void* got_tag;
