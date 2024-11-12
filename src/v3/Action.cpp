@@ -2,6 +2,15 @@
 #include <grpc/support/log.h>
 #include <grpcpp/support/status.h>
 #include "etcd/v3/action_constants.hpp"
+#include <cstdlib>
+
+#ifndef GPR_ASSERT
+#define GPR_ASSERT(x)                                             \
+  if (!(x)) {                                                     \
+    fprintf(stderr, "%s:%d assert failed\n", __FILE__, __LINE__); \
+    abort();                                                      \
+}
+#endif
 
 etcdv3::Action::Action(etcdv3::ActionParameters const& params) {
   parameters = params;
