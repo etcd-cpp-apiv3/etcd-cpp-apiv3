@@ -15,7 +15,7 @@ if(NOT gRPC_FOUND)
     find_dependency(GRPC)
 endif()
 
-find_dependency(cpprestsdk)
+find_package(cpprestsdk QUIET)
 if(cpprestsdk_FOUND)
     set(CPPREST_LIB cpprestsdk::cpprest)
 endif()

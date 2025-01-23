@@ -4,5 +4,8 @@ proto/**/*.pb.cc
 proto/**/*.pb.h
 default.etcd/
 
+# vscode
+.vscode/
+
 # vscode-clangd
 .cache/
