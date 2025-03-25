@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 using namespace std;
 
 namespace etcdv3 {
