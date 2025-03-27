@@ -1,6 +1,7 @@
 #ifndef __V3_ETCDV3MEMBERS_HPP__
 #define __V3_ETCDV3MEMBERS_HPP__
 
+#include <cstdint>
 #include <string>
 #include <vector>
 using namespace std;
