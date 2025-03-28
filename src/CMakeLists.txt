@@ -17,6 +17,10 @@ file(GLOB_RECURSE CPP_CLIENT_CORE_SRC
                   "${CMAKE_CURRENT_SOURCE_DIR}/**/*.cpp"
 )
 
+if(BUILD_ETCD_CORE_ONLY)
+    list(REMOVE_ITEM CPP_CLIENT_CORE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/Client.cpp")
+endif()
+
 add_library(etcd-cpp-api-core-objects OBJECT ${CPP_CLIENT_CORE_SRC} ${PROTOBUF_GENERATES})
 use_cxx(etcd-cpp-api-core-objects)
 set_exceptions(etcd-cpp-api-core-objects)
