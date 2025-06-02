@@ -304,9 +304,12 @@ void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply) {
     }
   }
 
-  action = actions[0];
-  value = values[0];
-  prev_value = prev_values[0];
+  if (not actions.empty())
+    action = actions[0];
+  if (not values.empty())
+    value = values[0];
+  if (not prev_values.empty())
+    prev_value = prev_values[0];
 }
 
 etcdv3::AsyncCampaignAction::AsyncCampaignAction(
