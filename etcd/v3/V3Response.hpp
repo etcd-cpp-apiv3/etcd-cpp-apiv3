@@ -10,7 +10,7 @@
 namespace etcdv3 {
 class V3Response {
  public:
-  V3Response() : error_code(0), index(0){};
+  V3Response() : error_code(0), index(0) {};
   void set_error_code(int code);
   int get_error_code() const;
   std::string const& get_error_message() const;
@@ -18,6 +18,7 @@ class V3Response {
   void set_action(std::string action);
   int64_t get_index() const;
   std::string const& get_action() const;
+  std::vector<std::string> const& get_actions() const;
   std::vector<etcdv3::KeyValue> const& get_values() const;
   std::vector<etcdv3::KeyValue> const& get_prev_values() const;
   etcdv3::KeyValue const& get_value() const;
@@ -44,6 +45,7 @@ class V3Response {
   std::string action;
   etcdv3::KeyValue value;
   etcdv3::KeyValue prev_value;
+  std::vector<std::string> actions;
   std::vector<etcdv3::KeyValue> values;
   std::vector<etcdv3::KeyValue> prev_values;
   int64_t compact_revision = -1;

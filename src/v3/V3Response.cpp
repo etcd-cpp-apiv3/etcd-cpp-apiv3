@@ -21,6 +21,10 @@ void etcdv3::V3Response::set_action(std::string action) {
   this->action = action;
 }
 
+std::vector<std::string> const& etcdv3::V3Response::get_actions() const {
+  return actions;
+}
+
 std::vector<etcdv3::KeyValue> const& etcdv3::V3Response::get_values() const {
   return values;
 }

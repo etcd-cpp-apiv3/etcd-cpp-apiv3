@@ -283,24 +283,30 @@ void etcdv3::AsyncWatchResponse::ParseResponse(WatchResponse& reply) {
     auto event = reply.events(cnt);
     if (mvccpb::Event::EventType::Event_EventType_PUT == event.type()) {
       if (event.kv().version() == 1) {
-        action = etcdv3::CREATE_ACTION;
+        actions.emplace_back(etcdv3::CREATE_ACTION);
       } else {
-        action = etcdv3::SET_ACTION;
+        actions.emplace_back(etcdv3::SET_ACTION);
       }
-      value.kvs = event.kv();
+      etcdv3::KeyValue kv;
+      kv.kvs.CopyFrom(event.kv());
+      values.push_back(kv);
     } else if (mvccpb::Event::EventType::Event_EventType_DELETE_ ==
                event.type()) {
-      action = etcdv3::DELETE_ACTION;
-      value.kvs = event.kv();
+      actions.emplace_back(etcdv3::DELETE_ACTION);
+      etcdv3::KeyValue kv;
+      kv.kvs.CopyFrom(event.kv());
+      values.push_back(kv);
     }
     if (event.has_prev_kv()) {
-      prev_value.kvs = event.prev_kv();
+      etcdv3::KeyValue kv;
+      kv.kvs.CopyFrom(event.prev_kv());
+      prev_values.emplace_back(kv);
     }
-    // just store the first occurence of the key in values.
-    // this is done so tas client will not need to change their behaviour.
-    // break immediately
-    break;
   }
+
+  action = actions[0];
+  value = values[0];
+  prev_value = prev_values[0];
 }
 
 etcdv3::AsyncCampaignAction::AsyncCampaignAction(

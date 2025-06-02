@@ -135,6 +135,18 @@ class Response {
   Value const& prev_value() const;
 
   /**
+   * Returns the index-th action of the response to an 'recursive watch'
+   * operation. Equivalent to actions()[index]
+   */
+  std::string const& action(int index) const;
+
+  /**
+   * Returns the vector of actions in a directory in response to an 'recursive
+   * watch' operation.
+   */
+  std::vector<std::string> const& actions() const;
+
+  /**
    * Returns the index-th value of the response to an 'ls' operation. Equivalent
    * to values()[index]
    */
@@ -220,6 +232,7 @@ class Response {
   std::string _action;
   Value _value;
   Value _prev_value;
+  std::vector<std::string> _actions;  // for recursive watch
   Values _values;
   Keys _keys;
   int64_t _compact_revision = -1;  // for watch

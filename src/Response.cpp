@@ -35,7 +35,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply,
   _error_message = reply.get_error_message();
   if (reply.has_values()) {
     auto val = reply.get_values();
+    auto action = reply.get_actions();
     for (unsigned int index = 0; index < val.size(); index++) {
+      _actions.push_back(action[index]);
       _values.push_back(Value(val[index]));
       _keys.push_back(val[index].kvs.key());
     }
@@ -95,6 +97,14 @@ int64_t etcd::Response::index() const { return _index; }
 etcd::Value const& etcd::Response::value() const { return _value; }
 
 etcd::Value const& etcd::Response::prev_value() const { return _prev_value; }
+
+std::vector<std::string> const& etcd::Response::actions() const {
+  return _actions;
+}
+
+std::string const& etcd::Response::action(int index) const {
+  return _actions[index];
+}
 
 etcd::Values const& etcd::Response::values() const { return _values; }
 
