@@ -84,3 +84,6 @@ else()
     install(TARGETS etcd-cpp-api-core etcd-cpp-api
             EXPORT etcd-targets)
 endif()
+
+add_executable(main main.cpp)
+target_link_libraries(main PRIVATE etcd-cpp-api)
