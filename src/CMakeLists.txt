@@ -85,5 +85,8 @@ else()
             EXPORT etcd-targets)
 endif()
 
+target_include_directories(etcd-cpp-api INTERFACE 
+			   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
+
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE etcd-cpp-api)
