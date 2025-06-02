@@ -37,7 +37,9 @@ etcd::Response::Response(const etcdv3::V3Response& reply,
     auto val = reply.get_values();
     auto action = reply.get_actions();
     for (unsigned int index = 0; index < val.size(); index++) {
-      _actions.push_back(action[index]);
+      if (index < action.size()) {
+        _actions.push_back(action[index]);
+      }
       _values.push_back(Value(val[index]));
       _keys.push_back(val[index].kvs.key());
     }
