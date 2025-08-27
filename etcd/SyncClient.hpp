@@ -310,6 +310,132 @@ class SyncClient {
                              std::string const& privkey = "",
                              std::string const& target_name_override = "");
 
+  /**
+   * Constructs an etcd client object.
+   *
+   * @param etcd_url is the url of the etcd server to connect to, like
+   * "http://127.0.0.1:2379", or multiple url, separated by ',' or ';'.
+   * @param username username of etcd auth
+   * @param password password of etcd auth
+   * @param ca      root CA file for SSL/TLS connection.
+   * @param cert    cert chain file for SSL/TLS authentication, could be empty
+   * string.
+   * @param privkey private key file for SSL/TLS authentication, could be empty
+   * string.
+   * @param target_name_override Override the target host name if you want to
+   * pass multiple address for load balancing with SSL, and there's no DNS. The
+   * @target_name_override@ must exist in the SANS of your SSL certificate.
+   * @param load_balancer is the load balance strategy, can be one of
+   * round_robin/pick_first/grpclb/xds.
+   * @param auth_token_ttl TTL seconds for auth token, see also
+   * `--auth-token-ttl` flags of etcd.
+   */
+  SyncClient(std::string const& etcd_url,
+             std::string const& username,
+             std::string const& password,
+             std::string const& ca,
+             std::string const& cert,
+             std::string const& privkey,
+             std::string const& target_name_override,
+             std::string const& load_balancer = "round_robin",
+             int const auth_token_ttl = 300);
+
+  /**
+   * Constructs an etcd client object.
+   *
+   * @param etcd_url is the url of the etcd server to connect to, like
+   * "http://127.0.0.1:2379", or multiple url, separated by ',' or ';'.
+   * @param username username of etcd auth
+   * @param password password of etcd auth
+   * @param ca      root CA file for SSL/TLS connection.
+   * @param cert    cert chain file for SSL/TLS authentication, could be empty
+   * string.
+   * @param privkey private key file for SSL/TLS authentication, could be empty
+   * string.
+   * @param target_name_override Override the target host name if you want to
+   * pass multiple address for load balancing with SSL, and there's no DNS. The
+   * @target_name_override@ must exist in the SANS of your SSL certificate.
+   * @param arguments user provided grpc channel arguments.
+   * @param auth_token_ttl TTL seconds for auth token, see also
+   * `--auth-token-ttl` flags of etcd.
+   */
+  SyncClient(std::string const& etcd_url,
+             std::string const& username,
+             std::string const& password,
+             std::string const& ca,
+             std::string const& cert,
+             std::string const& privkey,
+             std::string const& target_name_override,
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+             grpc::ChannelArguments const& arguments,
+#else
+             grpc_impl::ChannelArguments const& arguments,
+#endif
+             int const auth_token_ttl);
+
+  /**
+   * Constructs an etcd client object.
+   *
+   * @param etcd_url is the url of the etcd server to connect to, like
+   * "http://127.0.0.1:2379", or multiple url, separated by ',' or ';'.
+   * @param username username of etcd auth
+   * @param password password of etcd auth
+   * @param ca      root CA file for SSL/TLS connection.
+   * @param cert    cert chain file for SSL/TLS authentication, could be empty
+   * string.
+   * @param privkey private key file for SSL/TLS authentication, could be empty
+   * string.
+   * @param target_name_override Override the target host name if you want to
+   * pass multiple address for load balancing with SSL, and there's no DNS. The
+   * @target_name_override@ must exist in the SANS of your SSL certificate.
+   * @param load_balancer is the load balance strategy, can be one of
+   * round_robin/pick_first/grpclb/xds.
+   * @param auth_token_ttl TTL seconds for auth token, see also
+   * `--auth-token-ttl` flags of etcd. Default value should be 300.
+   */
+  static SyncClient* WithSSLUser(std::string const& etcd_url,
+                                 std::string const& username,
+                                 std::string const& password,
+                                 std::string const& ca,
+                                 std::string const& cert = "",
+                                 std::string const& privkey = "",
+                                 std::string const& target_name_override = "",
+                                 std::string const& load_balancer = "round_robin",
+                                 int const auth_token_ttl = 300);
+
+  /**
+   * Constructs an etcd client object.
+   *
+   * @param etcd_url is the url of the etcd server to connect to, like
+   * "http://127.0.0.1:2379", or multiple url, separated by ',' or ';'.
+   * @param username username of etcd auth
+   * @param password password of etcd auth
+   * @param auth_token_ttl TTL seconds for auth token, see also
+   * `--auth-token-ttl` flags of etcd. Default value should be 300.
+   * @param arguments user provided grpc channel arguments.
+   * @param ca      root CA file for SSL/TLS connection.
+   * @param cert    cert chain file for SSL/TLS authentication, could be empty
+   * string.
+   * @param privkey private key file for SSL/TLS authentication, could be empty
+   * string.
+   * @param target_name_override Override the target host name if you want to
+   * pass multiple address for load balancing with SSL, and there's no DNS. The
+   * @target_name_override@ must exist in the SANS of your SSL certificate.
+   */
+  static SyncClient* WithSSLUser(std::string const& etcd_url,
+                                 std::string const& username,
+                                 std::string const& password,
+                                 int const auth_token_ttl,
+#if defined(WITH_GRPC_CHANNEL_CLASS)
+                                 grpc::ChannelArguments const& arguments,
+#else
+                                 grpc_impl::ChannelArguments const& arguments,
+#endif
+                                 std::string const& ca,
+                                 std::string const& cert = "",
+                                 std::string const& privkey = "",
+                                 std::string const& target_name_override = "");
+
   ~SyncClient();
 
   /**
