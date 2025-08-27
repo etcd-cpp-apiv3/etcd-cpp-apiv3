@@ -145,6 +145,88 @@ etcd::Client* etcd::Client::WithSSL(std::string const& etcd_url,
                           arguments);
 }
 
+etcd::Client::Client(std::string const& address,
+                     std::string const& username,
+                     std::string const& password,
+                     std::string const& ca,
+                     std::string const& cert,
+                     std::string const& privkey,
+                     std::string const& target_name_override,
+                     std::string const& load_balancer,
+                     int const auth_token_ttl) {
+  this->own_client = true;
+  this->client = new SyncClient(address,
+                                username,
+                                password,
+                                ca,
+                                cert,
+                                privkey,
+                                target_name_override,
+                                load_balancer,
+                                auth_token_ttl);
+}
+
+etcd::Client::Client(std::string const& address,
+                     std::string const& username,
+                     std::string const& password,
+                     std::string const& ca,
+                     std::string const& cert,
+                     std::string const& privkey,
+                     std::string const& target_name_override,
+                     grpc::ChannelArguments const& arguments,
+                     int const auth_token_ttl) {
+  this->own_client = true;
+  this->client = new SyncClient(address,
+                                username,
+                                password,
+                                ca,
+                                cert,
+                                privkey,
+                                target_name_override,
+                                arguments,
+                                auth_token_ttl);
+}
+
+etcd::Client* etcd::Client::WithSSLUser(std::string const& etcd_url,
+                                        std::string const& username,
+                                        std::string const& password,
+                                        std::string const& ca,
+                                        std::string const& cert,
+                                        std::string const& privkey,
+                                        std::string const& target_name_override,
+                                        std::string const& load_balancer,
+                                        int const auth_token_ttl) {
+  return new etcd::Client(etcd_url,
+                          username,
+                          password,
+                          ca,
+                          cert,
+                          privkey,
+                          target_name_override,
+                          load_balancer,
+                          auth_token_ttl);
+}
+
+etcd::Client* etcd::Client::WithSSLUser(std::string const& etcd_url,
+                                        std::string const& username,
+                                        std::string const& password,
+                                        int const auth_token_ttl,
+                                        grpc::ChannelArguments const& arguments,
+                                        std::string const& ca,
+                                        std::string const& cert,
+                                        std::string const& privkey,
+                                        std::string const& target_name_override) {
+  return new etcd::Client(etcd_url,
+                          username,
+                          password,
+                          ca,
+                          cert,
+                          privkey,
+                          target_name_override,
+                          arguments,
+                          auth_token_ttl);
+}
+
 etcd::Client::~Client() {
   if (this->own_client) {
     delete this->client;
