@@ -204,7 +204,7 @@ std::string etcd::KeepAlive::refresh() {
       return std::string{};
     }
     // minimal resolution: 1 second
-    int keepalive_ttl = std::max(ttl - 1, 1);
+    int keepalive_ttl = std::max(ttl / 3, 1);
     {
       std::unique_lock<std::mutex> lock(mutex_for_refresh_);
       if (cv_for_refresh_.wait_for(lock, std::chrono::seconds(keepalive_ttl)) ==
