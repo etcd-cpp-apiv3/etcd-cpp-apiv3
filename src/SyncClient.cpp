@@ -256,6 +256,13 @@ static std::shared_ptr<grpc::Channel> create_grpc_channel(
     const grpc::ChannelArguments& grpc_args) {
   const std::string addresses =
       etcd::detail::strip_and_resolve_addresses(address);
+  // Check environment variable to disable strict URI validation
+  const char* disable_validation = std::getenv("ETCD_CPP_API_DISABLE_URI_VALIDATION");
+  if (disable_validation != nullptr && std::string(disable_validation) == "1") {
+    std::string final_address = addresses.empty() ? address : addresses;
+    return grpc::CreateCustomChannel(final_address, creds, grpc_args);
+  }
+  // Continue with normal validation
 #ifndef NDEBUG
   std::cerr << "[debug] resolved addresses: " << addresses << std::endl;
 #endif
